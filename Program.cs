@@ -1,7 +1,13 @@
 using System.Text.Json.Serialization;
+using backend.src.Configurations;
 using backend.src.Data;
+using backend.src.Services.Implement;
+using backend.src.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Minio;
 using Scalar.AspNetCore;
+using Server.src.Services.Implements;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,12 +22,39 @@ builder.Services.AddControllers().AddJsonOptions(option =>
    option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
 
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.Configure<MinioOptions>(builder.Configuration.GetSection(MinioOptions.SectionName));
+
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<MinioOptions>>().Value;
+
+    return new MinioClient()
+        .WithEndpoint(options.Endpoint)
+        .WithCredentials(options.AccessKey, options.SecretKey)
+        .WithSSL(options.UseSSL)
+        .Build();
+});
+
 // Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
 });
+
+// Manga Service
+builder.Services.AddScoped<IMangaService, MangaService>();
+
+// Author Service
+builder.Services.AddScoped<IAuthorService, AuthorService>();
+
+// Genre Service
+builder.Services.AddScoped<IGenreService, GenreService>();
+
+// Minio Storage Service
+builder.Services.AddScoped<IMinioStorageService, MinioStorageService>();
 
 var app = builder.Build();
 
@@ -57,19 +90,25 @@ app.MapControllers();
 if (app.Environment.IsDevelopment())
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    try
+
+    app.Lifetime.ApplicationStarted.Register(() =>
     {
-        var url = "http://localhost:7185/scalar/v1";
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        try
         {
-            FileName = url,
-            UseShellExecute = true
-        });
-    }
-    catch (Exception ex)
-    {
-        logger.LogWarning($"Không thể tự động mở browser: {ex.Message}");
-    }
+            var baseUrl = app.Urls.FirstOrDefault() ?? "http://localhost:5219";
+            var scalarUrl = $"{baseUrl.TrimEnd('/')}/scalar/v1";
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = scalarUrl,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning($"Không thể tự động mở browser: {ex.Message}");
+        }
+    });
 }
 
 app.Run();
