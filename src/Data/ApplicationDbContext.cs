@@ -9,6 +9,7 @@ namespace backend.src.Data
 {
     public class ApplicationDbContext : DbContext
     {
+        public DbSet<Admin> Admins { get; set; }
         public DbSet<Authors> Authors { get; set; }
         public DbSet<Chapters> Chapters { get; set; }
         public DbSet<Genres> Genres { get; set; }
@@ -17,6 +18,7 @@ namespace backend.src.Data
         public DbSet<Manga> Manga { get; set; }
         public DbSet<Pages> Pages { get; set; }
         public DbSet<Ratings> Ratings { get; set; }
+        public DbSet<Readers> Readers { get; set; }
         public DbSet<Users> Users { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> dbContextOptions) : base (dbContextOptions) {}
@@ -25,6 +27,34 @@ namespace backend.src.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Admin>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.Name)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode();
+                entity.Property(a => a.Birth)
+                    .HasColumnType("date")
+                    .IsRequired();
+                entity.Property(a => a.Gender)
+                    .HasMaxLength(5)
+                    .IsUnicode(false);
+                entity.Property(a => a.Address)
+                    .HasMaxLength(255);
+                entity.Property(a => a.Phone)
+                    .HasMaxLength(15)
+                    .IsUnicode(false)
+                    .IsRequired();
+                entity.HasIndex(a => a.Phone)
+                    .IsUnique();
+                entity.Property(a => a.Avatar)
+                    .HasMaxLength(255);
+            });
+
             modelBuilder.Entity<Authors>(entity =>
             {
                 entity.HasKey(a => a.Id);
@@ -88,16 +118,16 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.MangaId)
                     .IsRequired();
-                entity.Property(a => a.UserId)
+                entity.Property(a => a.ReaderId)
                     .IsRequired();
                 entity.Property(a => a.IsCompleted)
                     .IsRequired();
                 entity.Property(a => a.UpdateAt)
                     .IsRequired();
 
-                entity.HasOne(a => a.Users)
+                entity.HasOne(a => a.Readers)
                     .WithMany(b => b.History)
-                    .HasForeignKey(a => a.UserId)
+                    .HasForeignKey(a => a.ReaderId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(a => a.Manga)
@@ -119,7 +149,7 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.MangaId)
                     .IsRequired();
-                entity.Property(a => a.UserId)
+                entity.Property(a => a.ReaderId)
                     .IsRequired();
 
                 entity.HasOne(a => a.Manga)
@@ -127,9 +157,9 @@ namespace backend.src.Data
                     .HasForeignKey(a => a.MangaId)
                     .OnDelete(DeleteBehavior.Cascade);
                 
-                entity.HasOne(a => a.Users)
+                entity.HasOne(a => a.Readers)
                     .WithOne(b => b.Libraries)
-                    .HasForeignKey<Libraries>(a => a.UserId)
+                    .HasForeignKey<Libraries>(a => a.ReaderId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -184,8 +214,8 @@ namespace backend.src.Data
                     .HasMaxLength(200);
 
                 entity.HasOne(a => a.Chapters)
-                    .WithOne(b => b.Pages)
-                    .HasForeignKey<Pages>(a => a.ChapterId)
+                    .WithMany(b => b.Pages)
+                    .HasForeignKey(a => a.ChapterId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -197,14 +227,14 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.MangaId)
                     .IsRequired();
-                entity.Property(a => a.UserId)
+                entity.Property(a => a.ReaderId)
                     .IsRequired();
                 entity.Property(a => a.Score)
                     .IsRequired();
                 
-                entity.HasOne(a => a.Users)
+                entity.HasOne(a => a.Readers)
                     .WithMany(b => b.Ratings)
-                    .HasForeignKey(a => a.UserId)
+                    .HasForeignKey(a => a.ReaderId)
                     .OnDelete(DeleteBehavior.Cascade);
                 
                 entity.HasOne(a => a.Manga)
@@ -213,7 +243,7 @@ namespace backend.src.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<Users>(entity =>
+            modelBuilder.Entity<Readers>(entity =>
             {
                 entity.HasKey(a => a.Id);
                 entity.Property(a => a.Id)
@@ -223,19 +253,56 @@ namespace backend.src.Data
                     .IsRequired()
                     .HasMaxLength(50)
                     .IsUnicode();
-                entity.Property(a => a.UserName)
-                    .IsRequired()
-                    .HasMaxLength(50);
                 entity.Property(a => a.Email)
                     .IsRequired()
                     .HasMaxLength(50);
-                entity.Property(a => a.PasswordHash)
-                    .IsRequired()
-                    .HasMaxLength(20);
                 entity.Property(a => a.Avatar)
                     .HasMaxLength(200);
                 entity.Property(a => a.Coin)
                     .IsRequired();
+                entity.Property(a => a.Birth)
+                    .HasColumnType("date")
+                    .IsRequired();
+                entity.Property(a => a.Gender)
+                    .HasMaxLength(5)
+                    .IsUnicode(false);
+                entity.Property(a => a.Address)
+                    .HasMaxLength(255);
+                entity.Property(a => a.Phone)
+                    .HasMaxLength(15)
+                    .IsUnicode(false)
+                    .IsRequired();
+                entity.Property(a => a.Avatar)
+                    .HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<Users>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.UserName)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .IsUnicode();
+                entity.Property(a => a.Password)
+                    .IsRequired()
+                    .HasMaxLength(20);
+                entity.Property(a => a.Role)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .IsUnicode();
+                
+                entity.HasOne(a => a.Readers)
+                    .WithOne(b => b.Users)
+                    .HasForeignKey<Readers>(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Admin)
+                    .WithOne(b => b.Users)
+                    .HasForeignKey<Admin>(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

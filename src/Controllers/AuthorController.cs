@@ -6,6 +6,7 @@ using backend.src.Data;
 using backend.src.Dtos.Author;
 using backend.src.Exceptions;
 using backend.src.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.src.Controllers
@@ -23,6 +24,7 @@ namespace backend.src.Controllers
             _author = author;
         }
 
+        [AllowAnonymous]
         [HttpGet("get-all-author")]
         public async Task<IActionResult> GetAllAuthor()
         {
@@ -38,6 +40,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("get-author-by-id/{id}")]
         public async Task<IActionResult> GetAuthorById(int id)
         {
@@ -53,6 +56,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("create-author")]
         public async Task<IActionResult> CreateAuthor([FromForm] CreateAuthorDto dto, IFormFile? file)
         {
@@ -74,6 +78,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("update-author/{id}")]
         public async Task<IActionResult> UpdateAuthor([FromForm] UpdateAuthorDto dto, IFormFile? file, int id)
         {
@@ -95,6 +100,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("delete-author/{id}")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {

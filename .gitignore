@@ -27,7 +27,7 @@ docker-compose.jenkins.yml
 
 # Secrets và production configs
 # appsettings.Production.json
-# .env
+.env
 # *.env.production
 
 # Test results

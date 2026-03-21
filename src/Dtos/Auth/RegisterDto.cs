@@ -3,16 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace backend.src.Models
+namespace backend.src.Dtos.Auth
 {
-    public class Users
+    public class RegisterDto
     {
         public int Id { get; set; }
         public string? UserName { get; set; }
         public string? Password { get; set; }
         public string? Role { get; set; }
-
-        public Readers? Readers { get; set; }
-        public Admin? Admin { get; set; }
     }
 }

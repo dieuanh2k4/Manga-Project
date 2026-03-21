@@ -15,7 +15,7 @@ namespace backend.src.Models
         public int Coin { get; set; }
 
         public Manga? Manga { get; set; }
-        public Pages? Pages { get; set; }
+        public List<Pages>? Pages { get; set; }
         public List<History>? History { get; set; }
     }
 }

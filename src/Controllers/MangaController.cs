@@ -8,6 +8,7 @@ using backend.src.Exceptions;
 using backend.src.Models;
 using backend.src.Services.Implement;
 using backend.src.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.src.Controllers
@@ -26,6 +27,7 @@ namespace backend.src.Controllers
             _mangaservice = mangaService;
         }
 
+        [AllowAnonymous]
         [HttpGet("get-all-manga")]
         public async Task<IActionResult> GetAllManga()
         {
@@ -41,6 +43,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("get-manga-by-id/{id}")]
         public async Task<IActionResult> GetMangaById(int id)
         {
@@ -56,6 +59,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("create-manga")]
         public async Task<IActionResult> CreateManga([FromForm] CreateMangaDto dto, IFormFile? file)
         {
@@ -77,6 +81,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("update-manga/{id}")]
         public async Task<IActionResult> UpdateManga([FromForm] UpdateMangaDto dto, IFormFile? file, int id) 
         {
@@ -98,6 +103,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("delete-manga/{id}")]
         public async Task<IActionResult> DeleteManga(int id) 
         {

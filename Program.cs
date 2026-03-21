@@ -1,13 +1,18 @@
 using System.Text.Json.Serialization;
+using System.Text;
 using backend.src.Configurations;
 using backend.src.Data;
 using backend.src.Services.Implement;
 using backend.src.Services.Interface;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Minio;
 using Scalar.AspNetCore;
 using Server.src.Services.Implements;
+
+DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +28,36 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 });
 
 builder.Services.AddHttpContextAccessor();
+
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var jwtKey = jwtSettings["Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException("Jwt:Key is missing. Set Jwt__Key in .env or Jwt:Key in configuration.");
+}
+
+builder.Services.AddSingleton<JwtHelper>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("ReaderOnly", policy => policy.RequireRole("Reader", "Admin"));
+});
 
 builder.Services.Configure<MinioOptions>(builder.Configuration.GetSection(MinioOptions.SectionName));
 
@@ -53,8 +88,14 @@ builder.Services.AddScoped<IAuthorService, AuthorService>();
 // Genre Service
 builder.Services.AddScoped<IGenreService, GenreService>();
 
+//Admin Service
+builder.Services.AddScoped<IAdminService, AdminService>();
+
 // Minio Storage Service
 builder.Services.AddScoped<IMinioStorageService, MinioStorageService>();
+
+// Auth Service
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 

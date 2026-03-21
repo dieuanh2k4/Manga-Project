@@ -6,6 +6,7 @@ using backend.src.Data;
 using backend.src.Dtos.Genre;
 using backend.src.Exceptions;
 using backend.src.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.src.Controllers
@@ -23,6 +24,7 @@ namespace backend.src.Controllers
             _genre = genre;
         }
 
+        [AllowAnonymous]
         [HttpGet("get-all-genre")]
         public async Task<IActionResult> GetAllGenre()
         {
@@ -38,6 +40,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("create-genre")]
         public async Task<IActionResult> CreateGenre([FromBody] CreateGenreDto dto)
         {
@@ -53,6 +56,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("update-genre/{id}")]
         public async Task<IActionResult> UpdateGenre([FromBody] UpdateGenreDto dto, int id)
         {
@@ -68,6 +72,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("delete-genre/{id}")]
         public async Task<IActionResult> DeleteGenre(int id)
         {
