@@ -271,7 +271,7 @@ namespace backend.src.Services.Implement
                 Avatar = readerDto.Avatar,
                 Phone = readerDto.Phone,
                 Address = readerDto.Address,
-                Coin = 0,
+                IsPremium = false,
                 UserId = newUserReader.Id
             };
 

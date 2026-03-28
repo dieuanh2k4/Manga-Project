@@ -16,10 +16,11 @@ namespace backend.src.Models
         public int Rate { get; set; }
         public int AuthorId { get; set; }
         public int GenreId { get; set; }
-        public DateOnly YearRelease { get; set; }
-        public DateOnly DatePublish { get; set; }
+        public DateOnly ReleaseDate { get; set; }
+        public DateOnly EndDate { get; set; }
 
         public List<Chapters>? Chapters { get; set; }
+        public List<Pages>? Pages { get; set; }
         public List<Libraries>? Libraries { get; set; }
         public List<Ratings>? Ratings { get; set; }
         public List<History>? History { get; set; }

@@ -187,9 +187,7 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.GenreId)
                     .IsRequired();
-                entity.Property(a => a.YearRelease)
-                    .IsRequired();
-                entity.Property(a => a.DatePublish)
+                entity.Property(a => a.ReleaseDate)
                     .IsRequired();
 
                 entity.HasMany(a => a.Authors)
@@ -209,6 +207,8 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.ChapterId)
                     .IsRequired();
+                entity.Property(a => a.MangaId)
+                    .IsRequired();
                 entity.Property(a => a.ImageUrl)
                     .IsRequired()
                     .HasMaxLength(200);
@@ -216,6 +216,11 @@ namespace backend.src.Data
                 entity.HasOne(a => a.Chapters)
                     .WithMany(b => b.Pages)
                     .HasForeignKey(a => a.ChapterId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Manga)
+                    .WithMany(b => b.Pages)
+                    .HasForeignKey(a => a.MangaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

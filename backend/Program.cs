@@ -100,6 +100,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Chapter Service
 builder.Services.AddScoped<IChapterService, ChapterService>();
 
+// Page Service
+builder.Services.AddScoped<IPageService, PageService>();
+
 var app = builder.Build();
 
 // Tự động chạy migrations khi ứng dụng khởi động

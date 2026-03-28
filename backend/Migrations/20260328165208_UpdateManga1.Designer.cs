@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.src.Data;
@@ -11,9 +12,11 @@ using backend.src.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328165208_UpdateManga1")]
+    partial class UpdateManga1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -317,8 +320,6 @@ namespace backend.Migrations
 
                     b.HasIndex("ChapterId");
 
-                    b.HasIndex("MangaId");
-
                     b.ToTable("Pages");
                 });
 
@@ -541,7 +542,7 @@ namespace backend.Migrations
 
                     b.HasOne("backend.src.Models.Manga", "Manga")
                         .WithMany("Pages")
-                        .HasForeignKey("MangaId")
+                        .HasForeignKey("ChapterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

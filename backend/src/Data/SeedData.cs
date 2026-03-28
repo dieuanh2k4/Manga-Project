@@ -11,6 +11,7 @@ namespace backend.src.Data
             await SeedUsersAsync(context);
             await SeedAuthorsAndGenresAsync(context);
             await SeedMangaAsync(context);
+            await SeedChaptersAsync(context);
         }
 
         private static async Task SeedUsersAsync(ApplicationDbContext context)
@@ -77,7 +78,7 @@ namespace backend.src.Data
                     FullName = "Nguyen Van A",
                     Email = "reader01@manga.local",
                     Avatar = "https://example.com/avatar/reader01.png",
-                    Coin = 120,
+                    IsPremium = true,
                     Birth = new DateOnly(2002, 5, 10),
                     Gender = "Male",
                     Phone = "0900000011",
@@ -94,7 +95,7 @@ namespace backend.src.Data
                     FullName = "Tran Thi B",
                     Email = "reader02@manga.local",
                     Avatar = "https://example.com/avatar/reader02.png",
-                    Coin = 80,
+                    IsPremium = false,
                     Birth = new DateOnly(2003, 11, 12),
                     Gender = "Female",
                     Phone = "0900000012",
@@ -172,8 +173,7 @@ namespace backend.src.Data
                     Rate = 5,
                     AuthorId = authorOda.Id,
                     GenreId = genreAdventure.Id,
-                    YearRelease = new DateOnly(1997, 7, 22),
-                    DatePublish = new DateOnly(1997, 7, 22),
+                    ReleaseDate = new DateOnly(1997, 7, 22),
                     Authors = new List<Authors> { authorOda },
                     Genres = new List<Genres> { genreAction, genreAdventure, genreFantasy }
                 },
@@ -186,8 +186,8 @@ namespace backend.src.Data
                     Rate = 5,
                     AuthorId = authorGege.Id,
                     GenreId = genreAction.Id,
-                    YearRelease = new DateOnly(2018, 3, 5),
-                    DatePublish = new DateOnly(2018, 3, 5),
+                    ReleaseDate = new DateOnly(2018, 3, 5),
+                    EndDate = new DateOnly(2024, 9, 30),
                     Authors = new List<Authors> { authorGege },
                     Genres = new List<Genres> { genreAction, genreFantasy }
                 },
@@ -200,12 +200,68 @@ namespace backend.src.Data
                     Rate = 4,
                     AuthorId = authorAka.Id,
                     GenreId = genreRomance.Id,
-                    YearRelease = new DateOnly(2015, 5, 19),
-                    DatePublish = new DateOnly(2015, 5, 19),
+                    ReleaseDate = new DateOnly(2015, 5, 19),
+                    EndDate = new DateOnly(2022, 11, 2),
                     Authors = new List<Authors> { authorAka },
                     Genres = new List<Genres> { genreRomance }
                 }
             );
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedChaptersAsync(ApplicationDbContext context)
+        {
+            var onePiece = await context.Manga.FirstOrDefaultAsync(m => m.Title == "One Piece");
+            var jujutsu = await context.Manga.FirstOrDefaultAsync(m => m.Title == "Jujutsu Kaisen");
+            var kaguya = await context.Manga.FirstOrDefaultAsync(m => m.Title == "Kaguya-sama: Love Is War");
+
+            if (onePiece != null)
+            {
+                await SeedChapterIfNotExistsAsync(context, onePiece.Id, "1", "Romance Dawn", false);
+                await SeedChapterIfNotExistsAsync(context, onePiece.Id, "2", "They Call Him Straw Hat Luffy", false);
+            }
+
+            if (jujutsu != null)
+            {
+                await SeedChapterIfNotExistsAsync(context, jujutsu.Id, "1", "Ryomen Sukuna", false);
+                await SeedChapterIfNotExistsAsync(context, jujutsu.Id, "2", "For Myself", true);
+            }
+
+            if (kaguya != null)
+            {
+                await SeedChapterIfNotExistsAsync(context, kaguya.Id, "1", "Miyuki Shirogane Wants to Be Confessed To", false);
+            }
+
+            var mangaList = await context.Manga.ToListAsync();
+            foreach (var manga in mangaList)
+            {
+                manga.TotalChapter = await context.Chapters.CountAsync(c => c.MangaId == manga.Id);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedChapterIfNotExistsAsync(
+            ApplicationDbContext context,
+            int mangaId,
+            string chapterNumber,
+            string title,
+            bool isPremium)
+        {
+            var exists = await context.Chapters.AnyAsync(c => c.MangaId == mangaId && c.ChapterNumber == chapterNumber);
+            if (exists)
+            {
+                return;
+            }
+
+            await context.Chapters.AddAsync(new Chapters
+            {
+                MangaId = mangaId,
+                ChapterNumber = chapterNumber,
+                Title = title,
+                IsPremium = isPremium
+            });
 
             await context.SaveChangesAsync();
         }

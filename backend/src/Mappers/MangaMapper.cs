@@ -20,8 +20,8 @@ namespace backend.src.Mappers
                 Status = dto.Status,
                 TotalChapter = dto.TotalChapter,
                 Rate = dto.Rate,
-                YearRelease = dto.YearRelease,
-                DatePublish = dto.DatePublish,
+                ReleaseDate = dto.ReleaseDate,
+                EndDate = dto.EndDate,
                 AuthorId = dto.AuthorId,
                 GenreId = dto.GenreId
             };

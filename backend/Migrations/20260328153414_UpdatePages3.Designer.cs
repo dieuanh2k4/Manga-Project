@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.src.Data;
@@ -11,9 +12,11 @@ using backend.src.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328153414_UpdatePages3")]
+    partial class UpdatePages3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -254,22 +257,19 @@ namespace backend.Migrations
                     b.Property<int>("AuthorId")
                         .HasColumnType("integer");
 
+                    b.Property<DateOnly>("DatePublish")
+                        .HasColumnType("date");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .IsUnicode(true)
                         .HasColumnType("character varying(1000)");
-
-                    b.Property<DateOnly>("EndDate")
-                        .HasColumnType("date");
 
                     b.Property<int>("GenreId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Rate")
                         .HasColumnType("integer");
-
-                    b.Property<DateOnly>("ReleaseDate")
-                        .HasColumnType("date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -288,6 +288,9 @@ namespace backend.Migrations
 
                     b.Property<int>("TotalChapter")
                         .HasColumnType("integer");
+
+                    b.Property<DateOnly>("YearRelease")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 
@@ -316,8 +319,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChapterId");
-
-                    b.HasIndex("MangaId");
 
                     b.ToTable("Pages");
                 });
@@ -541,7 +542,7 @@ namespace backend.Migrations
 
                     b.HasOne("backend.src.Models.Manga", "Manga")
                         .WithMany("Pages")
-                        .HasForeignKey("MangaId")
+                        .HasForeignKey("ChapterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

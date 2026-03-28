@@ -129,3 +129,4 @@ D:\4-2\multi-platform-2\ProjectManga\backend.Tests\obj\Debug\net10.0\refint\back
 D:\4-2\multi-platform-2\ProjectManga\backend.Tests\obj\Debug\net10.0\backend.Tests.pdb
 D:\4-2\multi-platform-2\ProjectManga\backend.Tests\obj\Debug\net10.0\backend.Tests.genruntimeconfig.cache
 D:\4-2\multi-platform-2\ProjectManga\backend.Tests\obj\Debug\net10.0\ref\backend.Tests.dll
+D:\4-2\multi-platform-2\ProjectManga\backend.Tests\obj\Debug\net10.0\backend.Tests.sourcelink.json

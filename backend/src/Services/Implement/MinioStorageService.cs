@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using backend.src.Services.Interface;
 using Minio;
 using Minio.DataModel.Args;
+using Minio.Exceptions;
 
 namespace Server.src.Services.Implements
 {
@@ -29,6 +30,50 @@ namespace Server.src.Services.Implements
 
             // MinIO bucket name must be lowercase.
             _bucketName = configuredBucket.Trim().ToLowerInvariant();
+        }
+
+        private async Task<string> GetUniqueObjectPathAsync(string folder, string fileName)
+        {
+            var candidatePath = $"{folder}/{fileName}";
+            if (!await ObjectExistsAsync(candidatePath))
+            {
+                return candidatePath;
+            }
+
+            var baseName = Path.GetFileNameWithoutExtension(fileName);
+            var extension = Path.GetExtension(fileName);
+            var counter = 1;
+
+            while (true)
+            {
+                var candidateName = $"{baseName}_{counter}{extension}";
+                candidatePath = $"{folder}/{candidateName}";
+
+                if (!await ObjectExistsAsync(candidatePath))
+                {
+                    return candidatePath;
+                }
+
+                counter++;
+            }
+        }
+
+        private async Task<bool> ObjectExistsAsync(string objectPath)
+        {
+            try
+            {
+                await _minioClient.StatObjectAsync(
+                    new StatObjectArgs()
+                        .WithBucket(_bucketName)
+                        .WithObject(objectPath)
+                );
+
+                return true;
+            }
+            catch (ObjectNotFoundException)
+            {
+                return false;
+            }
         }
 
         public async Task<string> UploadImageAsync(IFormFile file, string folder = "images")
@@ -72,9 +117,26 @@ namespace Server.src.Services.Implements
                     );
                 }
 
-                // Tạo tên file unique
+                // Nếu có customFileName thì dùng tên đó; nếu không thì dùng đúng tên file upload.
                 var fileExtension = Path.GetExtension(file.FileName);
-                var fileName = $"{folder}/{Guid.NewGuid()}{fileExtension}";
+                // var effectiveName = string.IsNullOrWhiteSpace(customFileName)
+                //     ? file.FileName
+                //     : customFileName;
+                var effectiveName = string.IsNullOrWhiteSpace(file.FileName)
+                    ? "page"
+                    : file.FileName;
+
+                var sanitizedName = SanitizeFileName(effectiveName);
+                if (!string.IsNullOrWhiteSpace(sanitizedName) && string.IsNullOrWhiteSpace(Path.GetExtension(sanitizedName)))
+                {
+                    sanitizedName += fileExtension;
+                }
+
+                var finalName = string.IsNullOrWhiteSpace(sanitizedName)
+                    ? $"{Guid.NewGuid()}{fileExtension}"
+                    : sanitizedName;
+
+                var fileName = await GetUniqueObjectPathAsync(folder, finalName);
 
                 // Upload file
                 using var stream = file.OpenReadStream();
@@ -154,6 +216,27 @@ namespace Server.src.Services.Implements
             
             // fileName đã chứa bucket name, chỉ cần ghép baseUrl
             return $"{baseUrl}/{fileName}";
+        }
+
+        private static string? SanitizeFileName(string? fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return null;
+            }
+
+            var cleaned = Path.GetFileName(fileName).Trim();
+            if (string.IsNullOrWhiteSpace(cleaned))
+            {
+                return null;
+            }
+
+            foreach (var invalidChar in Path.GetInvalidFileNameChars())
+            {
+                cleaned = cleaned.Replace(invalidChar, '_');
+            }
+
+            return cleaned;
         }
     }
 }

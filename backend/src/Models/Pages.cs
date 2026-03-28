@@ -9,8 +9,10 @@ namespace backend.src.Models
     {
         public int Id { get; set; }
         public int ChapterId { get; set; }
+        public int MangaId { get; set; }
         public string? ImageUrl { get; set; }
 
         public Chapters? Chapters { get; set; }
+        public Manga? Manga { get; set; }
     }
 }

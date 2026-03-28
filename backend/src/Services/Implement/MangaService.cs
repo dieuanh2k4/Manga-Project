@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using backend.src.Data;
@@ -90,16 +91,16 @@ namespace backend.src.Services.Implement
                 throw new Result($"Không tìm thấy Manga cần chỉnh sửa");
             }
 
-            dto.AuthorId = manga.AuthorId;
-            dto.DatePublish = manga.DatePublish;
-            dto.GenreId = manga.GenreId;
-            dto.Status = manga.Status;
-            dto.TotalChapter = manga.TotalChapter;
-            dto.Description = manga.Description;
-            dto.Rate = manga.Rate;
-            dto.Thumbnail = dto.Thumbnail;
-            dto.Title = manga.Title;
-            dto.YearRelease = manga.YearRelease;
+            manga.AuthorId = dto.AuthorId;
+            manga.ReleaseDate = dto.ReleaseDate;
+            manga.GenreId = dto.GenreId;
+            manga.Status = dto.Status;
+            manga.TotalChapter = dto.TotalChapter;
+            manga.Description = dto.Description;
+            manga.Rate = dto.Rate;
+            manga.Thumbnail = dto.Thumbnail;
+            manga.Title = dto.Title;
+            manga.EndDate = dto.EndDate;
 
             await _context.SaveChangesAsync();
 

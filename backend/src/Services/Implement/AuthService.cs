@@ -133,7 +133,7 @@ namespace backend.src.Services.Implement
                 Avatar = register.Avatar,
                 Phone = register.Phone,
                 Address = register.Address,
-                Coin = 0,
+                IsPremium = false,
                 UserId = newUser.Id
             };
 

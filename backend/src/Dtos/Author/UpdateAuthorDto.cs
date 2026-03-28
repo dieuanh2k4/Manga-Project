@@ -10,7 +10,6 @@ namespace backend.src.Dtos.Author
     {
         public string? FullName { get; set; }
         public string? Avatar { get; set; }
-        public IFormFile? AvatarFile { get; set; }
         public string? Description { get; set; }
     }
 }
