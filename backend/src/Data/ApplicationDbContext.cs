@@ -20,6 +20,8 @@ namespace backend.src.Data
         public DbSet<Ratings> Ratings { get; set; }
         public DbSet<Readers> Readers { get; set; }
         public DbSet<Users> Users { get; set; }
+        public DbSet<Packages> Packages { get; set; }
+        public DbSet<Previlages> Previlages { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> dbContextOptions) : base (dbContextOptions) {}
 
@@ -308,6 +310,36 @@ namespace backend.src.Data
                     .WithOne(b => b.Users)
                     .HasForeignKey<Admin>(a => a.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Packages>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.Title)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode();
+                entity.Property(a => a.Price)
+                    .IsRequired();
+
+                entity.HasMany(a => a.Previlages)
+                    .WithMany(b => b.Packages)
+                    .UsingEntity(j => j.ToTable("PackagesPrevilages"));
+            });
+
+            modelBuilder.Entity<Previlages>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.Content)
+                    .IsRequired()
+                    .HasMaxLength(1000)
+                    .IsUnicode();
             });
         }
     }

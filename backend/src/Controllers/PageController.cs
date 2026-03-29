@@ -58,5 +58,25 @@ namespace backend.src.Controllers
                 return ReturnException(ex);
             }
         }
+
+        [Authorize(Policy = "AdminOnly")] 
+        [HttpPost("delete-page/{idManga}/{idChapter}")]
+        public async Task<IActionResult> DeletePageOfChapter([FromRoute] int idManga, [FromRoute] int idChapter, [FromForm] List<int> pageIds)
+        {
+            try
+            {
+                var pages = await _page.DeletePageOfChapter(idManga, idChapter, pageIds);
+
+                return Ok(new
+                {
+                    message = "Xóa page thành công",
+                    data = pages
+                });
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
     }
 }

@@ -103,6 +103,12 @@ builder.Services.AddScoped<IChapterService, ChapterService>();
 // Page Service
 builder.Services.AddScoped<IPageService, PageService>();
 
+// Package Service
+builder.Services.AddScoped<IPackageService, PackageService>();
+
+// Previlage Service
+builder.Services.AddScoped<IPrevilageService, PrevilageService>();
+
 var app = builder.Build();
 
 // Tự động chạy migrations khi ứng dụng khởi động

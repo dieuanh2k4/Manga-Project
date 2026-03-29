@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using backend.src.Services.Interface;
 using Minio;
 using Minio.DataModel.Args;
-using Minio.Exceptions;
 
 namespace Server.src.Services.Implements
 {
@@ -30,50 +29,6 @@ namespace Server.src.Services.Implements
 
             // MinIO bucket name must be lowercase.
             _bucketName = configuredBucket.Trim().ToLowerInvariant();
-        }
-
-        private async Task<string> GetUniqueObjectPathAsync(string folder, string fileName)
-        {
-            var candidatePath = $"{folder}/{fileName}";
-            if (!await ObjectExistsAsync(candidatePath))
-            {
-                return candidatePath;
-            }
-
-            var baseName = Path.GetFileNameWithoutExtension(fileName);
-            var extension = Path.GetExtension(fileName);
-            var counter = 1;
-
-            while (true)
-            {
-                var candidateName = $"{baseName}_{counter}{extension}";
-                candidatePath = $"{folder}/{candidateName}";
-
-                if (!await ObjectExistsAsync(candidatePath))
-                {
-                    return candidatePath;
-                }
-
-                counter++;
-            }
-        }
-
-        private async Task<bool> ObjectExistsAsync(string objectPath)
-        {
-            try
-            {
-                await _minioClient.StatObjectAsync(
-                    new StatObjectArgs()
-                        .WithBucket(_bucketName)
-                        .WithObject(objectPath)
-                );
-
-                return true;
-            }
-            catch (ObjectNotFoundException)
-            {
-                return false;
-            }
         }
 
         public async Task<string> UploadImageAsync(IFormFile file, string folder = "images")
@@ -136,7 +91,8 @@ namespace Server.src.Services.Implements
                     ? $"{Guid.NewGuid()}{fileExtension}"
                     : sanitizedName;
 
-                var fileName = await GetUniqueObjectPathAsync(folder, finalName);
+                // Use a stable object key so same-name uploads overwrite existing objects.
+                var fileName = $"{folder}/{finalName}";
 
                 // Upload file
                 using var stream = file.OpenReadStream();

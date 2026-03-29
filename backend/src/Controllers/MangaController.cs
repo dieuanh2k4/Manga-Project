@@ -18,7 +18,6 @@ namespace backend.src.Controllers
     public class MangaController : ApiControllerBase
     {
         private readonly ApplicationDbContext _context;
-
         private readonly IMangaService _mangaservice;
 
         public MangaController(ApplicationDbContext context, IMangaService mangaService, ILogger<MangaController> logger) : base(logger)

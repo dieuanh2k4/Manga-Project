@@ -11,5 +11,6 @@ namespace backend.src.Services.Interface
     {
         Task<List<Pages>> GetAllPage(int idManga, int idChapter);
         Task<List<Pages>> AddPageToChapter(int idManga, int idChapter, List<IFormFile> files);
+        Task<List<Pages>> DeletePageOfChapter(int idManga, int idChapter, List<int> pageIds);
     }
 }
