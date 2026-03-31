@@ -12,5 +12,6 @@ namespace backend.src.Services.Interface
         Task<Packages> CreatePackage(CreatePackageDto dto);
         Task<Packages> UpdatePackage(UpdatePackageDto dto, int id);
         Task<Packages> DeletePackage(int id);
+        Task<ReaderPackageDto> PurchasePackage(int packageId, int userId);
     }
 }

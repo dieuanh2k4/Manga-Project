@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using backend.src.Dtos.Exceptions;
 using backend.src.Exceptions;
@@ -55,6 +56,12 @@ namespace backend.src.Controllers
             {
                 Message = "An unexpected error occurred."
             });
+        }
+
+        protected int? GetCurrentUserId()
+        {
+            var userIdValue = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdValue, out var userId) ? userId : null;
         }
     }
 }

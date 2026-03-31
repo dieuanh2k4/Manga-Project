@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.src.Controllers
 {
     [ApiController]
-    [Authorize(Policy = "AdminOnly")]
     [Route("api/[controller]")]
     public class PackageController : ApiControllerBase
     {
@@ -26,6 +25,7 @@ namespace backend.src.Controllers
             _packageservice = packageService;
         }
 
+        [AllowAnonymous]
         [HttpGet("get-all-package")]
         public async Task<IActionResult> GetAllPackge()
         {
@@ -40,10 +40,22 @@ namespace backend.src.Controllers
                     throw new Result("Chưa có package nào");
                 }
 
+                var packageData = packages.Select(package => new
+                {
+                    package.Id,
+                    package.Title,
+                    package.Price,
+                    Previlages = package.Previlages.Select(p => new
+                    {
+                        p.Id,
+                        p.Content
+                    })
+                });
+
                 return Ok(new
                 {
                     message = "Lấy package thành công",
-                    data = packages
+                    data = packageData
                 });
             }
             catch (Exception ex)
@@ -52,6 +64,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("create-package")]
         public async Task<IActionResult> CreatePackage([FromBody] CreatePackageDto dto)
         {
@@ -71,6 +84,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("update-package/{id}")]
         public async Task<IActionResult> UpdatePackage([FromBody] UpdatePackageDto dto, int id)
         {
@@ -90,6 +104,7 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("delete-package/{id}")]
         public async Task<IActionResult> DeletePackage(int id)
         {
@@ -101,6 +116,32 @@ namespace backend.src.Controllers
                 {
                     message = "Xóa package thành công",
                     data = deletepackage
+                });
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [Authorize(Policy = "ReaderOnly")]
+        [HttpPost("purchase/{packageId}")]
+        public async Task<IActionResult> PurchasePackage(int packageId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    throw new UnauthorizedAccessException("Không xác định được người dùng");
+                }
+
+                var purchase = await _packageservice.PurchasePackage(packageId, userId.Value);
+
+                return Ok(new
+                {
+                    message = "Mua package thành công",
+                    data = purchase
                 });
             }
             catch (Exception ex)

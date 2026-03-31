@@ -28,6 +28,7 @@ namespace backend.src.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
                 var page = await _page.GetAllPage(idManga, idChapter);
 
                 return Ok(page);

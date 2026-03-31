@@ -44,7 +44,13 @@ namespace backend.src.Services.Implement
                 return AuthResultDto.Fail("Sai tài khoản hoặc mật khẩu");
             }
 
-            var token = _jwtHelper.CreateToken(user.UserName, user.Role, user.Id);
+            var isPremium = await _context.Readers
+                .AsNoTracking()
+                .Where(r => r.UserId == user.Id)
+                .Select(r => (bool?)r.IsPremium)
+                .FirstOrDefaultAsync() ?? false;
+
+            var token = _jwtHelper.CreateToken(user.UserName, user.Role, user.Id, isPremium);
 
             var response = new LoginResponseDto
             {

@@ -22,6 +22,7 @@ namespace backend.src.Data
         public DbSet<Users> Users { get; set; }
         public DbSet<Packages> Packages { get; set; }
         public DbSet<Previlages> Previlages { get; set; }
+        public DbSet<ReaderPackages> ReaderPackages { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> dbContextOptions) : base (dbContextOptions) {}
 
@@ -328,6 +329,30 @@ namespace backend.src.Data
                 entity.HasMany(a => a.Previlages)
                     .WithMany(b => b.Packages)
                     .UsingEntity(j => j.ToTable("PackagesPrevilages"));
+            });
+
+            modelBuilder.Entity<ReaderPackages>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.ReaderId)
+                    .IsRequired();
+                entity.Property(a => a.PackageId)
+                    .IsRequired();
+                entity.Property(a => a.PurchasedAt)
+                    .IsRequired();
+
+                entity.HasOne(a => a.Reader)
+                    .WithMany(b => b.ReaderPackages)
+                    .HasForeignKey(a => a.ReaderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Package)
+                    .WithMany(b => b.ReaderPackages)
+                    .HasForeignKey(a => a.PackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Previlages>(entity =>

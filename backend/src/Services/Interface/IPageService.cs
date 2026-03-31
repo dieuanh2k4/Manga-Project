@@ -9,6 +9,7 @@ namespace backend.src.Services.Interface
 {
     public interface IPageService
     {
+        // Task<List<Pages>> GetAllPage(int idManga, int idChapter, int? userId);
         Task<List<Pages>> GetAllPage(int idManga, int idChapter);
         Task<List<Pages>> AddPageToChapter(int idManga, int idChapter, List<IFormFile> files);
         Task<List<Pages>> DeletePageOfChapter(int idManga, int idChapter, List<int> pageIds);

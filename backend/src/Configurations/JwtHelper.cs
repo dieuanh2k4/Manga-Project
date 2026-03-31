@@ -18,13 +18,14 @@ namespace backend.src.Configurations
             _config = config;
         }
 
-        public string CreateToken(string username, string role, int userId)
+        public string CreateToken(string username, string role, int userId, bool isPremium)
         {
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, role),
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim("isPremium", isPremium.ToString().ToLowerInvariant())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
