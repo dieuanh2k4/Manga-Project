@@ -18,7 +18,7 @@ namespace backend.src.Models
         public string? Address { get; set; }
         public int UserId { get; set; }
 
-        public Libraries? Libraries { get; set; }
+        public List<Libraries>? Libraries { get; set; }
         public List<Ratings>? Ratings { get; set; }
         public List<History>? History { get; set; }
         public List<ReaderPackages> ReaderPackages { get; set; } = new();

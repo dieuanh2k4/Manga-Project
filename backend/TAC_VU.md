@@ -1,6 +1,6 @@
 # TAC VU - PROJECT MANGA BACKEND
 
-Cap nhat: 2026-03-31
+Cap nhat: 2026-04-01
 
 ## 2. Xac thuc va phan quyen
 
@@ -94,6 +94,24 @@ Bang chung:
 - src/Services/Implement/PrevilageService.cs
 - src/Controllers/PackageController.cs
 - src/Services/Implement/PackageService.cs
+
+### 3.7 Library
+
+- [x] Lay danh sach manga trong thu vien theo Reader dang dang nhap.
+- [x] Them manga vao thu vien theo mangaId + readerId.
+- [x] Chan them trung manga da ton tai trong thu vien.
+- [x] Xoa manga khoi thu vien.
+- [x] Tra ve thumbnail manga dang public URL khi lay danh sach thu vien.
+- [x] Cau hinh quan he Reader - Library theo 1-nhieu (1 reader co nhieu manga trong thu vien).
+
+Bang chung:
+
+- src/Controllers/LibraryController.cs
+- src/Services/Implement/LibraryService.cs
+- src/Services/Interface/ILibraryService.cs
+- src/Data/ApplicationDbContext.cs
+- src/Models/Libraries.cs
+- src/Models/Readers.cs
 
 ## 4. Luu tru file anh voi MinIO
 

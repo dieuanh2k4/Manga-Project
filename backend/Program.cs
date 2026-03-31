@@ -109,6 +109,9 @@ builder.Services.AddScoped<IPackageService, PackageService>();
 // Previlage Service
 builder.Services.AddScoped<IPrevilageService, PrevilageService>();
 
+// Library Service
+builder.Services.AddScoped<ILibraryService, LibraryService>();
+
 var app = builder.Build();
 
 // Tự động chạy migrations khi ứng dụng khởi động

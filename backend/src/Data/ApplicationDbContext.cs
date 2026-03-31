@@ -159,8 +159,8 @@ namespace backend.src.Data
                     .OnDelete(DeleteBehavior.Cascade);
                 
                 entity.HasOne(a => a.Readers)
-                    .WithOne(b => b.Libraries)
-                    .HasForeignKey<Libraries>(a => a.ReaderId)
+                    .WithMany(b => b.Libraries)
+                    .HasForeignKey(a => a.ReaderId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
