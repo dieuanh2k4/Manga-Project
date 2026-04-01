@@ -26,7 +26,9 @@ namespace backend.src.Services.Implement
 
         public async Task<List<Manga>> GetAllManga()
         {
-            var mangas = await _context.Manga.ToListAsync();
+            var mangas = await _context.Manga
+                .Include(m => m.Genres)
+                .ToListAsync();
 
             foreach (var manga in mangas)
             {
@@ -41,7 +43,9 @@ namespace backend.src.Services.Implement
 
         public async Task<Manga> GetAllMangaById(int id)
         {
-            var manga = await _context.Manga.FirstOrDefaultAsync(m => m.Id == id);
+            var manga = await _context.Manga
+                .Include(m => m.Genres)
+                .FirstOrDefaultAsync(m => m.Id == id);
 
             if (manga != null && !string.IsNullOrEmpty(manga.Thumbnail))
             {
@@ -93,7 +97,7 @@ namespace backend.src.Services.Implement
 
             manga.AuthorId = dto.AuthorId;
             manga.ReleaseDate = dto.ReleaseDate;
-            manga.GenreId = dto.GenreId;
+            manga.GenreIds = dto.GenreIds;
             manga.Status = dto.Status;
             manga.TotalChapter = dto.TotalChapter;
             manga.Description = dto.Description;
@@ -116,6 +120,62 @@ namespace backend.src.Services.Implement
                 throw new Result("Manga không tồn tại");
             }
 
+            return manga;
+        }
+
+        public async Task<List<Manga>> Search(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new List<Manga>();
+            }
+
+            var keyword = query.Trim(); // bỏ khoảng trắng
+            var pattern = $"%{keyword}%"; // tìm kiểu chứa chuỗi con trong SQL
+
+            var search = await _context.Manga
+                .Where(manga =>
+                    (manga.Title != null && EF.Functions.ILike(manga.Title, pattern)) ||
+                    manga.Authors.Any(author => author.FullName != null && EF.Functions.ILike(author.FullName, pattern)))
+                .OrderByDescending(a => a.Title)
+                .ToListAsync();
+            
+            return search;
+        }
+        
+        public async Task<List<Manga>> SortByGenre(int genreId)
+        {
+            var check = await _context.Genres.FirstOrDefaultAsync(g => g.Id == genreId);
+            if (check == null) 
+            {
+                throw new Result("Không tìm thấy thể loại");
+            }
+
+            var sort = await _context.Manga
+                .Where(m => m.GenreIds != null && m.GenreIds.Contains(genreId))
+                .OrderByDescending(m => m.Title)
+                .ToListAsync();
+            
+            return sort;
+        }
+
+        public async Task<List<Manga>> MangaOngoing()
+        {
+            var manga = await _context.Manga
+                .Where(m => m.Status.ToLower() == "Đang tiến hành".ToLower())
+                .OrderByDescending(m => m.Title)
+                .ToListAsync();
+            
+            return manga;
+        }
+
+        public async Task<List<Manga>> MangaComplete()
+        {
+            var manga = await _context.Manga
+                .Where(m => m.Status.ToLower() == "Hoàn thành".ToLower())
+                .OrderByDescending(m => m.Title)
+                .ToListAsync();
+            
             return manga;
         }
     }

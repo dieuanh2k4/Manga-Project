@@ -132,5 +132,129 @@ namespace backend.src.Controllers
                 return ReturnException(ex);
             }
         }
+
+        [AllowAnonymous]
+        [HttpPost("search")]
+        public async Task<IActionResult> Search(string query)
+        {
+            try 
+            {
+                var searchManga = await _mangaservice.Search(query);
+
+                if (!searchManga.Any())
+                {
+                    return Ok(new
+                    {
+                        message = "Không tìm thấy manga. Hãy thử với từ khóa khác",
+                        data = searchManga
+                    });
+                } 
+                else
+                {
+                    return Ok(new
+                    {
+                        message = "Danh sách manga theo yêu cầu",
+                        data = searchManga
+                    });
+                }
+            }
+            catch (Exception ex) 
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("sort-by-genre")]
+        public async Task<IActionResult> SortByGenre(int genreId)
+        {
+            try 
+            {
+                var sortManga = await _mangaservice.SortByGenre(genreId);
+
+                if (!sortManga.Any())
+                {
+                    return Ok(new
+                    {
+                        message = "Không tìm thấy manga.",
+                        data = sortManga
+                    });
+                } 
+                else
+                {
+                    return Ok(new
+                    {
+                        message = "Danh sách manga theo thể loại.",
+                        data = sortManga
+                    });
+                }
+            }
+            catch (Exception ex) 
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("manga-ongoing")]
+        public async Task<IActionResult> MangaOngoing()
+        {
+            try 
+            {
+                var ongoingManga = await _mangaservice.MangaOngoing();
+
+                if  (!ongoingManga.Any())
+                {
+                    return Ok(new
+                    {
+                        message = "Không tìm thấy manga.",
+                        data = ongoingManga
+                    });
+                } 
+                else
+                {
+                    return Ok(new
+                    {
+                        message = "Danh sách manga đang tiến hành.",
+                        data = ongoingManga
+                    });
+                }
+            }
+            catch (Exception ex) 
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("manga-completed")]
+        public async Task<IActionResult> MangaComplete()
+        {
+            try 
+            {
+                var completedManga = await _mangaservice.MangaComplete();
+
+                if  (!completedManga.Any())
+                {
+                    return Ok(new
+                    {
+                        message = "Không tìm thấy manga.",
+                        data = completedManga
+                    });
+                } 
+                else
+                {
+                    return Ok(new
+                    {
+                        message = "Danh sách manga đang tiến hành.",
+                        data = completedManga
+                    });
+                }
+            }
+            catch (Exception ex) 
+            {
+                return ReturnException(ex);
+            }
+        }
     }
 }

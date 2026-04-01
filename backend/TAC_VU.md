@@ -1,6 +1,6 @@
 # TAC VU - PROJECT MANGA BACKEND
 
-Cap nhat: 2026-04-01
+Cap nhat: 2026-04-02
 
 ## 2. Xac thuc va phan quyen
 
@@ -60,11 +60,21 @@ Bang chung:
 - [x] Lay manga theo id.
 - [x] Tao/sua/xoa manga.
 - [x] Ho tro upload thumbnail manga.
+- [x] Tim kiem manga theo tu khoa (title/tac gia).
+- [x] Loc manga theo the loai.
+- [x] Loc manga theo trang thai (Dang tien hanh/Hoan thanh).
+- [x] Nang cap manga ho tro nhieu the loai (GenreIds) thay cho 1 GenreId.
 
 Bang chung:
 
 - src/Controllers/MangaController.cs
 - src/Services/Implement/MangaService.cs
+- src/Services/Interface/IMangaService.cs
+- src/Dtos/Manga/CreateMangaDto.cs
+- src/Dtos/Manga/UpdateMangaDto.cs
+- src/Models/Manga.cs
+- src/Data/ApplicationDbContext.cs
+- Migrations/20260401170742_UpdateMangaGenreIds.cs
 
 ### 3.5 Chapter va Page
 

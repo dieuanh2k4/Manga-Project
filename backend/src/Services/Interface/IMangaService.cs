@@ -15,5 +15,9 @@ namespace backend.src.Services.Interface
         Task<Manga> CreateManga(CreateMangaDto dto);
         Task<Manga> UpdateManga(UpdateMangaDto dto, int id);
         Task<Manga> DeleteManga(int id);
+        Task<List<Manga>> Search(string query);
+        Task<List<Manga>> SortByGenre(int genreId);
+        Task<List<Manga>> MangaOngoing();
+        Task<List<Manga>> MangaComplete();
     }
 }

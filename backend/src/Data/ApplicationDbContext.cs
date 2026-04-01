@@ -188,7 +188,9 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.AuthorId)
                     .IsRequired();
-                entity.Property(a => a.GenreId)
+                entity.Property(a => a.GenreIds)
+                    .HasColumnType("integer[]")
+                    .HasDefaultValueSql("'{}'::integer[]")
                     .IsRequired();
                 entity.Property(a => a.ReleaseDate)
                     .IsRequired();

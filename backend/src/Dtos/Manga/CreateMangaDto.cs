@@ -16,7 +16,7 @@ namespace backend.src.Dtos.Manga
         public int TotalChapter { get; set; }
         public int Rate { get; set; }
         public int AuthorId { get; set; }
-        public int GenreId { get; set; }
+        public List<int>? GenreIds { get; set; }
         public DateOnly ReleaseDate { get; set; }
         public DateOnly EndDate { get; set; }
     }

@@ -15,7 +15,7 @@ namespace backend.src.Models
         public int TotalChapter { get; set; }
         public int Rate { get; set; }
         public int AuthorId { get; set; }
-        public int GenreId { get; set; }
+        public List<int> GenreIds { get; set; } = new();
         public DateOnly ReleaseDate { get; set; }
         public DateOnly EndDate { get; set; }
 

@@ -167,12 +167,12 @@ namespace backend.src.Data
                 new Manga
                 {
                     Title = "One Piece",
-                    Description = "Luffy and his crew search for the legendary One Piece treasure.",
+                    Description = "Luffy và thủy thủ đoàn của cậu ấy đang tìm kiếm kho báu One Piece huyền thoại.",
                     Thumbnail = "https://example.com/manga/one-piece.jpg",
-                    Status = "Ongoing",
+                    Status = "Đang tiến hành",
                     Rate = 5,
                     AuthorId = authorOda.Id,
-                    GenreId = genreAdventure.Id,
+                    GenreIds = new List<int> { genreAction.Id, genreAdventure.Id, genreFantasy.Id },
                     ReleaseDate = new DateOnly(1997, 7, 22),
                     Authors = new List<Authors> { authorOda },
                     Genres = new List<Genres> { genreAction, genreAdventure, genreFantasy }
@@ -180,12 +180,12 @@ namespace backend.src.Data
                 new Manga
                 {
                     Title = "Jujutsu Kaisen",
-                    Description = "A high school student joins a secret organization of Jujutsu sorcerers.",
+                    Description = "Một học sinh trung học gia nhập một tổ chức bí mật gồm các pháp sư Jujutsu.",
                     Thumbnail = "https://example.com/manga/jujutsu-kaisen.jpg",
-                    Status = "Ongoing",
+                    Status = "Hoàn Thành",
                     Rate = 5,
                     AuthorId = authorGege.Id,
-                    GenreId = genreAction.Id,
+                    GenreIds = new List<int> { genreAction.Id, genreFantasy.Id },
                     ReleaseDate = new DateOnly(2018, 3, 5),
                     EndDate = new DateOnly(2024, 9, 30),
                     Authors = new List<Authors> { authorGege },
@@ -194,12 +194,12 @@ namespace backend.src.Data
                 new Manga
                 {
                     Title = "Kaguya-sama: Love Is War",
-                    Description = "Two genius students in love wage psychological battles to make the other confess first.",
+                    Description = "Hai sinh viên thiên tài đang yêu nhau đã trải qua những cuộc đấu trí để xem ai sẽ tỏ tình trước.",
                     Thumbnail = "https://example.com/manga/kaguya-sama.jpg",
-                    Status = "Completed",
+                    Status = "Hoàn thành",
                     Rate = 4,
                     AuthorId = authorAka.Id,
-                    GenreId = genreRomance.Id,
+                    GenreIds = new List<int> { genreRomance.Id },
                     ReleaseDate = new DateOnly(2015, 5, 19),
                     EndDate = new DateOnly(2022, 11, 2),
                     Authors = new List<Authors> { authorAka },
@@ -218,19 +218,19 @@ namespace backend.src.Data
 
             if (onePiece != null)
             {
-                await SeedChapterIfNotExistsAsync(context, onePiece.Id, "1", "Romance Dawn", false);
-                await SeedChapterIfNotExistsAsync(context, onePiece.Id, "2", "They Call Him Straw Hat Luffy", false);
+                await SeedChapterIfNotExistsAsync(context, onePiece.Id, "1", "Bình Minh Lãng Mạn", false);
+                await SeedChapterIfNotExistsAsync(context, onePiece.Id, "2", "Họ gọi cậu ấy là Luffy Mũ Rơm", false);
             }
 
             if (jujutsu != null)
             {
                 await SeedChapterIfNotExistsAsync(context, jujutsu.Id, "1", "Ryomen Sukuna", false);
-                await SeedChapterIfNotExistsAsync(context, jujutsu.Id, "2", "For Myself", true);
+                await SeedChapterIfNotExistsAsync(context, jujutsu.Id, "2", "Vì chính bản thân tôi", true);
             }
 
             if (kaguya != null)
             {
-                await SeedChapterIfNotExistsAsync(context, kaguya.Id, "1", "Miyuki Shirogane Wants to Be Confessed To", false);
+                await SeedChapterIfNotExistsAsync(context, kaguya.Id, "1", "Miyuki Shirogane muốn được tỏ tình", false);
             }
 
             var mangaList = await context.Manga.ToListAsync();
