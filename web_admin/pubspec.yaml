@@ -1,0 +1,54 @@
+name: web_admin
+description: "A new Flutter project."
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # state management
+  flutter_bloc: ^9.1.1
+
+  # comaparing dart object
+  equatable: ^2.0.8
+
+  # service locator
+  get_it: ^9.2.1
+
+  # dateFormat
+  intl: ^0.20.2
+
+  # Database
+  floor: ^1.4.0
+
+  # make request to api
+  dio: ^4.0.6
+  retrofit: ^3.3.1
+
+  # hooks
+  flutter_hooks: ^0.21.3
+
+  # cached image
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  retrofit_generator: ^4.2.0
+  floor_generator: ^1.4.0
+  build_runner: ^2.3.3
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - images/
