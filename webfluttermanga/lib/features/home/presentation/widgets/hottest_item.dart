@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/manga_mock.dart';
+import '../../data/models/manga_mock.dart';
 
 class HottestItem extends StatelessWidget {
   final Manga manga;

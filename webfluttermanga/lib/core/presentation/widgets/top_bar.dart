@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../screens/login_screen.dart';
-import '../screens/profile_dialog.dart';
+import '../../../features/auth/presentation/pages/login_screen.dart';
+import '../../../features/auth/presentation/widgets/profile_dialog.dart';
 
 class TopBar extends StatefulWidget implements PreferredSizeWidget {
   const TopBar({super.key});

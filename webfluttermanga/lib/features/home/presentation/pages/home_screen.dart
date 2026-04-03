@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import '../widgets/top_bar.dart';
+import '../../../../core/presentation/widgets/top_bar.dart';
 import '../widgets/manga_card.dart';
 import '../widgets/hottest_item.dart';
-import '../models/manga_mock.dart'; // We'll create this to feed mock data
-import '../services/manga_service.dart';
+import '../../data/models/manga_mock.dart'; // We'll create this to feed mock data
+import '../../data/data_sources/manga_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

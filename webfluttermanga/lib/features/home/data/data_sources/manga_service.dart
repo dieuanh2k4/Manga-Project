@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/manga_mock.dart'; // Tạm mượn cấu trúc Manga của bạn
-import 'api_config.dart';
+import '../../../../core/network/api_config.dart';
 
 class MangaService {
   // Lấy toàn bộ truyện tranh từ Backend

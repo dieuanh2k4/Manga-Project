@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'package:flutter/material.dart';
+import 'features/home/presentation/pages/home_screen.dart';
 
 void main() {
   runApp(const MangaApp());
