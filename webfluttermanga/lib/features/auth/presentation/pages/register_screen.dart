@@ -230,11 +230,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return null;
       },
       onTap: () async {
+        // Giới hạn tuổi: từ 10 tuổi trở lên (ví dụ năm nay 2026 thì max là 2016)
+        DateTime maxDate = DateTime(
+          DateTime.now().year - 10,
+          DateTime.now().month,
+          DateTime.now().day,
+        );
+
         DateTime? pickedDate = await showDatePicker(
           context: context,
-          initialDate: DateTime.now(),
+          initialDate: maxDate,
           firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
+          lastDate: maxDate,
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
@@ -252,8 +259,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         if (pickedDate != null) {
+          // Định dạng theo chuẩn ngày - tháng - năm (VD: 01-04-2026)
           String formattedDate =
-              "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+              "${pickedDate.day.toString().padLeft(2, '0')}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.year}";
           setState(() {
             controller.text = formattedDate;
           });
