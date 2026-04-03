@@ -6,9 +6,9 @@ class MangaEntity extends Equatable {
   final String? description;
   final String? thumbnail;
   final String? status;
-  final String? totalChapter;
+  final int? totalChapter;
   final int? rate;
-  final int? authorid;
+  final int? authorId;
   final List<int>? genreIds;
   final DateTime? releaseDate;
   final DateTime? endDate;
@@ -21,7 +21,7 @@ class MangaEntity extends Equatable {
     this.status,
     this.totalChapter,
     this.rate,
-    this.authorid,
+    this.authorId,
     this.genreIds,
     this.releaseDate,
     this.endDate,
@@ -37,7 +37,7 @@ class MangaEntity extends Equatable {
       status,
       totalChapter,
       rate,
-      authorid,
+      authorId,
       genreIds,
       releaseDate,
       endDate,

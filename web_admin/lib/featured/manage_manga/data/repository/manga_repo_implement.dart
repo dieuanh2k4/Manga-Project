@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/resources/data_state.dart';
 import 'package:web_admin/featured/manage_manga/data/data_sources/remote/new_api_service.dart';
-import 'package:web_admin/featured/manage_manga/data/models/manga.dart';
+import 'package:web_admin/featured/manage_manga/data/mappers/manga_mapper.dart';
+import 'package:web_admin/featured/manage_manga/domain/entities/manga.dart';
 import 'package:web_admin/featured/manage_manga/domain/repository/manga_repository.dart';
 
 class MangaRepoImplement implements MangaRepository {
@@ -13,12 +13,12 @@ class MangaRepoImplement implements MangaRepository {
   MangaRepoImplement(this._newApiService);
 
   @override
-  Future<DataState<List<MangaModel>>> getManga() async {
+  Future<DataState<List<MangaEntity>>> getManga() async {
     try {
       final httpResponse = await _newApiService.getManga();
 
       if (httpResponse.response.statusCode == HttpStatus.ok) {
-        return DataSuccess(httpResponse.data);
+        return DataSuccess(httpResponse.data.toEntityList());
       } else {
         return DataFailed(
           DioError(

@@ -29,6 +29,27 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebAdminCors", policy =>
+    {
+        policy
+            // Allow localhost/127.0.0.1 for local web frontend even when the dev port changes.
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                {
+                    return false;
+                }
+
+                return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
@@ -146,6 +167,8 @@ app.MapGet("/", () =>
 
     return Results.Ok(new { message = "ProjectManga API is running." });
 });
+
+app.UseCors("WebAdminCors");
 
 app.UseAuthentication();
 
