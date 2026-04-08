@@ -34,7 +34,7 @@ namespace backend.src.Services.Implement
             {
                 if (!string.IsNullOrEmpty(manga.Thumbnail))
                 {
-                    manga.Thumbnail = _minio.GetImageUrl(manga.Thumbnail);
+                    manga.Thumbnail = await _minio.GetImageUrlAsync(manga.Thumbnail);
                 }
             }
 
@@ -49,7 +49,7 @@ namespace backend.src.Services.Implement
 
             if (manga != null && !string.IsNullOrEmpty(manga.Thumbnail))
             {
-                manga.Thumbnail = _minio.GetImageUrl(manga.Thumbnail);
+                manga.Thumbnail = await _minio.GetImageUrlAsync(manga.Thumbnail);
             }
 
             return manga;

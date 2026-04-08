@@ -15,22 +15,44 @@ namespace backend.src.Services.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly IMinioStorageService _minio;
+        private readonly IEntitlementService _entitlement;
 
-        public PageService(ApplicationDbContext context, IMinioStorageService minio)
+        public PageService(ApplicationDbContext context, IMinioStorageService minio, IEntitlementService entitlement)
         {
             _context = context;
             _minio = minio;
+            _entitlement = entitlement;
         }
 
-        public async Task<List<Pages>> GetAllPage(int idManga, int idChapter)
+        public async Task<List<Pages>> GetAllPage(int idManga, int idChapter, int? userId)
         {
+            var chapter = await _context.Chapters
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == idChapter && c.MangaId == idManga);
+
+            if (chapter == null)
+            {
+                throw new Result("Chapter không tồn tại hoặc không thuộc manga này");
+            }
+
+            await _entitlement.EnsureCanReadChapter(userId, chapter);
+
             var pages = await _context.Pages
+                .AsNoTracking()
                 .Where(p => p.ChapterId == idChapter && p.MangaId == idManga)
                 .ToListAsync();
 
             if (!pages.Any())
             {
                 throw new Result("Không có page nào");
+            }
+
+            foreach (var page in pages)
+            {
+                if (!string.IsNullOrWhiteSpace(page.ImageUrl))
+                {
+                    page.ImageUrl = await _minio.GetImageUrlAsync(page.ImageUrl, 120);
+                }
             }
 
             return pages;

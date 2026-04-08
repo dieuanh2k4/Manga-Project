@@ -18,11 +18,13 @@ namespace backend.src.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IPackageService _packageservice;
+        private readonly IEntitlementService _entitlementService;
 
-        public PackageController(ApplicationDbContext context, IPackageService packageService, ILogger<PackageController> logger) : base(logger)
+        public PackageController(ApplicationDbContext context, IPackageService packageService, IEntitlementService entitlementService, ILogger<PackageController> logger) : base(logger)
         {
             _context = context;
             _packageservice = packageService;
+            _entitlementService = entitlementService;
         }
 
         [AllowAnonymous]
@@ -45,6 +47,7 @@ namespace backend.src.Controllers
                     package.Id,
                     package.Title,
                     package.Price,
+                    package.DurationDays,
                     Previlages = package.Previlages.Select(p => new
                     {
                         p.Id,
@@ -137,11 +140,42 @@ namespace backend.src.Controllers
                 }
 
                 var purchase = await _packageservice.PurchasePackage(packageId, userId.Value);
+                var entitlements = await _entitlementService.GetReaderEntitlements(userId.Value);
 
                 return Ok(new
                 {
                     message = "Mua package thành công",
-                    data = purchase
+                    data = new
+                    {
+                        purchase,
+                        entitlements
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [Authorize(Policy = "ReaderOnly")]
+        [HttpGet("my-entitlements")]
+        public async Task<IActionResult> GetMyEntitlements()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    throw new UnauthorizedAccessException("Không xác định được người dùng");
+                }
+
+                var entitlements = await _entitlementService.GetReaderEntitlements(userId.Value);
+
+                return Ok(new
+                {
+                    message = "Lấy đặc quyền hiện tại thành công",
+                    data = entitlements
                 });
             }
             catch (Exception ex)

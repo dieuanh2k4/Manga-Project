@@ -32,7 +32,7 @@ namespace backend.src.Services.Implement
             {
                 if (!string.IsNullOrEmpty(author.Avatar))
                 {
-                    author.Avatar = _minio.GetImageUrl(author.Avatar);
+                    author.Avatar = await _minio.GetImageUrlAsync(author.Avatar);
                 }
             }
 
@@ -46,7 +46,7 @@ namespace backend.src.Services.Implement
             // Chuyển path thành URL cho từng author
             if (author != null && !string.IsNullOrEmpty(author.Avatar))
             {
-                author.Avatar = _minio.GetImageUrl(author.Avatar);
+                author.Avatar = await _minio.GetImageUrlAsync(author.Avatar);
             }
 
             return author;
@@ -122,7 +122,7 @@ namespace backend.src.Services.Implement
 
             if (!string.IsNullOrEmpty(author.Avatar))
             {
-                author.Avatar = _minio.GetImageUrl(author.Avatar);
+                author.Avatar = await _minio.GetImageUrlAsync(author.Avatar);
             }
 
             return author;

@@ -127,6 +127,9 @@ builder.Services.AddScoped<IPageService, PageService>();
 // Package Service
 builder.Services.AddScoped<IPackageService, PackageService>();
 
+// Entitlement Service
+builder.Services.AddScoped<IEntitlementService, EntitlementService>();
+
 // Previlage Service
 builder.Services.AddScoped<IPrevilageService, PrevilageService>();
 

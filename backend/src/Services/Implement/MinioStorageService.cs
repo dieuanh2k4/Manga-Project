@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using backend.src.Services.helper;
 using backend.src.Services.Interface;
 using Minio;
 using Minio.DataModel.Args;
@@ -10,16 +11,17 @@ namespace Server.src.Services.Implements
 {
     public class MinioStorageService : IMinioStorageService
     {
+        private readonly MinioHelper _minioHelper;
+
         private readonly IMinioClient _minioClient;
         private readonly IConfiguration _configuration;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly string _bucketName;
 
         public MinioStorageService(IMinioClient minioClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _minioClient = minioClient;
             _configuration = configuration;
-            _httpContextAccessor = httpContextAccessor;
+            _minioHelper = new MinioHelper(minioClient, configuration, httpContextAccessor);
 
             var configuredBucket = _configuration["Minio:Bucket"] ?? _configuration["Minio:BucketName"];
             if (string.IsNullOrWhiteSpace(configuredBucket))
@@ -40,48 +42,15 @@ namespace Server.src.Services.Implements
 
             try
             {
-                // Đảm bảo bucket tồn tại
-                var bucketExists = await _minioClient.BucketExistsAsync(
-                    new BucketExistsArgs().WithBucket(_bucketName)
-                );
-
-                if (!bucketExists)
-                {
-                    // Tạo bucket mới
-                    await _minioClient.MakeBucketAsync(
-                        new MakeBucketArgs().WithBucket(_bucketName)
-                    );
-
-                    // Set policy public cho bucket để cho phép đọc file
-                    var policyJson = @"{
-                        ""Version"": ""2012-10-17"",
-                        ""Statement"": [
-                            {
-                                ""Effect"": ""Allow"",
-                                ""Principal"": {""AWS"": ""*""},
-                                ""Action"": [""s3:GetObject""],
-                                ""Resource"": [""arn:aws:s3:::" + _bucketName + @"/*""]
-                            }
-                        ]
-                    }";
-
-                    await _minioClient.SetPolicyAsync(
-                        new SetPolicyArgs()
-                            .WithBucket(_bucketName)
-                            .WithPolicy(policyJson)
-                    );
-                }
+                await _minioHelper.EnsureBucketIsPrivateAsync();
 
                 // Nếu có customFileName thì dùng tên đó; nếu không thì dùng đúng tên file upload.
                 var fileExtension = Path.GetExtension(file.FileName);
-                // var effectiveName = string.IsNullOrWhiteSpace(customFileName)
-                //     ? file.FileName
-                //     : customFileName;
                 var effectiveName = string.IsNullOrWhiteSpace(file.FileName)
                     ? "page"
                     : file.FileName;
 
-                var sanitizedName = SanitizeFileName(effectiveName);
+                var sanitizedName = MinioHelper.SanitizeFileName(effectiveName);
                 if (!string.IsNullOrWhiteSpace(sanitizedName) && string.IsNullOrWhiteSpace(Path.GetExtension(sanitizedName)))
                 {
                     sanitizedName += fileExtension;
@@ -118,11 +87,10 @@ namespace Server.src.Services.Implements
         {
             try
             {
-                // fileName có format: bucket/folder/file.jpg
-                // Tách bucket và object path
-                var parts = fileName.Split('/', 2);
-                var bucket = parts.Length > 1 ? parts[0] : _bucketName;
-                var objectName = parts.Length > 1 ? parts[1] : fileName;
+                if (!_minioHelper.TryParseStoragePath(fileName, out var bucket, out var objectName))
+                {
+                    return false;
+                }
 
                 var removeObjectArgs = new RemoveObjectArgs()
                     .WithBucket(bucket)
@@ -137,62 +105,43 @@ namespace Server.src.Services.Implements
             }
         }
 
-        public string GetImageUrl(string fileName)
+        public async Task<string> GetImageUrlAsync(string fileName, int expirySeconds = 300)
         {
-            // Nếu đã là URL đầy đủ (http/https), trả về luôn
-            if (fileName.StartsWith("http://") || fileName.StartsWith("https://"))
+            // 1) Input rỗng thì trả nguyên để tránh xử lý thừa.
+            if (string.IsNullOrWhiteSpace(fileName))
             {
                 return fileName;
             }
-            
-            // fileName có format: bucket/folder/file.jpg hoặc chỉ folder/file.jpg
-            // Chỉ cần ghép domain vào
-            
-            var httpContext = _httpContextAccessor.HttpContext;
-            string baseUrl;
-            
-            if (httpContext != null)
-            {
-                var request = httpContext.Request;
-                var host = request.Host.Host;
-                var scheme = request.Scheme;
-                
-                // MinIO port (9004 từ docker-compose)
-                var minioPort = _configuration["Minio:PublicPort"] ?? "9004";
-                baseUrl = $"{scheme}://{host}:{minioPort}";
-            }
-            else
-            {
-                // Fallback nếu không có HttpContext (background jobs, etc.)
-                var endpoint = _configuration["Minio:PublicEndpoint"] ?? "localhost:9004";
-                var useSsl = _configuration.GetValue<bool>("Minio:UseSsl");
-                var protocol = useSsl ? "https" : "http";
-                baseUrl = $"{protocol}://{endpoint}";
-            }
-            
-            // fileName đã chứa bucket name, chỉ cần ghép baseUrl
-            return $"{baseUrl}/{fileName}";
-        }
 
-        private static string? SanitizeFileName(string? fileName)
-        {
-            if (string.IsNullOrWhiteSpace(fileName))
+            // 2) Đảm bảo bucket đang ở trạng thái private trước khi cấp URL ký.
+            await _minioHelper.EnsureBucketIsPrivateAsync();
+
+            // 3) Nếu là absolute URL nhưng không thuộc MinIO hiện tại, giữ nguyên.
+            // Điều này giúp tương thích dữ liệu cũ/ảnh ngoài hệ thống (example.com, CDN khác...).
+            if (Uri.TryCreate(fileName, UriKind.Absolute, out var absoluteUri)
+                && !_minioHelper.IsKnownMinioHost(absoluteUri.Host, absoluteUri.Port))
             {
-                return null;
+                return fileName;
             }
 
-            var cleaned = Path.GetFileName(fileName).Trim();
-            if (string.IsNullOrWhiteSpace(cleaned))
+            // 4) Parse về bucket/objectName từ các dạng input khác nhau.
+            if (!_minioHelper.TryParseStoragePath(fileName, out var bucket, out var objectName))
             {
-                return null;
+                return fileName;
             }
 
-            foreach (var invalidChar in Path.GetInvalidFileNameChars())
-            {
-                cleaned = cleaned.Replace(invalidChar, '_');
-            }
+            // 5) Giới hạn TTL an toàn để URL không sống quá lâu.
+            var safeExpirySeconds = Math.Clamp(expirySeconds, 60, 300);
 
-            return cleaned;
+            // 6) Build client presign theo endpoint public để frontend truy cập được.
+            var presignClient = _minioHelper.BuildPresignClient();
+            var args = new PresignedGetObjectArgs()
+                .WithBucket(bucket)
+                .WithObject(objectName)
+                .WithExpiry(safeExpirySeconds);
+
+            // 7) Trả signed URL ngắn hạn thay vì link public cố định.
+            return await presignClient.PresignedGetObjectAsync(args);
         }
     }
 }

@@ -166,7 +166,7 @@ namespace backend.src.Services.Implement
             // Chuyển path thành URL khi trả về
             if (!string.IsNullOrEmpty(admin.Avatar))
             {
-                admin.Avatar = _minio.GetImageUrl(admin.Avatar);
+                admin.Avatar = await _minio.GetImageUrlAsync(admin.Avatar);
             }
 
             await _context.SaveChangesAsync();
@@ -311,7 +311,7 @@ namespace backend.src.Services.Implement
 
             if (!string.IsNullOrEmpty(reader.Avatar))
             {
-                reader.Avatar = _minio.GetImageUrl(reader.Avatar);
+                reader.Avatar = await _minio.GetImageUrlAsync(reader.Avatar);
             }
 
             await _context.SaveChangesAsync();

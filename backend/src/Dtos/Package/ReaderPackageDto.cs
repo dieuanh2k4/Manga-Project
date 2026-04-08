@@ -11,7 +11,9 @@ namespace backend.src.Dtos.Package
         public int PackageId { get; set; }
         public string? PackageTitle { get; set; }
         public int PackagePrice { get; set; }
+        public int PackageDurationDays { get; set; }
         public DateTime PurchasedAt { get; set; }
         public DateTime? ExpiredAt { get; set; }
+        public List<string> PackagePrevilages { get; set; } = new();
     }
 }

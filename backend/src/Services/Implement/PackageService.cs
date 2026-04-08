@@ -6,6 +6,7 @@ using backend.src.Data;
 using backend.src.Dtos.Package;
 using backend.src.Exceptions;
 using backend.src.Models;
+using backend.src.Services.Entitlements;
 using backend.src.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +15,12 @@ namespace backend.src.Services.Implement
     public class PackageService : IPackageService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEntitlementService _entitlement;
 
-        public PackageService(ApplicationDbContext context)
+        public PackageService(ApplicationDbContext context, IEntitlementService entitlement)
         {
             _context = context;
+            _entitlement = entitlement;
         }
 
         public async Task<Packages> CreatePackage(CreatePackageDto dto)
@@ -32,6 +35,11 @@ namespace backend.src.Services.Implement
                 throw new Result("Giá package phải lớn hơn 0");
             }
 
+            if (dto.DurationDays <= 0)
+            {
+                throw new Result("Thời hạn package phải lớn hơn 0 ngày");
+            }
+
             var check = await _context.Packages.FirstOrDefaultAsync(a => a.Title == dto.Title);
             if (check != null)
             {
@@ -44,6 +52,7 @@ namespace backend.src.Services.Implement
             {
                 Title = dto.Title,
                 Price = dto.Price,
+                DurationDays = dto.DurationDays,
                 Previlages = previlages
             };
 
@@ -71,10 +80,16 @@ namespace backend.src.Services.Implement
                 throw new Result("Giá package phải lớn hơn 0");
             }
 
+            if (dto.DurationDays <= 0)
+            {
+                throw new Result("Thời hạn package phải lớn hơn 0 ngày");
+            }
+
             var previlages = await ResolvePrevilages(dto.PrevilageIds);
 
             package.Title = dto.Title;
             package.Price = dto.Price;
+            package.DurationDays = dto.DurationDays;
             package.Previlages = previlages;
 
             await _context.SaveChangesAsync();
@@ -107,6 +122,7 @@ namespace backend.src.Services.Implement
             }
 
             var package = await _context.Packages
+                .Include(p => p.Previlages)
                 .FirstOrDefaultAsync(p => p.Id == packageId);
 
             if (package == null)
@@ -131,12 +147,14 @@ namespace backend.src.Services.Implement
                 ReaderId = reader.Id,
                 PackageId = packageId,
                 PurchasedAt = now,
-                ExpiredAt = null
+                ExpiredAt = now.AddDays(package.DurationDays > 0 ? package.DurationDays : 30)
             };
 
             await _context.ReaderPackages.AddAsync(purchase);
-            reader.IsPremium = true;
 
+            await _context.SaveChangesAsync();
+
+            reader.IsPremium = await _entitlement.HasPrivilege(userId, EntitlementFeatureKeys.ReadPremium);
             await _context.SaveChangesAsync();
 
             purchase.Package = package;
@@ -174,8 +192,11 @@ namespace backend.src.Services.Implement
                 PackageId = purchase.PackageId,
                 PackageTitle = package?.Title,
                 PackagePrice = package?.Price ?? 0,
+                PackageDurationDays = package?.DurationDays ?? 0,
                 PurchasedAt = purchase.PurchasedAt,
-                ExpiredAt = purchase.ExpiredAt
+                ExpiredAt = purchase.ExpiredAt,
+                PackagePrevilages = package?.Previlages.Select(p => p.Content ?? string.Empty).Where(c => !string.IsNullOrWhiteSpace(c)).ToList()
+                    ?? new List<string>()
             };
         }
     }

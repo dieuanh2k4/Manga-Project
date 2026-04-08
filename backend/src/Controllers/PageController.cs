@@ -29,7 +29,7 @@ namespace backend.src.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var page = await _page.GetAllPage(idManga, idChapter);
+                var page = await _page.GetAllPage(idManga, idChapter, userId);
 
                 return Ok(page);
             }
