@@ -1,17 +1,24 @@
 using backend.src.Configurations;
 using backend.src.Models;
+using backend.src.Services.Entitlements;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Data
 {
     public static class SeedData
     {
+        private const string PremiumPackageTitle = "Gói Premium 30 ngày";
+
         public static async Task InitializeAsync(ApplicationDbContext context)
         {
             await SeedUsersAsync(context);
+            await SeedPrevilagesAndPackagesAsync(context);
             await SeedAuthorsAndGenresAsync(context);
             await SeedMangaAsync(context);
             await SeedChaptersAsync(context);
+            await SeedPagesAsync(context);
+            await SeedLibrariesAsync(context);
+            await SeedReaderPackagesAsync(context);
         }
 
         private static async Task SeedUsersAsync(ApplicationDbContext context)
@@ -102,6 +109,117 @@ namespace backend.src.Data
                     Address = "Da Nang",
                     UserId = readerUser2.Id
                 });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedPrevilagesAndPackagesAsync(ApplicationDbContext context)
+        {
+            var previlageContents = new[]
+            {
+                $"{EntitlementFeatureKeys.ReadPremium}=true",
+                $"{EntitlementFeatureKeys.NoAds}=true",
+                $"{EntitlementFeatureKeys.OfflineDownload}=true",
+                $"{EntitlementFeatureKeys.DailyChapterLimit}=200",
+                $"{EntitlementFeatureKeys.EarlyAccessDays}=2",
+                $"{EntitlementFeatureKeys.MaxDevices}=4"
+            };
+
+            var existingPrevilageContents = await context.Previlages
+                .Where(p => p.Content != null)
+                .Select(p => p.Content!)
+                .ToListAsync();
+
+            var previlageContentSet = existingPrevilageContents.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var content in previlageContents)
+            {
+                if (previlageContentSet.Contains(content))
+                {
+                    continue;
+                }
+
+                context.Previlages.Add(new Previlages
+                {
+                    Content = content
+                });
+
+                previlageContentSet.Add(content);
+            }
+
+            await context.SaveChangesAsync();
+
+            var previlageList = await context.Previlages
+                .Where(p => p.Content != null)
+                .ToListAsync();
+
+            var previlageLookup = previlageList
+                .GroupBy(p => p.Content!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            var packageDefinitions = new[]
+            {
+                new
+                {
+                    Title = PremiumPackageTitle,
+                    Price = 39000,
+                    DurationDays = 30,
+                    Previlages = new[]
+                    {
+                        $"{EntitlementFeatureKeys.ReadPremium}=true",
+                        $"{EntitlementFeatureKeys.NoAds}=true",
+                        $"{EntitlementFeatureKeys.OfflineDownload}=true",
+                        $"{EntitlementFeatureKeys.MaxDevices}=2"
+                    }
+                },
+                new
+                {
+                    Title = "Gói VIP 90 ngày",
+                    Price = 99000,
+                    DurationDays = 90,
+                    Previlages = new[]
+                    {
+                        $"{EntitlementFeatureKeys.ReadPremium}=true",
+                        $"{EntitlementFeatureKeys.NoAds}=true",
+                        $"{EntitlementFeatureKeys.OfflineDownload}=true",
+                        $"{EntitlementFeatureKeys.DailyChapterLimit}=200",
+                        $"{EntitlementFeatureKeys.EarlyAccessDays}=2",
+                        $"{EntitlementFeatureKeys.MaxDevices}=4"
+                    }
+                }
+            };
+
+            var existingPackages = await context.Packages
+                .Include(p => p.Previlages)
+                .ToListAsync();
+
+            foreach (var definition in packageDefinitions)
+            {
+                var packagePrevilages = definition.Previlages
+                    .Where(previlageLookup.ContainsKey)
+                    .Select(key => previlageLookup[key])
+                    .ToList();
+
+                var package = existingPackages
+                    .FirstOrDefault(p => p.Title == definition.Title);
+
+                if (package == null)
+                {
+                    context.Packages.Add(new Packages
+                    {
+                        Title = definition.Title,
+                        Price = definition.Price,
+                        DurationDays = definition.DurationDays,
+                        Previlages = packagePrevilages
+                    });
+
+                    continue;
+                }
+
+                package.Price = definition.Price;
+                package.DurationDays = definition.DurationDays;
+                package.Previlages = packagePrevilages;
             }
 
             await context.SaveChangesAsync();
@@ -240,6 +358,206 @@ namespace backend.src.Data
             }
 
             await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedPagesAsync(ApplicationDbContext context)
+        {
+            var pageDefinitions = new[]
+            {
+                new
+                {
+                    MangaTitle = "One Piece",
+                    ChapterNumber = "1",
+                    ImageUrls = new[]
+                    {
+                        "https://example.com/pages/one-piece-1-1.jpg",
+                        "https://example.com/pages/one-piece-1-2.jpg"
+                    }
+                },
+                new
+                {
+                    MangaTitle = "One Piece",
+                    ChapterNumber = "2",
+                    ImageUrls = new[]
+                    {
+                        "https://example.com/pages/one-piece-2-1.jpg",
+                        "https://example.com/pages/one-piece-2-2.jpg"
+                    }
+                },
+                new
+                {
+                    MangaTitle = "Jujutsu Kaisen",
+                    ChapterNumber = "1",
+                    ImageUrls = new[]
+                    {
+                        "https://example.com/pages/jujutsu-1-1.jpg",
+                        "https://example.com/pages/jujutsu-1-2.jpg"
+                    }
+                },
+                new
+                {
+                    MangaTitle = "Jujutsu Kaisen",
+                    ChapterNumber = "2",
+                    ImageUrls = new[]
+                    {
+                        "https://example.com/pages/jujutsu-2-1.jpg",
+                        "https://example.com/pages/jujutsu-2-2.jpg"
+                    }
+                },
+                new
+                {
+                    MangaTitle = "Kaguya-sama: Love Is War",
+                    ChapterNumber = "1",
+                    ImageUrls = new[]
+                    {
+                        "https://example.com/pages/kaguya-1-1.jpg",
+                        "https://example.com/pages/kaguya-1-2.jpg"
+                    }
+                }
+            };
+
+            foreach (var definition in pageDefinitions)
+            {
+                var chapter = await context.Chapters
+                    .Include(c => c.Manga)
+                    .FirstOrDefaultAsync(c => c.ChapterNumber == definition.ChapterNumber
+                        && c.Manga != null
+                        && c.Manga.Title == definition.MangaTitle);
+
+                if (chapter == null)
+                {
+                    continue;
+                }
+
+                foreach (var imageUrl in definition.ImageUrls)
+                {
+                    await SeedPageIfNotExistsAsync(context, chapter.Id, chapter.MangaId, imageUrl);
+                }
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedLibrariesAsync(ApplicationDbContext context)
+        {
+            var reader1 = await FindReaderByUserNameAsync(context, "reader01");
+            var reader2 = await FindReaderByUserNameAsync(context, "reader02");
+
+            var onePiece = await context.Manga.FirstOrDefaultAsync(m => m.Title == "One Piece");
+            var jujutsu = await context.Manga.FirstOrDefaultAsync(m => m.Title == "Jujutsu Kaisen");
+            var kaguya = await context.Manga.FirstOrDefaultAsync(m => m.Title == "Kaguya-sama: Love Is War");
+
+            if (reader1 != null && onePiece != null)
+            {
+                await SeedLibraryIfNotExistsAsync(context, reader1.Id, onePiece.Id);
+            }
+
+            if (reader1 != null && jujutsu != null)
+            {
+                await SeedLibraryIfNotExistsAsync(context, reader1.Id, jujutsu.Id);
+            }
+
+            if (reader2 != null && kaguya != null)
+            {
+                await SeedLibraryIfNotExistsAsync(context, reader2.Id, kaguya.Id);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedReaderPackagesAsync(ApplicationDbContext context)
+        {
+            var premiumPackage = await context.Packages
+                .FirstOrDefaultAsync(p => p.Title == PremiumPackageTitle);
+
+            if (premiumPackage == null)
+            {
+                return;
+            }
+
+            var reader1 = await FindReaderByUserNameAsync(context, "reader01");
+            var reader2 = await FindReaderByUserNameAsync(context, "reader02");
+
+            var now = DateTime.UtcNow;
+
+            if (reader1 != null)
+            {
+                var hasActivePremium = await context.ReaderPackages
+                    .AnyAsync(rp => rp.ReaderId == reader1.Id
+                        && rp.PackageId == premiumPackage.Id
+                        && (rp.ExpiredAt == null || rp.ExpiredAt > now));
+
+                if (!hasActivePremium)
+                {
+                    var purchasedAt = now.AddDays(-2);
+                    var durationDays = premiumPackage.DurationDays > 0 ? premiumPackage.DurationDays : 30;
+
+                    context.ReaderPackages.Add(new ReaderPackages
+                    {
+                        ReaderId = reader1.Id,
+                        PackageId = premiumPackage.Id,
+                        PurchasedAt = purchasedAt,
+                        ExpiredAt = purchasedAt.AddDays(durationDays)
+                    });
+                }
+
+                reader1.IsPremium = true;
+            }
+
+            if (reader2 != null)
+            {
+                var hasActivePackage = await context.ReaderPackages
+                    .AnyAsync(rp => rp.ReaderId == reader2.Id
+                        && (rp.ExpiredAt == null || rp.ExpiredAt > now));
+
+                reader2.IsPremium = hasActivePackage;
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedLibraryIfNotExistsAsync(ApplicationDbContext context, int readerId, int mangaId)
+        {
+            var exists = await context.Libraries.AnyAsync(l => l.ReaderId == readerId && l.MangaId == mangaId);
+            if (exists)
+            {
+                return;
+            }
+
+            await context.Libraries.AddAsync(new Libraries
+            {
+                ReaderId = readerId,
+                MangaId = mangaId
+            });
+        }
+
+        private static async Task SeedPageIfNotExistsAsync(ApplicationDbContext context, int chapterId, int mangaId, string imageUrl)
+        {
+            var exists = await context.Pages
+                .AnyAsync(p => p.ChapterId == chapterId && p.MangaId == mangaId && p.ImageUrl == imageUrl);
+
+            if (exists)
+            {
+                return;
+            }
+
+            await context.Pages.AddAsync(new Pages
+            {
+                ChapterId = chapterId,
+                MangaId = mangaId,
+                ImageUrl = imageUrl
+            });
+        }
+
+        private static async Task<Readers?> FindReaderByUserNameAsync(ApplicationDbContext context, string userName)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return await context.Readers.FirstOrDefaultAsync(r => r.UserId == user.Id);
         }
 
         private static async Task SeedChapterIfNotExistsAsync(

@@ -98,7 +98,7 @@ namespace backend.src.Services.helper
             // 2) Xác định SSL theo config public, fallback về config chung.
             var useSsl = _configuration.GetValue<bool?>("Minio:PublicUseSSL") ?? _useSsl;
 
-            if (Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
+            if (TryParseHttpEndpoint(endpoint, out var endpointUri))
             {
                 // Nếu endpoint có dạng http(s)://..., normalize về host:port.
                 endpoint = NormalizeEndpoint(endpoint);
@@ -146,7 +146,8 @@ namespace backend.src.Services.helper
         {
             var trimmed = endpoint.Trim();
 
-            if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            // Tránh parse nhầm "localhost:9004" thành URI có scheme="localhost" và host rỗng.
+            if (!TryParseHttpEndpoint(trimmed, out var uri))
             {
                 return trimmed;
             }
@@ -163,14 +164,8 @@ namespace backend.src.Services.helper
             }
 
             var normalized = endpoint.Trim();
-            if (normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-                || normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            if (TryParseHttpEndpoint(normalized, out var uri))
             {
-                if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
-                {
-                    return false;
-                }
-
                 return string.Equals(uri.Host, host, StringComparison.OrdinalIgnoreCase)
                     && uri.Port == port;
             }
@@ -215,6 +210,25 @@ namespace backend.src.Services.helper
             }
 
             return false;
+        }
+
+        private static bool TryParseHttpEndpoint(string? value, out Uri uri)
+        {
+            uri = default!;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var trimmed = value.Trim();
+            if (!trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                && !trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return Uri.TryCreate(trimmed, UriKind.Absolute, out uri);
         }
         
         // hỗ trợ parse nhiều dạng input 
