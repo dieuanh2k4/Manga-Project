@@ -6,6 +6,6 @@ namespace backend.src.Services.Interface
     {
         Task<string> UploadImageAsync(IFormFile file, string folder = "images");
         Task<bool> DeleteImageAsync(string fileName);
-        string GetImageUrl(string fileName);
+        Task<string> GetImageUrlAsync(string fileName, int expirySeconds = 300);
     }
 }

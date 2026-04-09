@@ -10,6 +10,7 @@ namespace backend.src.Models
         public int Id { get; set; }
         public string? Title { get; set; }
         public int Price { get; set; }
+        public int DurationDays { get; set; } = 30;
 
         public List<Previlages> Previlages { get; set; } = new();
         public List<ReaderPackages> ReaderPackages { get; set; } = new();

@@ -9,6 +9,7 @@ namespace backend.src.Dtos.Package
     {
         public string? Title { get; set; }
         public int Price { get; set; }
+        public int DurationDays { get; set; } = 30;
         public List<int> PrevilageIds { get; set; } = new();
     }
 }

@@ -327,6 +327,9 @@ namespace backend.src.Data
                     .IsUnicode();
                 entity.Property(a => a.Price)
                     .IsRequired();
+                entity.Property(a => a.DurationDays)
+                    .IsRequired()
+                    .HasDefaultValue(30);
 
                 entity.HasMany(a => a.Previlages)
                     .WithMany(b => b.Packages)

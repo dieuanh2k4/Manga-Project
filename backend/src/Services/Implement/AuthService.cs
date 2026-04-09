@@ -9,6 +9,7 @@ using backend.src.Data;
 using backend.src.Dtos.Auth;
 using backend.src.Exceptions;
 using backend.src.Models;
+using backend.src.Services.Entitlements;
 using backend.src.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,12 +20,14 @@ namespace backend.src.Services.Implement
         private readonly ApplicationDbContext _context;
         private readonly JwtHelper _jwtHelper;
         private readonly IMinioStorageService _minio;
+        private readonly IEntitlementService _entitlementService;
 
-        public AuthService(ApplicationDbContext context, JwtHelper jwtHelper, IMinioStorageService minio)
+        public AuthService(ApplicationDbContext context, JwtHelper jwtHelper, IMinioStorageService minio, IEntitlementService entitlementService)
         {
             _context = context;
             _jwtHelper = jwtHelper;
             _minio = minio;
+            _entitlementService = entitlementService;
         }
 
         public async Task<AuthResultDto> Login(LoginRequestDto request)
@@ -44,11 +47,8 @@ namespace backend.src.Services.Implement
                 return AuthResultDto.Fail("Sai tài khoản hoặc mật khẩu");
             }
 
-            var isPremium = await _context.Readers
-                .AsNoTracking()
-                .Where(r => r.UserId == user.Id)
-                .Select(r => (bool?)r.IsPremium)
-                .FirstOrDefaultAsync() ?? false;
+            var isPremium = string.Equals(user.Role, "Reader", StringComparison.OrdinalIgnoreCase)
+                && await _entitlementService.HasPrivilege(user.Id, EntitlementFeatureKeys.ReadPremium);
 
             var token = _jwtHelper.CreateToken(user.UserName, user.Role, user.Id, isPremium);
 

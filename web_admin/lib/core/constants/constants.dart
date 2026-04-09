@@ -1,1 +1,1 @@
-const String newAPIBaseURL = 'http://localhost:5001/scalar/api/';
+const String newAPIBaseURL = 'http://localhost:5001/api/';
