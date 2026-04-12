@@ -1,5 +1,5 @@
-import 'package:web_admin/featured/manage_manga/data/models/manga.dart';
-import 'package:web_admin/featured/manage_manga/domain/entities/manga.dart';
+import 'package:web_admin/data/models/manga.dart';
+import 'package:web_admin/domain/entities/manga.dart';
 
 extension MangaModelMapper on MangaModel {
   MangaEntity toEntity() {

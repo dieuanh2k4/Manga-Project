@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_admin/core/resources/data_state.dart';
-import 'package:web_admin/featured/manage_manga/domain/entities/manga.dart';
-import 'package:web_admin/featured/manage_manga/domain/usecases/get_manga.dart';
-import 'package:web_admin/featured/manage_manga/presentation/bloc/manga/remote/remote_manga_event.dart';
-import 'package:web_admin/featured/manage_manga/presentation/bloc/manga/remote/remote_manga_state.dart';
+import 'package:web_admin/domain/entities/manga.dart';
+import 'package:web_admin/domain/usecases/get_manga.dart';
+import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
+import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_state.dart';
 
 class RemoteMangaBloc extends Bloc<RemoteMangaEvent, RemoteMangaState> {
   final GetMangaUseCase _getMangaUseCase;

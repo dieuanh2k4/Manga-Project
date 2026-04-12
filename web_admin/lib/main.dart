@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_admin/config/theme/app_themes.dart';
-import 'package:web_admin/featured/manage_manga/presentation/bloc/manga/remote/remote_manga_bloc.dart';
-import 'package:web_admin/featured/manage_manga/presentation/bloc/manga/remote/remote_manga_event.dart';
-import 'package:web_admin/featured/manage_manga/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
+import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
+import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/injection_container.dart';
 
 Future<void> main() async {

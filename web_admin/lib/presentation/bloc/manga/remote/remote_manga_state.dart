@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
-import 'package:web_admin/featured/manage_manga/domain/entities/manga.dart';
+import 'package:web_admin/domain/entities/manga.dart';
 
 abstract class RemoteMangaState extends Equatable {
   final List<MangaEntity>? manga;
