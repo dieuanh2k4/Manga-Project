@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:web_admin/domain/entities/manga.dart';
 
 class ManageMangaTableCard extends StatelessWidget {
+  static const double _coverWidth = 50;
+  static const double _coverHeight = 50;
+
   final List<MangaEntity> mangas;
   final String Function(String?) normalizeStatus;
   final String Function(MangaEntity) buildAuthor;
   final String Function(MangaEntity) buildGenres;
   final String Function(MangaEntity) buildViewsText;
+  final ValueChanged<MangaEntity> onEditTap;
 
   const ManageMangaTableCard({
     super.key,
@@ -15,6 +19,7 @@ class ManageMangaTableCard extends StatelessWidget {
     required this.buildAuthor,
     required this.buildGenres,
     required this.buildViewsText,
+    required this.onEditTap,
   });
 
   @override
@@ -73,6 +78,20 @@ class ManageMangaTableCard extends StatelessWidget {
     );
   }
 
+  Widget _headerCell(String text, double width) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF344055),
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeaderRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -92,45 +111,6 @@ class ManageMangaTableCard extends StatelessWidget {
     );
   }
 
-  Widget _headerCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF344055),
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDataRow(MangaEntity manga) {
-    final String status = normalizeStatus(manga.status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF0F3F8))),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(width: 86, child: _buildCoverImage(manga.thumbnail)),
-          _bodyCell(manga.title ?? 'Chưa có tên', 180, bold: true),
-          _bodyCell(buildAuthor(manga), 136),
-          _bodyCell(buildGenres(manga), 170, maxLines: 2),
-          SizedBox(width: 128, child: _buildStatusBadge(status)),
-          _bodyCell('${manga.totalChapter ?? 0}', 94),
-          _bodyCell(buildViewsText(manga), 94),
-          SizedBox(width: 86, child: _buildRateCell(manga.rate)),
-          SizedBox(width: 106, child: _buildActionButtons()),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCoverImage(String? thumbnail) {
     final String image = thumbnail?.trim() ?? '';
 
@@ -138,8 +118,8 @@ class ManageMangaTableCard extends StatelessWidget {
       return ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          width: 42,
-          height: 56,
+          width: _coverWidth,
+          height: _coverHeight,
           color: const Color(0xFFE5EAF3),
           child: const Icon(
             Icons.image_outlined,
@@ -154,13 +134,13 @@ class ManageMangaTableCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
       child: Image.network(
         image,
-        width: 42,
-        height: 56,
+        width: _coverWidth,
+        height: _coverHeight,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) {
           return Container(
-            width: 42,
-            height: 56,
+            width: _coverWidth,
+            height: _coverHeight,
             color: const Color(0xFFE5EAF3),
             child: const Icon(
               Icons.broken_image_outlined,
@@ -177,14 +157,17 @@ class ManageMangaTableCard extends StatelessWidget {
     String text,
     double width, {
     bool bold = false,
-    int maxLines = 1,
+    int? maxLines,
   }) {
     return SizedBox(
       width: width,
       child: Text(
         text,
         maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
+        softWrap: true,
+        overflow: maxLines == null
+            ? TextOverflow.visible
+            : TextOverflow.ellipsis,
         style: TextStyle(
           color: const Color(0xFF4E5A6F),
           fontSize: 13,
@@ -252,25 +235,68 @@ class ManageMangaTableCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _actionButton(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: Icon(icon, size: 16, color: color),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(MangaEntity manga) {
     return Row(
       children: [
-        _actionButton(Icons.visibility_outlined, const Color(0xFF657489)),
+        _actionButton(
+          Icons.visibility_outlined,
+          const Color(0xFF657489),
+          () {},
+        ),
         const SizedBox(width: 2),
-        _actionButton(Icons.edit_outlined, const Color(0xFF657489)),
+        _actionButton(
+          Icons.edit_outlined,
+          const Color(0xFF657489),
+          () => onEditTap(manga),
+        ),
         const SizedBox(width: 2),
-        _actionButton(Icons.delete_outline_rounded, const Color(0xFFF56D6D)),
+        _actionButton(
+          Icons.delete_outline_rounded,
+          const Color(0xFFF56D6D),
+          () {},
+        ),
       ],
     );
   }
 
-  Widget _actionButton(IconData icon, Color color) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.all(5),
-        child: Icon(icon, size: 16, color: color),
+  Widget _buildDataRow(MangaEntity manga) {
+    final String status = normalizeStatus(manga.status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF0F3F8))),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 86,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildCoverImage(manga.thumbnail),
+            ),
+          ),
+          _bodyCell(manga.title ?? 'Chưa có tên', 180, bold: true),
+          _bodyCell(buildAuthor(manga), 136),
+          _bodyCell(buildGenres(manga), 170),
+          SizedBox(width: 128, child: _buildStatusBadge(status)),
+          _bodyCell('${manga.totalChapter ?? 0}', 94),
+          _bodyCell(buildViewsText(manga), 94),
+          SizedBox(width: 86, child: _buildRateCell(manga.rate)),
+          SizedBox(width: 106, child: _buildActionButtons(manga)),
+        ],
       ),
     );
   }
