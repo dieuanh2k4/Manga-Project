@@ -1,41 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../models/genre.dart';
-import '../models/manga.dart';
-import '../services/api_service.dart';
-import 'home_screen.dart';
+import '../../domain/entities/manga_entity.dart';
+import '../controllers/search_controller.dart';
+import 'home_page.dart';
 
-class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchScreenState extends State<SearchScreen>
+class _SearchPageState extends State<SearchPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   late final TabController _tabController;
-
-  List<Manga> _allManga = [];
-  List<Manga> _searchResult = [];
-  List<Manga> _ongoingManga = [];
-  List<Manga> _completedManga = [];
-  List<Genre> _genres = [];
-  final Map<int, List<Manga>> _genreMangaCache = {};
-
-  bool _isLoading = true;
-  bool _isFilteringGenre = false;
-  String? _errorMessage;
-
-  String _selectedStatus = 'Continuous';
-  Genre? _selectedGenre;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _fetchSearchData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MangaSearchController>().initialize();
+    });
   }
 
   @override
@@ -45,150 +33,20 @@ class _SearchScreenState extends State<SearchScreen>
     super.dispose();
   }
 
-  Future<void> _fetchSearchData() async {
-    try {
-      final results = await Future.wait([
-        ApiService.getAllManga(),
-        ApiService.getOngoingManga(),
-        ApiService.getCompletedManga(),
-        ApiService.getAllGenres(),
-      ]);
-
-      setState(() {
-        _allManga = results[0] as List<Manga>;
-        _searchResult = _allManga;
-        _ongoingManga = results[1] as List<Manga>;
-        _completedManga = results[2] as List<Manga>;
-        _genres = results[3] as List<Genre>;
-        _isLoading = false;
-        _errorMessage = null;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
-    }
-  }
-
-  Future<void> _onSearchChanged(String value) async {
-    final query = value.trim();
-
-    if (query.isEmpty) {
-      setState(() {
-        _searchResult = _allManga;
-      });
-      return;
-    }
-
-    try {
-      final response = await ApiService.searchManga(query);
-      if (!mounted) return;
-      setState(() {
-        _searchResult = response;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      final keyword = query.toLowerCase();
-      setState(() {
-        _searchResult = _allManga
-            .where((m) => m.title.toLowerCase().contains(keyword))
-            .toList();
-      });
-    }
-  }
-
-  List<Manga> _popularItems() {
-    final copy = List<Manga>.from(_searchResult);
-    copy.sort((a, b) => b.rate.compareTo(a.rate));
-    return copy;
-  }
-
-  List<Manga> _lastUpdateItems() {
-    final copy = List<Manga>.from(_searchResult);
-    copy.sort((a, b) => b.id.compareTo(a.id));
-    return copy;
-  }
-
-  List<Manga> _directoryItems() {
-    List<Manga> base;
-    switch (_selectedStatus) {
-      case 'Continuous':
-        base = _ongoingManga;
-        break;
-      case 'Complete':
-        base = _completedManga;
-        break;
-      case 'New':
-        base = _lastUpdateItems();
-        break;
-      default:
-        base = _allManga;
-    }
-
-    if (_selectedGenre == null) {
-      return base;
-    }
-
-    final genreItems = _genreMangaCache[_selectedGenre!.id] ?? const <Manga>[];
-    final allowedIds = genreItems.map((e) => e.id).toSet();
-
-    return base.where((m) => allowedIds.contains(m.id)).toList();
-  }
-
-  Future<void> _onGenreTapped(Genre genre) async {
-    if (_selectedGenre?.id == genre.id) {
-      setState(() {
-        _selectedGenre = null;
-      });
-      return;
-    }
-
-    setState(() {
-      _selectedGenre = genre;
-    });
-
-    if (_genreMangaCache.containsKey(genre.id)) {
-      return;
-    }
-
-    setState(() {
-      _isFilteringGenre = true;
-    });
-
-    try {
-      final result = await ApiService.getMangaByGenre(genre.id);
-      if (!mounted) return;
-
-      setState(() {
-        _genreMangaCache[genre.id] = result;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _genreMangaCache[genre.id] = const [];
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isFilteringGenre = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<MangaSearchController>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
-        child: _isLoading
+        child: controller.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-                ? _buildError()
+            : controller.errorMessage != null
+                ? _buildError(controller)
                 : Column(
                     children: [
-                      _buildSearchBar(),
+                      _buildSearchBar(controller),
                       const SizedBox(height: 8),
                       Container(height: 8, color: const Color(0xFFFF6200)),
                       TabBar(
@@ -206,9 +64,15 @@ class _SearchScreenState extends State<SearchScreen>
                         child: TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildMangaList(_popularItems(), isUpdateList: false),
-                            _buildMangaList(_lastUpdateItems(), isUpdateList: true),
-                            _buildDirectoryTab(),
+                            _buildMangaList(
+                              controller.popularItems(),
+                              isUpdateList: false,
+                            ),
+                            _buildMangaList(
+                              controller.lastUpdateItems(),
+                              isUpdateList: true,
+                            ),
+                            _buildDirectoryTab(controller),
                           ],
                         ),
                       ),
@@ -219,7 +83,7 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(MangaSearchController controller) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -229,26 +93,20 @@ class _SearchScreenState extends State<SearchScreen>
             const Icon(Icons.cloud_off, size: 40, color: Color(0xFFBA541E)),
             const SizedBox(height: 12),
             const Text(
-              'Không tải được dữ liệu Search',
+              'Khong tai duoc du lieu Search',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              _errorMessage ?? '',
+              controller.errorMessage ?? '',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isLoading = true;
-                  _errorMessage = null;
-                });
-                _fetchSearchData();
-              },
-              child: const Text('Thử lại'),
+              onPressed: () => controller.initialize(),
+              child: const Text('Thu lai'),
             ),
           ],
         ),
@@ -256,7 +114,7 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(MangaSearchController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Row(
@@ -264,7 +122,7 @@ class _SearchScreenState extends State<SearchScreen>
           Expanded(
             child: TextField(
               controller: _searchController,
-              onChanged: _onSearchChanged,
+              onChanged: controller.onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Enter title or author\'s name',
                 prefixIcon: const Icon(Icons.search),
@@ -294,14 +152,14 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Widget _buildMangaList(
-    List<Manga> items, {
+    List<MangaEntity> items, {
     required bool isUpdateList,
     bool isEmbedded = false,
   }) {
     if (items.isEmpty) {
       return const Center(
         child: Text(
-          'Không có dữ liệu',
+          'Khong co du lieu',
           style: TextStyle(color: Colors.black54),
         ),
       );
@@ -313,7 +171,7 @@ class _SearchScreenState extends State<SearchScreen>
           ? const NeverScrollableScrollPhysics()
           : const AlwaysScrollableScrollPhysics(),
       itemCount: items.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (context, separatorIndex) =>
           const Divider(height: 1, color: Color(0xFFD0D0D0)),
       itemBuilder: (context, index) {
         final manga = items[index];
@@ -331,7 +189,7 @@ class _SearchScreenState extends State<SearchScreen>
                   width: 54,
                   height: 74,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     width: 54,
                     height: 74,
                     color: Colors.grey.shade300,
@@ -351,7 +209,7 @@ class _SearchScreenState extends State<SearchScreen>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 30 / 1.5,
+                        fontSize: 20,
                         color: Color(0xFF333333),
                         fontWeight: FontWeight.w500,
                       ),
@@ -366,7 +224,7 @@ class _SearchScreenState extends State<SearchScreen>
                     Text(
                       'cap ${manga.totalChapter}',
                       style:
-                          const TextStyle(fontSize: 16 / 1.2, color: Color(0xFF6B7280)),
+                          const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -386,7 +244,7 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
-  Widget _buildDirectoryTab() {
+  Widget _buildDirectoryTab(MangaSearchController controller) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -394,7 +252,7 @@ class _SearchScreenState extends State<SearchScreen>
         children: [
           const Text(
             'Status',
-            style: TextStyle(fontSize: 32 / 1.5, color: Color(0xFF4B5563)),
+            style: TextStyle(fontSize: 21, color: Color(0xFF4B5563)),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -403,19 +261,15 @@ class _SearchScreenState extends State<SearchScreen>
             children: ['Continuous', 'Complete', 'New']
                 .map(
                   (status) => GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedStatus = status;
-                      });
-                    },
+                    onTap: () => controller.selectStatus(status),
                     child: Text(
                       status,
                       style: TextStyle(
-                        fontSize: 31 / 1.5,
-                        color: _selectedStatus == status
+                        fontSize: 20,
+                        color: controller.selectedStatus == status
                             ? const Color(0xFFCC5A15)
                             : const Color(0xFF333333),
-                        decoration: _selectedStatus == status
+                        decoration: controller.selectedStatus == status
                             ? TextDecoration.underline
                             : TextDecoration.none,
                         decorationColor: const Color(0xFFCC5A15),
@@ -428,24 +282,24 @@ class _SearchScreenState extends State<SearchScreen>
           const SizedBox(height: 20),
           const Text(
             'Genres',
-            style: TextStyle(fontSize: 32 / 1.5, color: Color(0xFF4B5563)),
+            style: TextStyle(fontSize: 21, color: Color(0xFF4B5563)),
           ),
           const SizedBox(height: 14),
           Wrap(
             spacing: 22,
             runSpacing: 18,
-            children: _genres
+            children: controller.genres
                 .map(
                   (genre) => GestureDetector(
-                    onTap: () => _onGenreTapped(genre),
+                    onTap: () => controller.toggleGenre(genre),
                     child: Text(
                       genre.name,
                       style: TextStyle(
-                        fontSize: 30 / 1.5,
-                        color: _selectedGenre?.id == genre.id
+                        fontSize: 20,
+                        color: controller.selectedGenre?.id == genre.id
                             ? const Color(0xFFCC5A15)
                             : const Color(0xFF333333),
-                        decoration: _selectedGenre?.id == genre.id
+                        decoration: controller.selectedGenre?.id == genre.id
                             ? TextDecoration.underline
                             : TextDecoration.none,
                         decorationColor: const Color(0xFFCC5A15),
@@ -458,14 +312,14 @@ class _SearchScreenState extends State<SearchScreen>
           const SizedBox(height: 24),
           const Divider(height: 1),
           const SizedBox(height: 10),
-          if (_isFilteringGenre)
+          if (controller.isFilteringGenre)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Center(child: CircularProgressIndicator()),
             )
           else
             _buildMangaList(
-              _directoryItems(),
+              controller.directoryItems(),
               isUpdateList: true,
               isEmbedded: true,
             ),
@@ -484,7 +338,7 @@ class _SearchScreenState extends State<SearchScreen>
       onTap: (index) {
         if (index == 0) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const HomePage()),
           );
         }
       },

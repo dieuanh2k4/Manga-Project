@@ -1,6 +1,6 @@
-import 'dart:convert';
+import '../../domain/entities/manga_entity.dart';
 
-class Manga {
+class MangaModel {
   final int id;
   final String title;
   final String? description;
@@ -9,7 +9,7 @@ class Manga {
   final int rate;
   final String? status;
 
-  Manga({
+  const MangaModel({
     required this.id,
     required this.title,
     this.description,
@@ -19,8 +19,8 @@ class Manga {
     this.status,
   });
 
-  factory Manga.fromJson(Map<String, dynamic> json) {
-    return Manga(
+  factory MangaModel.fromJson(Map<String, dynamic> json) {
+    return MangaModel(
       id: json['id'] ?? json['Id'] ?? 0,
       title: json['title'] ?? json['Title'] ?? 'Unknown Title',
       description: json['description'] ?? json['Description'],
@@ -28,6 +28,18 @@ class Manga {
       totalChapter: json['totalChapter'] ?? json['TotalChapter'] ?? 0,
       rate: json['rate'] ?? json['Rate'] ?? 0,
       status: json['status'] ?? json['Status'],
+    );
+  }
+
+  MangaEntity toEntity() {
+    return MangaEntity(
+      id: id,
+      title: title,
+      description: description,
+      thumbnail: thumbnail,
+      totalChapter: totalChapter,
+      rate: rate,
+      status: status,
     );
   }
 }
