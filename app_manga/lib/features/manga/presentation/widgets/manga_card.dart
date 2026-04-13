@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
-import '../models/manga.dart';
+
+import '../../domain/entities/manga_entity.dart';
 
 class MangaCard extends StatelessWidget {
-  final Manga manga;
+  final MangaEntity manga;
   final double width;
   final double height;
   final bool isGrid;
 
   const MangaCard({
-    Key? key,
+    super.key,
     required this.manga,
     this.width = 120,
     this.height = 180,
     this.isGrid = false,
-  }) : super(key: key);
+  });
 
   String _getImageUrl(String? thumbnail) {
     if (thumbnail == null || thumbnail.isEmpty) {
-      return 'https://via.placeholder.com/150x200?text=No+Image'; // default
+      return 'https://via.placeholder.com/150x200?text=No+Image';
     }
-    if (thumbnail.startsWith('http')) return thumbnail;
-    // Assuming minio storage returns path to minio endpoint
+    if (thumbnail.startsWith('http')) {
+      return thumbnail;
+    }
     return 'http://localhost:5219/$thumbnail';
   }
 
@@ -61,8 +63,8 @@ class MangaCard extends StatelessWidget {
             children: List.generate(
               5,
               (index) => Icon(
-                index < (manga.rate) ? Icons.star : Icons.star_border,
-                color: const Color(0xFFC75F25), // Theme orange/brown
+                index < manga.rate ? Icons.star : Icons.star_border,
+                color: const Color(0xFFC75F25),
                 size: 14,
               ),
             ),

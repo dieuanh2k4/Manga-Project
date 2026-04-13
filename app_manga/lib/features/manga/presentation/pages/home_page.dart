@@ -1,50 +1,37 @@
 import 'package:flutter/material.dart';
-import '../models/manga.dart';
-import '../services/api_service.dart';
-import '../widgets/manga_card.dart';
-import 'search_screen.dart';
+import 'package:provider/provider.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+import '../../domain/entities/manga_entity.dart';
+import '../controllers/home_controller.dart';
+import '../widgets/manga_card.dart';
+import 'search_page.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  List<Manga> _allManga = [];
-  bool _isLoading = true;
-  String? _errorMessage;
-
+class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
-  }
-
-  Future<void> _fetchData() async {
-    try {
-      final data = await ApiService.getAllManga();
-      setState(() {
-        _allManga = data;
-        _isLoading = false;
-        _errorMessage = null;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeController>().loadManga();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    final controller = context.watch<HomeController>();
+    final allManga = controller.mangas;
+
+    if (controller.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressPath()));
     }
 
-    if (_errorMessage != null) {
+    if (controller.errorMessage != null) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -56,26 +43,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Icon(Icons.cloud_off, size: 40, color: Color(0xFFBA541E)),
                 const SizedBox(height: 12),
                 const Text(
-                  'Không tải được dữ liệu truyện',
+                  'Khong tai duoc du lieu truyen',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _errorMessage!,
+                  controller.errorMessage!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                      _errorMessage = null;
-                    });
-                    _fetchData();
-                  },
-                  child: const Text('Thử lại'),
+                  onPressed: () => controller.loadManga(),
+                  child: const Text('Thu lai'),
                 ),
               ],
             ),
@@ -85,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_allManga.isEmpty) {
+    if (allManga.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: const Center(
           child: Text(
-            'Chưa có truyện để hiển thị',
+            'Chua co truyen de hien thi',
             style: TextStyle(fontSize: 16, color: Colors.black54),
           ),
         ),
@@ -102,17 +83,12 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          // Banner/Carousel Area
           SliverToBoxAdapter(child: _buildBanner()),
-
-          // Last Updates (Horizontal Scroll)
           SliverToBoxAdapter(
-            child: _buildHorizontalSection("Last Updates", _allManga),
+            child: _buildHorizontalSection('Last Updates', allManga),
           ),
-
-          // Most Viewed (Grid View as requested, maybe grid with 2 columns)
           SliverToBoxAdapter(
-            child: _buildSectionHeader("Most Viewed", showGenreBtn: true),
+            child: _buildSectionHeader('Most Viewed', showGenreBtn: true),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -126,27 +102,17 @@ class _HomeScreenState extends State<HomeScreen> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   return MangaCard(
-                    // We just reverse or shuffle to simulate diff data
-                    manga:
-                        _allManga[(_allManga.length - 1 - index) %
-                            _allManga.length],
+                    manga: allManga[(allManga.length - 1 - index) % allManga.length],
                     isGrid: true,
                   );
                 },
-                childCount: _allManga.length > 4
-                    ? 4
-                    : _allManga.length, // Limit to 4 for grid
+                childCount: allManga.length > 4 ? 4 : allManga.length,
               ),
             ),
           ),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
-
-          // For You (Horizontal Scroll)
           SliverToBoxAdapter(
-            child: _buildHorizontalSection(
-              "For you",
-              _allManga.reversed.toList(),
-            ),
+            child: _buildHorizontalSection('For you', allManga.reversed.toList()),
           ),
           SliverToBoxAdapter(child: const SizedBox(height: 30)),
         ],
@@ -172,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Align(
           alignment: Alignment.topLeft,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: CircleAvatar(
               backgroundColor: const Color(0xFFE8742B),
               child: const Icon(Icons.person, color: Colors.white),
@@ -194,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFBA541E), // Match app theme
+              color: Color(0xFFBA541E),
             ),
           ),
           if (showGenreBtn)
@@ -214,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHorizontalSection(String title, List<Manga> mangas) {
+  Widget _buildHorizontalSection(String title, List<MangaEntity> mangas) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -245,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: (index) {
         if (index == 2) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const SearchScreen()),
+            MaterialPageRoute(builder: (_) => const SearchPage()),
           );
         }
       },
@@ -267,7 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class CircularProgressPath extends StatelessWidget {
-  const CircularProgressPath({Key? key}) : super(key: key);
+  const CircularProgressPath({super.key});
+
   @override
   Widget build(BuildContext context) {
     return const CircularProgressIndicator(color: Color(0xFFE8742B));
