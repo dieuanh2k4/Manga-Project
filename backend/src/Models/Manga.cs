@@ -26,5 +26,6 @@ namespace backend.src.Models
         public List<History>? History { get; set; }
         public List<Authors>? Authors { get; set; }
         public List<Genres>? Genres { get; set; }
+        public List<Notifications>? Notifications { get; set; }
     }
 }

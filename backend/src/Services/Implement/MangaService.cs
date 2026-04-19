@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using backend.src.Data;
 using backend.src.Dtos.Manga;
 using backend.src.Exceptions;
+using backend.src.Hubs;
 using backend.src.Mappers;
 using backend.src.Models;
 using backend.src.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 
 namespace backend.src.Services.Implement
 {
@@ -17,11 +19,19 @@ namespace backend.src.Services.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly IMinioStorageService _minio;
+        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly ILogger<MangaService> _logger;
 
-        public MangaService(ApplicationDbContext context, IMinioStorageService minio)
+        public MangaService(
+            ApplicationDbContext context,
+            IMinioStorageService minio,
+            IHubContext<NotificationHub> hubContext,
+            ILogger<MangaService> logger)
         {
             _context = context;
             _minio = minio;
+            _hubContext = hubContext;
+            _logger = logger;
         }
 
         public async Task<List<Manga>> GetAllManga()
@@ -47,7 +57,12 @@ namespace backend.src.Services.Implement
                 .Include(m => m.Genres)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (manga != null && !string.IsNullOrEmpty(manga.Thumbnail))
+            if (manga == null)
+            {
+                throw new Result("Không tìm thấy manga");
+            }
+
+            if (!string.IsNullOrEmpty(manga.Thumbnail))
             {
                 manga.Thumbnail = await _minio.GetImageUrlAsync(manga.Thumbnail);
             }
@@ -83,6 +98,36 @@ namespace backend.src.Services.Implement
             await _context.AddAsync(newManga);
             await _context.SaveChangesAsync();
 
+            var notification = new Notifications
+            {
+                Title = $"TRUYỆN MỚI",
+                Content = $"Manga mới cực hot: {newManga.Title} vừa trình làng!",
+                TargetRole = "All_readers",
+                MangaId = newManga.Id,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+
+            await _context.Set<Notifications>().AddAsync(notification);
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _hubContext.Clients.Group(NotificationHub.ReaderGroupName).SendAsync("ReceiveNotification", new
+                {
+                    notification.Id,
+                    notification.Title,
+                    notification.TargetRole,
+                    notification.Content,
+                    notification.MangaId,
+                    notification.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Gửi realtime noti thất bại cho mangaId={MangaId}", newManga.Id);
+            }
+
             return newManga;
         }
 
@@ -97,7 +142,7 @@ namespace backend.src.Services.Implement
 
             manga.AuthorId = dto.AuthorId;
             manga.ReleaseDate = dto.ReleaseDate;
-            manga.GenreIds = dto.GenreIds;
+            manga.GenreIds = dto.GenreIds ?? new List<int>();
             manga.Status = dto.Status;
             manga.TotalChapter = dto.TotalChapter;
             manga.Description = dto.Description;
@@ -136,7 +181,7 @@ namespace backend.src.Services.Implement
             var search = await _context.Manga
                 .Where(manga =>
                     (manga.Title != null && EF.Functions.ILike(manga.Title, pattern)) ||
-                    manga.Authors.Any(author => author.FullName != null && EF.Functions.ILike(author.FullName, pattern)))
+                    (manga.Authors != null && manga.Authors.Any(author => author.FullName != null && EF.Functions.ILike(author.FullName, pattern))))
                 .OrderByDescending(a => a.Title)
                 .ToListAsync();
             
@@ -162,7 +207,7 @@ namespace backend.src.Services.Implement
         public async Task<List<Manga>> MangaOngoing()
         {
             var manga = await _context.Manga
-                .Where(m => m.Status.ToLower() == "Đang tiến hành".ToLower())
+                .Where(m => (m.Status ?? string.Empty).ToLower() == "Đang tiến hành".ToLower())
                 .OrderByDescending(m => m.Title)
                 .ToListAsync();
             
@@ -172,7 +217,7 @@ namespace backend.src.Services.Implement
         public async Task<List<Manga>> MangaComplete()
         {
             var manga = await _context.Manga
-                .Where(m => m.Status.ToLower() == "Hoàn thành".ToLower())
+                .Where(m => (m.Status ?? string.Empty).ToLower() == "Hoàn thành".ToLower())
                 .OrderByDescending(m => m.Title)
                 .ToListAsync();
             

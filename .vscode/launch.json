@@ -1,0 +1,48 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "app_manga",
+            "cwd": "app_manga",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "app_manga (profile mode)",
+            "cwd": "app_manga",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "app_manga (release mode)",
+            "cwd": "app_manga",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "web_admin",
+            "cwd": "web_admin",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "web_admin (profile mode)",
+            "cwd": "web_admin",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "web_admin (release mode)",
+            "cwd": "web_admin",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
