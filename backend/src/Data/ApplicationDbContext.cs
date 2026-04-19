@@ -23,6 +23,8 @@ namespace backend.src.Data
         public DbSet<Packages> Packages { get; set; }
         public DbSet<Previlages> Previlages { get; set; }
         public DbSet<ReaderPackages> ReaderPackages { get; set; }
+        public DbSet<Notifications> Notifications { get; set; }
+        public DbSet<NotificationReads> NotificationReads { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> dbContextOptions) : base (dbContextOptions) {}
 
@@ -370,6 +372,60 @@ namespace backend.src.Data
                     .IsRequired()
                     .HasMaxLength(1000)
                     .IsUnicode();
+            });
+
+            modelBuilder.Entity<NotificationReads>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.ReaderId)
+                    .IsRequired();
+                entity.Property(a => a.NotificationId)
+                    .IsRequired();
+                entity.Property(a => a.ReadAt)
+                    .IsRequired();
+
+                entity.HasIndex(a => new { a.ReaderId, a.NotificationId })
+                    .IsUnique();
+
+                entity.HasOne(a => a.Reader)
+                    .WithMany(b => b.NotificationReads)
+                    .HasForeignKey(a => a.ReaderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Notification)
+                    .WithMany(b => b.NotificationReads)
+                    .HasForeignKey(a => a.NotificationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Notifications>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id)
+                    .ValueGeneratedOnAdd()
+                    .IsRequired();
+                entity.Property(a => a.Title)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .IsUnicode();
+                entity.Property(a => a.Content)
+                    .IsRequired()
+                    .HasMaxLength(1000)
+                    .IsUnicode();
+                entity.Property(a => a.TargetRole)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode();
+                entity.Property(a => a.MangaId);
+                entity.Property(a => a.CreatedAt)
+                    .IsRequired();
+
+                entity.HasMany(a => a.Manga)
+                    .WithMany(b => b.Notifications)
+                    .UsingEntity(j => j.ToTable("NotificationManga"));
             });
         }
     }

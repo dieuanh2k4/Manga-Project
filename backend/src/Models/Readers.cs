@@ -22,6 +22,7 @@ namespace backend.src.Models
         public List<Ratings>? Ratings { get; set; }
         public List<History>? History { get; set; }
         public List<ReaderPackages> ReaderPackages { get; set; } = new();
+        public List<NotificationReads> NotificationReads { get; set; } = new();
         public Users? Users { get; set; }
     }
 }

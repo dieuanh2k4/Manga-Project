@@ -91,7 +91,6 @@ namespace backend.src.Services.Implement
                     }
                 }
 
-                // Backward-compatible behavior: old packages without any explicit privilege still grant premium.
                 if (!packageHasPremium && package.Previlages.Count == 0)
                 {
                     EntilmentHelper.MergeFeature(features, EntitlementFeatureKeys.ReadPremium, "true");
@@ -102,7 +101,7 @@ namespace backend.src.Services.Implement
 
             var canReadPremium = EntilmentHelper.HasReadPremium(features);
 
-            // Preserve old premium readers that were created before purchase history existed.
+            // Bảo lưu các tài khoản premium cũ được tạo trước khi lịch sử mua gói tồn tại.
             if (!canReadPremium && reader.IsPremium && activePurchase == null)
             {
                 var hasAnyPurchase = await _context.ReaderPackages

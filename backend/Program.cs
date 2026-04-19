@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using System.Text;
 using backend.src.Configurations;
 using backend.src.Data;
+using backend.src.Hubs;
 using backend.src.Services.Implement;
 using backend.src.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +27,8 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 {
    option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
+
+builder.Services.AddSignalR(); // gửi thông báo realtime
 
 builder.Services.AddHttpContextAccessor();
 
@@ -62,6 +65,22 @@ builder.Services.AddSingleton<JwtHelper>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var requestPath = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) && requestPath.StartsWithSegments("/hubs/notifications"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -136,6 +155,9 @@ builder.Services.AddScoped<IPrevilageService, PrevilageService>();
 // Library Service
 builder.Services.AddScoped<ILibraryService, LibraryService>();
 
+// Notification Service
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 var app = builder.Build();
 
 // Tự động chạy migrations khi ứng dụng khởi động
@@ -178,6 +200,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 // Tự động mở Scalar API Reference khi chạy ứng dụng trong Development
 if (app.Environment.IsDevelopment())
