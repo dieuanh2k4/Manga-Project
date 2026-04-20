@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:provider/provider.dart';
 
+import 'core/security/screen_security_service.dart';
+
 import 'features/manga/data/datasources/manga_remote_data_source.dart';
 import 'features/manga/data/repositories/manga_repository_impl.dart';
 import 'features/manga/domain/usecases/get_all_genres_usecase.dart';
@@ -17,6 +19,7 @@ import 'features/manga/presentation/pages/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ScreenSecurityService.instance.initialize();
   await _enableScreenSecurity();
   runApp(const MangaApp());
 }
