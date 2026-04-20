@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/config/app_config.dart';
+import '../../../../core/network/protected_network_image.dart';
 import '../../domain/entities/manga_entity.dart';
 
 class MangaCard extends StatelessWidget {
@@ -23,7 +25,10 @@ class MangaCard extends StatelessWidget {
     if (thumbnail.startsWith('http')) {
       return thumbnail;
     }
-    return 'http://localhost:5219/$thumbnail';
+
+    final normalizedPath =
+        thumbnail.startsWith('/') ? thumbnail.substring(1) : thumbnail;
+    return '${AppConfig.serverBaseUrl}/$normalizedPath';
   }
 
   @override
@@ -37,12 +42,12 @@ class MangaCard extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                _getImageUrl(manga.thumbnail),
+              child: ProtectedNetworkImage(
+                imageUrl: _getImageUrl(manga.thumbnail),
                 width: isGrid ? null : width,
                 height: isGrid ? null : height,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+                errorWidget: Container(
                   width: isGrid ? null : width,
                   height: isGrid ? null : height,
                   color: Colors.grey[300],

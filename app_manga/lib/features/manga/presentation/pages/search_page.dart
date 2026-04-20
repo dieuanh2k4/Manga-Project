@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/network/protected_network_image.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/search_controller.dart';
 import 'home_page.dart';
@@ -183,13 +184,13 @@ class _SearchPageState extends State<SearchPage>
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
-                child: Image.network(
-                  manga.thumbnail ??
+                child: ProtectedNetworkImage(
+                  imageUrl: manga.thumbnail ??
                       'https://via.placeholder.com/60x85?text=Manga',
                   width: 54,
                   height: 74,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  errorWidget: Container(
                     width: 54,
                     height: 74,
                     color: Colors.grey.shade300,
