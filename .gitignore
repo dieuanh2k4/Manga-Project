@@ -1,0 +1,6 @@
+# Ignore generated build artifacts from backend tests
+backend.Tests/bin/
+backend.Tests/obj/
+
+# Ignore local VS Code user settings for this workspace
+.vscode/settings.json
