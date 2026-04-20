@@ -11,7 +11,10 @@ namespace backend.src.Models
         public string? FullName { get; set; }
         public string? Email { get; set; }
         public string? Avatar { get; set; }
-        public bool IsPremium { get; set; } = false; // trạng thái tài khoản
+        public bool IsPremium { get; set; } = false;
+        public bool IsCommentMuted { get; set; } = false;
+        public bool IsBanned { get; set; } = false;
+        public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
         public DateOnly Birth { get; set; }
         public string? Gender { get; set; }
         public string? Phone { get; set; }

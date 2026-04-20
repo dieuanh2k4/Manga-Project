@@ -79,7 +79,8 @@ namespace backend.src.Controllers
 
                 var newAdmin = await _admin.CreateAdmin(adminDto);
 
-                return Ok(new {
+                return Ok(new
+                {
                     message = "Tạo Admin thành công",
                     user = newAdmin
                 });
@@ -91,9 +92,9 @@ namespace backend.src.Controllers
         }
 
         [HttpPut("update-admin/{id}")]
-        public async Task<IActionResult> UpdateAdmin([FromForm] UpdateAdminDto adminDto, IFormFile? file, int id) 
+        public async Task<IActionResult> UpdateAdmin([FromForm] UpdateAdminDto adminDto, IFormFile? file, int id)
         {
-            try 
+            try
             {
                 // Upload avatar
                 if (file != null && file.Length > 0)
@@ -111,25 +112,26 @@ namespace backend.src.Controllers
 
                 var updateAdmin = await _admin.UpdateAdmin(adminDto, id);
 
-                return Ok(new {
+                return Ok(new
+                {
                     message = "Cập nhật thành công",
                     user = updateAdmin
                 });
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 return ReturnException(ex);
             }
         }
 
         [HttpDelete("delete-admin/{id}")]
-        public async Task<IActionResult> DeleteAdmin(int id) 
+        public async Task<IActionResult> DeleteAdmin(int id)
         {
             try
             {
                 var deleteAdmin = await _admin.DeleteAdmin(id);
 
-                return Ok(new 
+                return Ok(new
                 {
                     message = "Xóa Admin thành công",
                     user = deleteAdmin
@@ -249,6 +251,186 @@ namespace backend.src.Controllers
                     message = "Xóa Reader thành công",
                     user = deleteReader
                 });
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("reader-management")]
+        public async Task<IActionResult> GetReaderManagement([FromQuery] ReaderManagementQueryDto query)
+        {
+            try
+            {
+                var page = await _admin.GetReaderManagement(query);
+                return Ok(page);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management")]
+        public async Task<IActionResult> CreateReaderManagement([FromBody] CreateReaderManagementDto dto)
+        {
+            try
+            {
+                var user = await _admin.CreateReaderManagement(dto);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPut("reader-management/{id:int}")]
+        public async Task<IActionResult> UpdateReaderManagement(int id, [FromBody] UpdateReaderManagementDto dto)
+        {
+            try
+            {
+                var user = await _admin.UpdateReaderManagement(id, dto);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/reset-password")]
+        public async Task<IActionResult> ResetReaderPassword(int id, [FromBody] ResetPasswordRequestDto dto)
+        {
+            try
+            {
+                var user = await _admin.ResetReaderPassword(id, dto);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/grant-vip")]
+        public async Task<IActionResult> GrantReaderVip(int id, [FromBody] GrantVipRequestDto dto)
+        {
+            try
+            {
+                var user = await _admin.GrantReaderVip(id, dto);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/revoke-vip")]
+        public async Task<IActionResult> RevokeReaderVip(int id)
+        {
+            try
+            {
+                var user = await _admin.RevokeReaderVip(id);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/mute-comment")]
+        public async Task<IActionResult> MuteReaderComment(int id)
+        {
+            try
+            {
+                var user = await _admin.MuteReaderComment(id);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/unmute-comment")]
+        public async Task<IActionResult> UnmuteReaderComment(int id)
+        {
+            try
+            {
+                var user = await _admin.UnmuteReaderComment(id);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/ban")]
+        public async Task<IActionResult> BanReader(int id)
+        {
+            try
+            {
+                var user = await _admin.BanReader(id);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/unban")]
+        public async Task<IActionResult> UnbanReader(int id)
+        {
+            try
+            {
+                var user = await _admin.UnbanReader(id);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/{id:int}/force-logout")]
+        public async Task<IActionResult> ForceLogoutReader(int id)
+        {
+            try
+            {
+                var user = await _admin.ForceLogoutReader(id);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reader-management/bulk-notify")]
+        public async Task<IActionResult> BulkNotifyReaders([FromBody] BulkNotifyRequestDto dto)
+        {
+            try
+            {
+                var count = await _admin.BulkNotifyReaders(dto);
+                return Ok(new { NotifiedCount = count });
             }
             catch (Exception ex)
             {
