@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/manga_card.dart';
+import '../../../auth/presentation/pages/me_page.dart';
 import 'manga_detail_page.dart';
 import 'search_page.dart';
 
@@ -233,6 +234,11 @@ class _HomePageState extends State<HomePage> {
         if (index == 2) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const SearchPage()),
+          );
+        }
+        if (index == 3) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MePage()),
           );
         }
       },

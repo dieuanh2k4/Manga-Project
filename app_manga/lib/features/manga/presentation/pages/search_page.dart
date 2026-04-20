@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../auth/presentation/pages/me_page.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/search_controller.dart';
 import 'home_page.dart';
@@ -355,6 +356,11 @@ class _SearchPageState extends State<SearchPage>
         if (index == 0) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        }
+        if (index == 3) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MePage()),
           );
         }
       },
