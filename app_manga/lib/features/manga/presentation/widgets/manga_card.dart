@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/protected_network_image.dart';
 import '../../domain/entities/manga_entity.dart';
 
 class MangaCard extends StatelessWidget {
