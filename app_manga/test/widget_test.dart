@@ -10,9 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:app_manga/main.dart';
 
 void main() {
-  testWidgets('App bootstraps successfully', (WidgetTester tester) async {
+  testWidgets('MangaApp renders HomePage shell', (WidgetTester tester) async {
     await tester.pumpWidget(const MangaApp());
 
-    expect(find.byType(MangaApp), findsOneWidget);
+    expect(find.text('Manga App'), findsOneWidget);
   });
 }

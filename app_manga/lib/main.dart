@@ -3,10 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:provider/provider.dart';
 
-import 'core/security/screen_security_service.dart';
-
+import 'features/auth/data/datasources/auth_local_data_source.dart';
+import 'features/auth/data/datasources/auth_remote_data_source.dart';
+import 'features/auth/data/repositories/auth_repository_impl.dart';
+import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/auth/domain/usecases/get_my_profile_usecase.dart';
+import 'features/auth/domain/usecases/login_usecase.dart';
+import 'features/auth/domain/usecases/logout_usecase.dart';
+import 'features/auth/domain/usecases/register_usecase.dart';
+import 'features/auth/domain/usecases/restore_session_usecase.dart';
+import 'features/auth/presentation/controllers/auth_controller.dart';
+import 'features/auth/presentation/pages/auth_page.dart';
 import 'features/manga/data/datasources/manga_remote_data_source.dart';
 import 'features/manga/data/repositories/manga_repository_impl.dart';
+import 'features/manga/domain/repositories/manga_repository.dart';
 import 'features/manga/domain/usecases/get_all_genres_usecase.dart';
 import 'features/manga/domain/usecases/get_all_manga_usecase.dart';
 import 'features/manga/domain/usecases/get_completed_manga_usecase.dart';
@@ -41,24 +51,42 @@ class MangaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final remoteDataSource = MangaRemoteDataSource();
-    final repository = MangaRepositoryImpl(remoteDataSource: remoteDataSource);
+    final mangaRemoteDataSource = MangaRemoteDataSource();
+    final mangaRepository = MangaRepositoryImpl(remoteDataSource: mangaRemoteDataSource);
+
+    final authRemoteDataSource = AuthRemoteDataSource();
+    final authLocalDataSource = AuthLocalDataSource();
+    final authRepository = AuthRepositoryImpl(
+      remote: authRemoteDataSource,
+      local: authLocalDataSource,
+    );
 
     return MultiProvider(
       providers: [
+        Provider<AuthRepository>.value(value: authRepository),
+        Provider<MangaRepository>.value(value: mangaRepository),
+        ChangeNotifierProvider(
+          create: (_) => AuthController(
+            loginUseCase: LoginUseCase(authRepository),
+            registerUseCase: RegisterUseCase(authRepository),
+            getMyProfileUseCase: GetMyProfileUseCase(authRepository),
+            restoreSessionUseCase: RestoreSessionUseCase(authRepository),
+            logoutUseCase: LogoutUseCase(authRepository),
+          )..bootstrap(),
+        ),
         ChangeNotifierProvider(
           create: (_) => HomeController(
-            getAllMangaUseCase: GetAllMangaUseCase(repository),
+            getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => MangaSearchController(
-            getAllMangaUseCase: GetAllMangaUseCase(repository),
-            searchMangaUseCase: SearchMangaUseCase(repository),
-            getOngoingMangaUseCase: GetOngoingMangaUseCase(repository),
-            getCompletedMangaUseCase: GetCompletedMangaUseCase(repository),
-            getAllGenresUseCase: GetAllGenresUseCase(repository),
-            getMangaByGenreUseCase: GetMangaByGenreUseCase(repository),
+            getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
+            searchMangaUseCase: SearchMangaUseCase(mangaRepository),
+            getOngoingMangaUseCase: GetOngoingMangaUseCase(mangaRepository),
+            getCompletedMangaUseCase: GetCompletedMangaUseCase(mangaRepository),
+            getAllGenresUseCase: GetAllGenresUseCase(mangaRepository),
+            getMangaByGenreUseCase: GetMangaByGenreUseCase(mangaRepository),
           ),
         ),
       ],
@@ -70,8 +98,33 @@ class MangaApp extends StatelessWidget {
           scaffoldBackgroundColor: Colors.white,
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC75F25)),
         ),
-        home: const HomePage(),
+        home: const AuthGatePage(),
       ),
+    );
+  }
+}
+
+class AuthGatePage extends StatelessWidget {
+  const AuthGatePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthController>(
+      builder: (context, auth, _) {
+        if (auth.isBootstrapping) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFFE8742B)),
+            ),
+          );
+        }
+
+        if (auth.isAuthenticated) {
+          return const HomePage();
+        }
+
+        return const AuthPage();
+      },
     );
   }
 }

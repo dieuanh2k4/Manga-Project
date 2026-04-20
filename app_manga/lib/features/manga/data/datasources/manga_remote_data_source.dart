@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/network/json_list_parser.dart';
+import '../models/chapter_model.dart';
 import '../models/genre_model.dart';
 import '../models/manga_model.dart';
 
@@ -89,6 +90,43 @@ class MangaRemoteDataSource {
         .where((e) => !e.containsKey(r'$ref'))
         .map(GenreModel.fromJson)
         .where((e) => e.id > 0 && e.name.isNotEmpty)
+        .toList();
+  }
+
+  Future<MangaModel> getMangaDetail(int mangaId) async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.apiBaseUrl}/Manga/get-manga-by-id/$mangaId'),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('API get-manga-by-id failed: ${response.statusCode} ${response.body}');
+    }
+
+    final data = json.decode(response.body);
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid manga detail response');
+    }
+
+    return MangaModel.fromJson(data);
+  }
+
+  Future<List<ChapterModel>> getChaptersByManga(int mangaId) async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.apiBaseUrl}/Chapter/get-all-chapter/$mangaId'),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('API get-all-chapter failed: ${response.statusCode} ${response.body}');
+    }
+
+    final data = json.decode(response.body);
+    final listData = JsonListParser.extractList(data);
+
+    return listData
+        .whereType<Map<String, dynamic>>()
+        .where((e) => !e.containsKey(r'$ref'))
+        .map(ChapterModel.fromJson)
+        .where((e) => e.id > 0)
         .toList();
   }
 

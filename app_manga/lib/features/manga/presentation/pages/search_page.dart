@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/network/protected_network_image.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../auth/presentation/pages/me_page.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/search_controller.dart';
 import 'home_page.dart';
+import 'manga_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -176,17 +178,30 @@ class _SearchPageState extends State<SearchPage>
           const Divider(height: 1, color: Color(0xFFD0D0D0)),
       itemBuilder: (context, index) {
         final manga = items[index];
-        return Container(
-          color: const Color(0xFFF2F2F2),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Row(
+        final imageUrl = manga.thumbnail == null || manga.thumbnail!.isEmpty
+            ? 'https://via.placeholder.com/60x85?text=Manga'
+            : manga.thumbnail!.startsWith('http')
+                ? manga.thumbnail!
+                : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
+
+        return InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MangaDetailPage(mangaId: manga.id),
+              ),
+            );
+          },
+          child: Container(
+            color: const Color(0xFFF2F2F2),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
-                child: ProtectedNetworkImage(
-                  imageUrl: manga.thumbnail ??
-                      'https://via.placeholder.com/60x85?text=Manga',
+                child: Image.network(
+                  imageUrl,
                   width: 54,
                   height: 74,
                   fit: BoxFit.cover,
@@ -239,6 +254,7 @@ class _SearchPageState extends State<SearchPage>
                 ),
               ),
             ],
+          ),
           ),
         );
       },
@@ -340,6 +356,11 @@ class _SearchPageState extends State<SearchPage>
         if (index == 0) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        }
+        if (index == 3) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MePage()),
           );
         }
       },

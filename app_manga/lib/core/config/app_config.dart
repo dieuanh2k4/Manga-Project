@@ -6,11 +6,9 @@ class AppConfig {
     defaultValue: 'http://localhost:5001/api',
   );
 
-  static String get serverBaseUrl {
-    if (apiBaseUrl.endsWith('/api')) {
-      return apiBaseUrl.substring(0, apiBaseUrl.length - 4);
-    }
-
-    return apiBaseUrl;
+  static String get apiOrigin {
+    final uri = Uri.parse(apiBaseUrl);
+    final portPart = uri.hasPort ? ':${uri.port}' : '';
+    return '${uri.scheme}://${uri.host}$portPart';
   }
 }
