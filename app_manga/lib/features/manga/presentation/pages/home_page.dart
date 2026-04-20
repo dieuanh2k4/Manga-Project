@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/manga_card.dart';
+import 'manga_detail_page.dart';
 import 'search_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -104,6 +105,14 @@ class _HomePageState extends State<HomePage> {
                   return MangaCard(
                     manga: allManga[(allManga.length - 1 - index) % allManga.length],
                     isGrid: true,
+                    onTap: () {
+                      final selected = allManga[(allManga.length - 1 - index) % allManga.length];
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => MangaDetailPage(mangaId: selected.id),
+                        ),
+                      );
+                    },
                   );
                 },
                 childCount: allManga.length > 4 ? 4 : allManga.length,
@@ -192,7 +201,19 @@ class _HomePageState extends State<HomePage> {
             scrollDirection: Axis.horizontal,
             itemCount: mangas.length,
             itemBuilder: (context, index) {
-              return MangaCard(manga: mangas[index], width: 110, height: 160);
+              final selected = mangas[index];
+              return MangaCard(
+                manga: selected,
+                width: 110,
+                height: 160,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => MangaDetailPage(mangaId: selected.id),
+                    ),
+                  );
+                },
+              );
             },
           ),
         ),

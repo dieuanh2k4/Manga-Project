@@ -1,4 +1,6 @@
+import '../../domain/entities/genre_entity.dart';
 import '../../domain/entities/manga_entity.dart';
+import 'genre_model.dart';
 
 class MangaModel {
   final int id;
@@ -8,6 +10,7 @@ class MangaModel {
   final int totalChapter;
   final int rate;
   final String? status;
+  final List<GenreModel> genres;
 
   const MangaModel({
     required this.id,
@@ -17,9 +20,15 @@ class MangaModel {
     required this.totalChapter,
     required this.rate,
     this.status,
+    this.genres = const [],
   });
 
   factory MangaModel.fromJson(Map<String, dynamic> json) {
+    final rawGenres = json['genres'] ?? json['Genres'];
+    final genresList = rawGenres is List
+        ? rawGenres.whereType<Map<String, dynamic>>().map(GenreModel.fromJson).toList()
+        : <GenreModel>[];
+
     return MangaModel(
       id: json['id'] ?? json['Id'] ?? 0,
       title: json['title'] ?? json['Title'] ?? 'Unknown Title',
@@ -28,6 +37,7 @@ class MangaModel {
       totalChapter: json['totalChapter'] ?? json['TotalChapter'] ?? 0,
       rate: json['rate'] ?? json['Rate'] ?? 0,
       status: json['status'] ?? json['Status'],
+      genres: genresList,
     );
   }
 
@@ -40,6 +50,7 @@ class MangaModel {
       totalChapter: totalChapter,
       rate: rate,
       status: status,
+      genres: genres.map<GenreEntity>((e) => e.toEntity()).toList(),
     );
   }
 }

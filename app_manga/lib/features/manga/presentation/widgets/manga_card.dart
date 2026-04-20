@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../domain/entities/manga_entity.dart';
 
 class MangaCard extends StatelessWidget {
@@ -7,6 +8,7 @@ class MangaCard extends StatelessWidget {
   final double width;
   final double height;
   final bool isGrid;
+  final VoidCallback? onTap;
 
   const MangaCard({
     super.key,
@@ -14,6 +16,7 @@ class MangaCard extends StatelessWidget {
     this.width = 120,
     this.height = 180,
     this.isGrid = false,
+    this.onTap,
   });
 
   String _getImageUrl(String? thumbnail) {
@@ -23,7 +26,7 @@ class MangaCard extends StatelessWidget {
     if (thumbnail.startsWith('http')) {
       return thumbnail;
     }
-    return 'http://localhost:5219/$thumbnail';
+    return '${AppConfig.apiOrigin}/${thumbnail.replaceFirst(RegExp(r'^/+'), '')}';
   }
 
   @override
@@ -31,7 +34,10 @@ class MangaCard extends StatelessWidget {
     return Container(
       width: isGrid ? null : width,
       margin: isGrid ? null : const EdgeInsets.only(right: 12),
-      child: Column(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
@@ -70,6 +76,7 @@ class MangaCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

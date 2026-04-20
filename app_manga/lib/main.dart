@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'features/manga/data/datasources/manga_remote_data_source.dart';
 import 'features/manga/data/repositories/manga_repository_impl.dart';
+import 'features/manga/domain/repositories/manga_repository.dart';
 import 'features/manga/domain/usecases/get_all_genres_usecase.dart';
 import 'features/manga/domain/usecases/get_all_manga_usecase.dart';
 import 'features/manga/domain/usecases/get_completed_manga_usecase.dart';
@@ -27,6 +28,7 @@ class MangaApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        Provider<MangaRepository>.value(value: repository),
         ChangeNotifierProvider(
           create: (_) => HomeController(
             getAllMangaUseCase: GetAllMangaUseCase(repository),

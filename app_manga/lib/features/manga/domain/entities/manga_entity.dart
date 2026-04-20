@@ -1,3 +1,5 @@
+import 'genre_entity.dart';
+
 class MangaEntity {
   final int id;
   final String title;
@@ -6,6 +8,7 @@ class MangaEntity {
   final int totalChapter;
   final int rate;
   final String? status;
+  final List<GenreEntity> genres;
 
   const MangaEntity({
     required this.id,
@@ -15,5 +18,6 @@ class MangaEntity {
     required this.totalChapter,
     required this.rate,
     this.status,
+    this.genres = const [],
   });
 }

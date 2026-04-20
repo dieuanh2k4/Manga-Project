@@ -1,3 +1,4 @@
+import '../../domain/entities/chapter_entity.dart';
 import '../../domain/entities/genre_entity.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../../domain/repositories/manga_repository.dart';
@@ -41,6 +42,18 @@ class MangaRepositoryImpl implements MangaRepository {
   @override
   Future<List<MangaEntity>> searchManga(String query) async {
     final data = await remoteDataSource.searchManga(query);
+    return data.map((e) => e.toEntity()).toList();
+  }
+
+  @override
+  Future<MangaEntity> getMangaDetail(int mangaId) async {
+    final data = await remoteDataSource.getMangaDetail(mangaId);
+    return data.toEntity();
+  }
+
+  @override
+  Future<List<ChapterEntity>> getChaptersByManga(int mangaId) async {
+    final data = await remoteDataSource.getChaptersByManga(mangaId);
     return data.map((e) => e.toEntity()).toList();
   }
 }
