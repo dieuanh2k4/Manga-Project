@@ -43,12 +43,12 @@ class MangaCard extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                _getImageUrl(manga.thumbnail),
+              child: ProtectedNetworkImage(
+                imageUrl: _getImageUrl(manga.thumbnail),
                 width: isGrid ? null : width,
                 height: isGrid ? null : height,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+                errorWidget: Container(
                   width: isGrid ? null : width,
                   height: isGrid ? null : height,
                   color: Colors.grey[300],

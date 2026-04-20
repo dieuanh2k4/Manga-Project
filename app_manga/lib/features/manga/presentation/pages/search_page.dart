@@ -205,7 +205,7 @@ class _SearchPageState extends State<SearchPage>
                   width: 54,
                   height: 74,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  errorWidget: Container(
                     width: 54,
                     height: 74,
                     color: Colors.grey.shade300,

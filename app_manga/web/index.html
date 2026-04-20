@@ -33,6 +33,19 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // Basic web-side hardening: disable right-click menu and drag image save.
+    window.addEventListener('contextmenu', function (event) {
+      event.preventDefault();
+    });
+
+    window.addEventListener('dragstart', function (event) {
+      const target = event.target;
+      if (target && target.tagName === 'IMG') {
+        event.preventDefault();
+      }
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

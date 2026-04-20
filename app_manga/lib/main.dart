@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:provider/provider.dart';
 
 import 'features/auth/data/datasources/auth_local_data_source.dart';
@@ -25,8 +27,23 @@ import 'features/manga/presentation/controllers/home_controller.dart';
 import 'features/manga/presentation/controllers/search_controller.dart';
 import 'features/manga/presentation/pages/home_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ScreenSecurityService.instance.initialize();
+  await _enableScreenSecurity();
   runApp(const MangaApp());
+}
+
+Future<void> _enableScreenSecurity() async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+    return;
+  }
+
+  try {
+    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  } catch (_) {
+    // Keep app startup resilient if the platform channel is unavailable.
+  }
 }
 
 class MangaApp extends StatelessWidget {
