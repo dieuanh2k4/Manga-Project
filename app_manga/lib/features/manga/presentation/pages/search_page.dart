@@ -205,14 +205,16 @@ class _SearchPageState extends State<SearchPage>
                   width: 54,
                   height: 74,
                   fit: BoxFit.cover,
-                  errorWidget: Container(
-                    width: 54,
-                    height: 74,
-                    color: Colors.grey.shade300,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image_not_supported_outlined,
-                        size: 18),
-                  ),
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 54,
+                      height: 74,
+                      color: Colors.grey.shade300,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image_not_supported_outlined,
+                          size: 18),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 10),
