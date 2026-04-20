@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using backend.src.Data;
 using backend.src.Dtos.Admin;
+using backend.src.Exceptions;
 using backend.src.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,7 @@ namespace backend.src.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "ReadOnly")]
+    [Authorize(Policy = "ReaderOnly")]
     public class ReaderController : ApiControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -31,7 +32,23 @@ namespace backend.src.Controllers
         {
             try
             {
-                var reader = await _admin.GetInfoReader();
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    throw new UnauthorizedAccessException("Token khong hop le");
+                }
+
+                var readers = await _admin.GetInfoReader();
+                var reader = readers.FirstOrDefault(r => r.UserId == userId.Value);
+                if (reader == null)
+                {
+                    throw new KeyNotFoundException("Khong tim thay thong tin Reader");
+                }
+
+                if (!string.IsNullOrWhiteSpace(reader.Avatar) && !reader.Avatar.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    reader.Avatar = await _minio.GetImageUrlAsync(reader.Avatar);
+                }
 
                 return Ok(reader);
             }
