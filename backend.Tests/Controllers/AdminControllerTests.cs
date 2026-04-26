@@ -201,7 +201,7 @@ public class AdminControllerTests
         var minioService = new Mock<IMinioStorageService>();
 
         adminService
-            .Setup(x => x.CreateReader(It.IsAny<CreateReaderDto>(), "reader", "123"))
+            .Setup(x => x.CreateReader(It.IsAny<CreateReaderDto>()))
             .ReturnsAsync(new Readers { Id = 1, FullName = "Reader" });
 
         var controller = new AdminController(
@@ -210,7 +210,7 @@ public class AdminControllerTests
             minioService.Object,
             ControllerTestHelper.CreateLogger<AdminController>());
 
-        var result = await controller.CreateReader(new CreateReaderDto { FullName = "Reader" }, "reader", "123", null);
+        var result = await controller.CreateReader(new CreateReaderDto { FullName = "Reader" }, null);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
         Assert.NotNull(okResult.Value);

@@ -72,7 +72,8 @@ class _ProtectedNetworkImageState extends State<ProtectedNetworkImage> {
           return SizedBox(
             width: widget.width,
             height: widget.height,
-            child: widget.loadingWidget ??
+            child:
+                widget.loadingWidget ??
                 const Center(
                   child: SizedBox(
                     width: 18,
@@ -88,7 +89,8 @@ class _ProtectedNetworkImageState extends State<ProtectedNetworkImage> {
           return SizedBox(
             width: widget.width,
             height: widget.height,
-            child: widget.errorWidget ??
+            child:
+                widget.errorWidget ??
                 const Center(
                   child: Icon(Icons.image_not_supported_outlined, size: 18),
                 ),
