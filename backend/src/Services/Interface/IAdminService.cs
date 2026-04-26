@@ -22,5 +22,17 @@ namespace backend.src.Services.Interface
         Task<Readers> CreateReader(CreateReaderDto readerDto);
         Task<Readers> UpdateReader(UpdateReaderDto readerDto, int id);
         Task<Readers> DeleteReader(int id);
+        Task<ReaderManagementPageDto> GetReaderManagement(ReaderManagementQueryDto query);
+        Task<ReaderManagementItemDto> CreateReaderManagement(CreateReaderManagementDto dto);
+        Task<ReaderManagementItemDto> UpdateReaderManagement(int id, UpdateReaderManagementDto dto);
+        Task<ReaderManagementItemDto> ResetReaderPassword(int id, ResetPasswordRequestDto dto);
+        Task<ReaderManagementItemDto> GrantReaderVip(int id, GrantVipRequestDto dto);
+        Task<ReaderManagementItemDto> RevokeReaderVip(int id);
+        Task<ReaderManagementItemDto> MuteReaderComment(int id);
+        Task<ReaderManagementItemDto> UnmuteReaderComment(int id);
+        Task<ReaderManagementItemDto> BanReader(int id);
+        Task<ReaderManagementItemDto> UnbanReader(int id);
+        Task<ReaderManagementItemDto> ForceLogoutReader(int id);
+        Task<int> BulkNotifyReaders(BulkNotifyRequestDto dto);
     }
 }

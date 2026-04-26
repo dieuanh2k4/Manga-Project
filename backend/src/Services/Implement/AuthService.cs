@@ -34,6 +34,7 @@ namespace backend.src.Services.Implement
         {
             // tìm user theo username và role
             var user = await _context.Users
+                .Include(u => u.Readers)
                 .FirstOrDefaultAsync(u => u.UserName == request.UserName);
 
             if (user == null)
@@ -47,10 +48,24 @@ namespace backend.src.Services.Implement
                 return AuthResultDto.Fail("Sai tài khoản hoặc mật khẩu");
             }
 
+            if (string.Equals(user.Role, "Reader", StringComparison.OrdinalIgnoreCase)
+                && user.Readers?.IsBanned == true)
+            {
+                return AuthResultDto.Fail("Tài khoản đã bị khóa");
+            }
+
+            await _context.SaveChangesAsync();
+
             var isPremium = string.Equals(user.Role, "Reader", StringComparison.OrdinalIgnoreCase)
                 && await _entitlementService.HasPrivilege(user.Id, EntitlementFeatureKeys.ReadPremium);
 
-            var token = _jwtHelper.CreateToken(user.UserName, user.Role, user.Id, isPremium);
+            var token = _jwtHelper.CreateToken(
+                user.UserName ?? string.Empty,
+                user.Role ?? string.Empty,
+                user.Id,
+                isPremium,
+                user.TokenVersion
+            );
 
             var response = new LoginResponseDto
             {
@@ -81,7 +96,7 @@ namespace backend.src.Services.Implement
                 throw new Result("Tên đăng nhập không được để trống");
             if (string.IsNullOrWhiteSpace(register.Password))
                 throw new Result("Tên đăng nhập không được để trống");
-            
+
             var checkUserNameReader = await _context.Users.FirstOrDefaultAsync(a => a.UserName == register.UserName);
             if (checkUserNameReader != null)
             {
@@ -124,7 +139,8 @@ namespace backend.src.Services.Implement
             {
                 UserName = register.UserName,
                 Password = hashPassword,
-                Role = "Reader"
+                Role = "Reader",
+                TokenVersion = 0
             };
 
             await _context.Users.AddAsync(newUser);
@@ -140,6 +156,9 @@ namespace backend.src.Services.Implement
                 Phone = register.Phone,
                 Address = register.Address,
                 IsPremium = false,
+                IsCommentMuted = false,
+                IsBanned = false,
+                RegisteredAt = DateTime.UtcNow,
                 UserId = newUser.Id
             };
 

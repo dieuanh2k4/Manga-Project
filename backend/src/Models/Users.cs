@@ -11,6 +11,7 @@ namespace backend.src.Models
         public string? UserName { get; set; }
         public string? Password { get; set; }
         public string? Role { get; set; }
+        public int TokenVersion { get; set; } = 0;
 
         public Readers? Readers { get; set; }
         public Admin? Admin { get; set; }
