@@ -8,6 +8,7 @@ import '../../domain/repositories/manga_repository.dart';
 import '../../domain/usecases/get_chapters_by_manga_usecase.dart';
 import '../../domain/usecases/get_manga_detail_usecase.dart';
 import '../controllers/manga_detail_controller.dart';
+import 'manga_reader_page.dart';
 
 class MangaDetailPage extends StatelessWidget {
   final int mangaId;
@@ -178,7 +179,23 @@ class _MangaDetailView extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
                 child: Column(
                   children: controller.chapters
-                      .map((chapter) => _ChapterTile(chapter: chapter))
+                      .map(
+                        (chapter) => _ChapterTile(
+                          chapter: chapter,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => MangaReaderPage(
+                                  mangaId: manga.id,
+                                  mangaTitle: manga.title,
+                                  chapters: controller.chapters,
+                                  initialChapterId: chapter.id,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -321,8 +338,9 @@ class _ActionButton extends StatelessWidget {
 
 class _ChapterTile extends StatelessWidget {
   final ChapterEntity chapter;
+  final VoidCallback onTap;
 
-  const _ChapterTile({required this.chapter});
+  const _ChapterTile({required this.chapter, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -353,14 +371,7 @@ class _ChapterTile extends StatelessWidget {
         trailing: chapter.isPremium
             ? const Icon(Icons.lock_outline, color: Color(0xFFE8742B))
             : const Icon(Icons.chevron_right, color: Color(0xFFB1B7C2)),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Mo $chapterLabel'),
-              duration: const Duration(milliseconds: 900),
-            ),
-          );
-        },
+        onTap: onTap,
       ),
     );
   }
