@@ -1,4 +1,5 @@
 import '../entities/chapter_entity.dart';
+import '../entities/chapter_page_entity.dart';
 import '../entities/genre_entity.dart';
 import '../entities/manga_entity.dart';
 
@@ -11,4 +12,9 @@ abstract class MangaRepository {
   Future<List<GenreEntity>> getAllGenres();
   Future<MangaEntity> getMangaDetail(int mangaId);
   Future<List<ChapterEntity>> getChaptersByManga(int mangaId);
+  Future<List<ChapterPageEntity>> getPagesByChapter({
+    required int mangaId,
+    required int chapterId,
+    String? token,
+  });
 }

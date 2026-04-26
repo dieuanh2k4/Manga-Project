@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/pages/me_page.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/search_controller.dart';
@@ -200,8 +201,8 @@ class _SearchPageState extends State<SearchPage>
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
-                child: Image.network(
-                  imageUrl,
+                child: ProtectedNetworkImage(
+                  imageUrl: imageUrl,
                   width: 54,
                   height: 74,
                   fit: BoxFit.cover,
