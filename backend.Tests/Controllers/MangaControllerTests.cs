@@ -26,8 +26,8 @@ public class MangaControllerTests
                 {
                     Id = 1,
                     Title = "Manga",
-                    YearRelease = new DateOnly(2024, 1, 1),
-                    DatePublish = new DateOnly(2024, 1, 1)
+                    ReleaseDate = new DateOnly(2024, 1, 1),
+                    EndDate = new DateOnly(2024, 1, 1)
                 }
             });
 
@@ -52,8 +52,8 @@ public class MangaControllerTests
             {
                 Id = 1,
                 Title = "Manga",
-                YearRelease = new DateOnly(2024, 1, 1),
-                DatePublish = new DateOnly(2024, 1, 1)
+                ReleaseDate = new DateOnly(2024, 1, 1),
+                EndDate = new DateOnly(2024, 1, 1)
             });
 
         var controller = new MangaController(dbContext, mangaService.Object, ControllerTestHelper.CreateLogger<MangaController>());
@@ -82,8 +82,8 @@ public class MangaControllerTests
             {
                 Id = 1,
                 Title = "Manga",
-                YearRelease = new DateOnly(2024, 1, 1),
-                DatePublish = new DateOnly(2024, 1, 1)
+                ReleaseDate = new DateOnly(2024, 1, 1),
+                EndDate = new DateOnly(2024, 1, 1)
             });
 
         var controller = new MangaController(dbContext, mangaService.Object, ControllerTestHelper.CreateLogger<MangaController>());
@@ -92,8 +92,13 @@ public class MangaControllerTests
         var result = await controller.CreateManga(dto, file);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var payload = Assert.IsType<Manga>(okResult.Value);
-        Assert.Equal(1, payload.Id);
+        Assert.NotNull(okResult.Value);
+
+        var message = ControllerTestHelper.GetAnonymousProperty<string>(okResult.Value, "message");
+        var data = ControllerTestHelper.GetAnonymousProperty<Manga>(okResult.Value, "data");
+
+        Assert.Equal("Thêm Manga thành công", message);
+        Assert.Equal(1, data?.Id);
         mangaService.Verify(x => x.UploadImage(It.IsAny<IFormFile>()), Times.Once);
     }
 
@@ -114,8 +119,8 @@ public class MangaControllerTests
             {
                 Id = 1,
                 Title = "Updated",
-                YearRelease = new DateOnly(2024, 1, 1),
-                DatePublish = new DateOnly(2024, 1, 1)
+                ReleaseDate = new DateOnly(2024, 1, 1),
+                EndDate = new DateOnly(2024, 1, 1)
             });
 
         var controller = new MangaController(dbContext, mangaService.Object, ControllerTestHelper.CreateLogger<MangaController>());
@@ -123,13 +128,18 @@ public class MangaControllerTests
         var result = await controller.UpdateManga(new UpdateMangaDto { Title = "Updated" }, file, 1);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var payload = Assert.IsType<Manga>(okResult.Value);
-        Assert.Equal("Updated", payload.Title);
+        Assert.NotNull(okResult.Value);
+
+        var message = ControllerTestHelper.GetAnonymousProperty<string>(okResult.Value, "message");
+        var data = ControllerTestHelper.GetAnonymousProperty<Manga>(okResult.Value, "data");
+
+        Assert.Equal("Cập nhật Manga thành công", message);
+        Assert.Equal("Updated", data?.Title);
         mangaService.Verify(x => x.UploadImage(It.IsAny<IFormFile>()), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteManga_ReturnsBadRequestResultMessage_WhenDeleteSucceeds()
+    public async Task DeleteManga_ReturnsOkResultMessage_WhenDeleteSucceeds()
     {
         using var dbContext = ControllerTestHelper.CreateDbContext();
         var mangaService = new Mock<IMangaService>();
@@ -138,8 +148,8 @@ public class MangaControllerTests
             Id = 1,
             Title = "Manga",
             Status = "Ongoing",
-            YearRelease = new DateOnly(2024, 1, 1),
-            DatePublish = new DateOnly(2024, 1, 1)
+            ReleaseDate = new DateOnly(2024, 1, 1),
+            EndDate = new DateOnly(2024, 1, 1)
         };
 
         dbContext.Manga.Add(manga);
@@ -153,9 +163,13 @@ public class MangaControllerTests
 
         var result = await controller.DeleteManga(1);
 
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        var payload = Assert.IsType<ExceptionBody>(objectResult.Value);
-        Assert.Equal(400, objectResult.StatusCode);
-        Assert.Equal("Xóa manga thành công", payload.Message);
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+
+        var message = ControllerTestHelper.GetAnonymousProperty<string>(okResult.Value, "message");
+        var data = ControllerTestHelper.GetAnonymousProperty<Manga>(okResult.Value, "data");
+
+        Assert.Equal("Cập nhật manga thành công", message);
+        Assert.Equal(1, data?.Id);
     }
 }
