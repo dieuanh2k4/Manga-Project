@@ -26,9 +26,9 @@ namespace backend.src.Data
         public DbSet<Notifications> Notifications { get; set; }
         public DbSet<NotificationReads> NotificationReads { get; set; }
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> dbContextOptions) : base (dbContextOptions) {}
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> dbContextOptions) : base(dbContextOptions) { }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {}
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -90,7 +90,7 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.IsPremium)
                     .IsRequired();
-                
+
                 entity.HasOne(a => a.Manga)
                     .WithMany(b => b.Chapters)
                     .HasForeignKey(a => a.MangaId)
@@ -159,7 +159,7 @@ namespace backend.src.Data
                     .WithMany(b => b.Libraries)
                     .HasForeignKey(a => a.MangaId)
                     .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne(a => a.Readers)
                     .WithMany(b => b.Libraries)
                     .HasForeignKey(a => a.ReaderId)
@@ -243,12 +243,12 @@ namespace backend.src.Data
                     .IsRequired();
                 entity.Property(a => a.Score)
                     .IsRequired();
-                
+
                 entity.HasOne(a => a.Readers)
                     .WithMany(b => b.Ratings)
                     .HasForeignKey(a => a.ReaderId)
                     .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne(a => a.Manga)
                     .WithMany(b => b.Ratings)
                     .HasForeignKey(a => a.MangaId)
@@ -271,6 +271,16 @@ namespace backend.src.Data
                 entity.Property(a => a.Avatar)
                     .HasMaxLength(200);
                 entity.Property(a => a.IsPremium)
+                    .IsRequired();
+                entity.Property(a => a.IsCommentMuted)
+                    .HasDefaultValue(false)
+                    .IsRequired();
+                entity.Property(a => a.IsBanned)
+                    .HasDefaultValue(false)
+                    .IsRequired();
+                entity.Property(a => a.RegisteredAt)
+                    .HasColumnType("timestamp with time zone")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .IsRequired();
                 entity.Property(a => a.Birth)
                     .HasColumnType("date")
@@ -305,7 +315,10 @@ namespace backend.src.Data
                     .IsRequired()
                     .HasMaxLength(20)
                     .IsUnicode();
-                
+                entity.Property(a => a.TokenVersion)
+                    .HasDefaultValue(0)
+                    .IsRequired();
+
                 entity.HasOne(a => a.Readers)
                     .WithOne(b => b.Users)
                     .HasForeignKey<Readers>(a => a.UserId)

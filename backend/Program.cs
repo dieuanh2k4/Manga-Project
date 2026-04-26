@@ -7,6 +7,8 @@ using backend.src.Services.Implement;
 using backend.src.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Minio;
@@ -25,7 +27,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddControllers().AddJsonOptions(option =>
 {
-   option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
 
 builder.Services.AddSignalR(); // gửi thông báo realtime
@@ -78,6 +80,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
 
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var tokenVersionClaim = context.Principal?.FindFirst("tokenVersion")?.Value;
+
+                if (!int.TryParse(userIdClaim, out var userId))
+                {
+                    context.Fail("Invalid token claims");
+                    return;
+                }
+
+                if (!int.TryParse(tokenVersionClaim, out var tokenVersion))
+                {
+                    context.Fail("Invalid token version");
+                    return;
+                }
+
+                var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var dbUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                if (dbUser == null)
+                {
+                    context.Fail("User does not exist");
+                    return;
+                }
+
+                if (dbUser.TokenVersion != tokenVersion)
+                {
+                    context.Fail("Token has been invalidated");
+                }
             }
         };
 
@@ -117,6 +149,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+    options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 // Manga Service

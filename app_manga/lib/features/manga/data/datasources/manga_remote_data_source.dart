@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../../core/config/app_config.dart';
 import '../../../../core/network/json_list_parser.dart';
 import '../models/chapter_model.dart';
+import '../models/chapter_page_model.dart';
 import '../models/genre_model.dart';
 import '../models/manga_model.dart';
 
@@ -127,6 +128,35 @@ class MangaRemoteDataSource {
         .where((e) => !e.containsKey(r'$ref'))
         .map(ChapterModel.fromJson)
         .where((e) => e.id > 0)
+        .toList();
+  }
+
+  Future<List<ChapterPageModel>> getPagesByChapter({
+    required int mangaId,
+    required int chapterId,
+    String? token,
+  }) async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.apiBaseUrl}/Page/get-all-page/$mangaId/$chapterId'),
+      headers: token == null || token.isEmpty
+          ? const {}
+          : {
+              'Authorization': 'Bearer $token',
+            },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('API get-all-page failed: ${response.statusCode} ${response.body}');
+    }
+
+    final data = json.decode(response.body);
+    final listData = JsonListParser.extractList(data);
+
+    return listData
+        .whereType<Map<String, dynamic>>()
+        .where((e) => !e.containsKey(r'$ref'))
+        .map(ChapterPageModel.fromJson)
+        .where((e) => e.id > 0 && e.imageUrl.isNotEmpty)
         .toList();
   }
 
