@@ -66,6 +66,7 @@ namespace backend.src.Controllers
                 {
                     var fileUrl = await _author.UploadImage(file);
                     dto.Avatar = fileUrl;
+                    Response.Headers["X-Upload-Status"] = Uri.EscapeDataString("Đang xử lý");
                 }
 
                 var newAuthor = await _author.CreateAuthor(dto);
@@ -88,6 +89,7 @@ namespace backend.src.Controllers
                 {
                     var fileUrl = await _author.UploadImage(file);
                     dto.Avatar = fileUrl;
+                    Response.Headers["X-Upload-Status"] = Uri.EscapeDataString("Đang xử lý");
                 }
 
                 var updateAuthor = await _author.UpdateAuthor(dto, id);

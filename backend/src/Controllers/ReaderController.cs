@@ -63,6 +63,8 @@ namespace backend.src.Controllers
         {
             try
             {
+                var uploadStatus = file != null && file.Length > 0 ? "Đang xử lý" : null;
+
                 // Upload avatar
                 if (file != null && file.Length > 0)
                 {
@@ -82,6 +84,7 @@ namespace backend.src.Controllers
                 return Ok(new
                 {
                     message = "Cập nhật account thành công",
+                    uploadStatus,
                     user = updateReader
                 });
             }

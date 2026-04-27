@@ -64,6 +64,8 @@ namespace backend.src.Controllers
         {
             try
             {
+                var uploadStatus = file != null && file.Length > 0 ? "Đang xử lý" : null;
+
                 if (file != null)
                 {
                     var fileUrl = await _mangaservice.UploadImage(file);
@@ -75,6 +77,7 @@ namespace backend.src.Controllers
                 return Ok(new
                 {
                     message = "Thêm Manga thành công",
+                    uploadStatus,
                     data = newManga
                 });
             }
@@ -90,6 +93,8 @@ namespace backend.src.Controllers
         {
             try 
             {
+                var uploadStatus = file != null && file.Length > 0 ? "Đang xử lý" : null;
+
                 if (file != null) 
                 {
                     var fileUrl = await _mangaservice.UploadImage(file);
@@ -101,6 +106,7 @@ namespace backend.src.Controllers
                 return Ok(new
                 {
                     message = "Cập nhật Manga thành công",
+                    uploadStatus,
                     data = updateManga
                 });
             }

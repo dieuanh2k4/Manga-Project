@@ -43,6 +43,8 @@ namespace backend.src.Controllers
         {
             try
             {
+                var uploadStatus = imageFile != null && imageFile.Length > 0 ? "Đang xử lý" : null;
+
                 if (imageFile != null)
                 {
                     var imageUrl = await _auth.UploadImage(imageFile);
@@ -57,6 +59,7 @@ namespace backend.src.Controllers
                 return Ok(new
                 {
                     message = "Đăng ký thành công",
+                    uploadStatus,
                     user = newUser
                 });
             }
