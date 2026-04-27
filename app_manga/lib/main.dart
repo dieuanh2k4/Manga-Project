@@ -25,6 +25,9 @@ import 'features/manga/domain/usecases/search_manga_usecase.dart';
 import 'features/manga/presentation/controllers/home_controller.dart';
 import 'features/manga/presentation/controllers/search_controller.dart';
 import 'features/manga/presentation/pages/home_page.dart';
+import 'features/vip/data/datasources/vip_remote_data_source.dart';
+import 'features/vip/data/repositories/vip_repository_impl.dart';
+import 'features/vip/domain/repositories/vip_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +41,9 @@ class MangaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mangaRemoteDataSource = MangaRemoteDataSource();
-    final mangaRepository = MangaRepositoryImpl(remoteDataSource: mangaRemoteDataSource);
+    final mangaRepository = MangaRepositoryImpl(
+      remoteDataSource: mangaRemoteDataSource,
+    );
 
     final authRemoteDataSource = AuthRemoteDataSource();
     final authLocalDataSource = AuthLocalDataSource();
@@ -47,10 +52,16 @@ class MangaApp extends StatelessWidget {
       local: authLocalDataSource,
     );
 
+    final vipRemoteDataSource = VipRemoteDataSource();
+    final vipRepository = VipRepositoryImpl(
+      remoteDataSource: vipRemoteDataSource,
+    );
+
     return MultiProvider(
       providers: [
         Provider<AuthRepository>.value(value: authRepository),
         Provider<MangaRepository>.value(value: mangaRepository),
+        Provider<VipRepository>.value(value: vipRepository),
         ChangeNotifierProvider(
           create: (_) => AuthController(
             loginUseCase: LoginUseCase(authRepository),

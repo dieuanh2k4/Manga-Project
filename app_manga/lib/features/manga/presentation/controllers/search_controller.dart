@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/genre_entity.dart';
@@ -35,12 +37,22 @@ class MangaSearchController extends ChangeNotifier {
 
   bool isLoading = false;
   bool isFilteringGenre = false;
+  bool isSearching = false;
   String? errorMessage;
+
+  Timer? _searchDebounce;
+  int _searchRequestId = 0;
+  String _lastQuery = '';
+  bool _initialized = false;
 
   String selectedStatus = 'Continuous';
   GenreEntity? selectedGenre;
 
   Future<void> initialize() async {
+    if (_initialized) {
+      return;
+    }
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -58,6 +70,7 @@ class MangaSearchController extends ChangeNotifier {
       ongoingManga = results[1] as List<MangaEntity>;
       completedManga = results[2] as List<MangaEntity>;
       genres = results[3] as List<GenreEntity>;
+      _initialized = true;
     } catch (e) {
       errorMessage = e.toString();
     } finally {
@@ -66,25 +79,52 @@ class MangaSearchController extends ChangeNotifier {
     }
   }
 
-  Future<void> onSearchChanged(String value) async {
+  void onSearchChanged(String value) {
     final query = value.trim();
 
+    if (query == _lastQuery) {
+      return;
+    }
+
+    _lastQuery = query;
+    _searchDebounce?.cancel();
+
     if (query.isEmpty) {
+      isSearching = false;
       searchResult = allManga;
       notifyListeners();
       return;
     }
 
-    try {
-      searchResult = await searchMangaUseCase(query);
-    } catch (_) {
-      final keyword = query.toLowerCase();
-      searchResult = allManga
-          .where((m) => m.title.toLowerCase().contains(keyword))
-          .toList();
-    }
-
+    isSearching = true;
     notifyListeners();
+
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      final requestId = ++_searchRequestId;
+
+      try {
+        final result = await searchMangaUseCase(query);
+        if (requestId != _searchRequestId) {
+          return;
+        }
+
+        searchResult = result;
+      } catch (_) {
+        if (requestId != _searchRequestId) {
+          return;
+        }
+
+        final keyword = query.toLowerCase();
+        searchResult = allManga
+            .where((m) => m.title.toLowerCase().contains(keyword))
+            .toList();
+      } finally {
+        if (requestId == _searchRequestId) {
+          isSearching = false;
+          notifyListeners();
+        }
+      }
+    });
   }
 
   List<MangaEntity> popularItems() {
@@ -119,7 +159,8 @@ class MangaSearchController extends ChangeNotifier {
       return base;
     }
 
-    final genreItems = genreMangaCache[selectedGenre!.id] ?? const <MangaEntity>[];
+    final genreItems =
+        genreMangaCache[selectedGenre!.id] ?? const <MangaEntity>[];
     final allowedIds = genreItems.map((e) => e.id).toSet();
     return base.where((m) => allowedIds.contains(m.id)).toList();
   }
@@ -154,5 +195,11 @@ class MangaSearchController extends ChangeNotifier {
       isFilteringGenre = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
   }
 }
