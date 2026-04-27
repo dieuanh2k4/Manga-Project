@@ -1,4 +1,5 @@
 import '../../domain/entities/reader_entitlements_entity.dart';
+import '../../../../core/network/json_list_parser.dart';
 import 'reader_purchase_model.dart';
 
 class ReaderEntitlementsModel {
@@ -27,8 +28,9 @@ class ReaderEntitlementsModel {
     }
 
     final rawFeatures = (json['features'] ?? json['Features']) as Map?;
-    final rawPackages =
-        (json['activePackages'] ?? json['ActivePackages']) as List?;
+    final rawPackages = JsonListParser.extractList(
+      json['activePackages'] ?? json['ActivePackages'],
+    );
 
     return ReaderEntitlementsModel(
       hasActivePackage:
@@ -42,12 +44,10 @@ class ReaderEntitlementsModel {
           : rawFeatures.map(
               (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
             ),
-      activePackages:
-          rawPackages
-              ?.whereType<Map<String, dynamic>>()
-              .map(ReaderPurchaseModel.fromJson)
-              .toList() ??
-          const [],
+      activePackages: rawPackages
+          .whereType<Map<String, dynamic>>()
+          .map(ReaderPurchaseModel.fromJson)
+          .toList(),
     );
   }
 

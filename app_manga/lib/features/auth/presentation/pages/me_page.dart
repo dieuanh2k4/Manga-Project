@@ -240,7 +240,7 @@ class MePage extends StatelessWidget {
                               ),
                             ),
                             icon: const Icon(Icons.logout),
-                            label: const Text('Dang xuat'),
+                            label: const Text('Đăng xuất'),
                           ),
                         ),
                       ],
@@ -362,6 +362,103 @@ class _VipCard extends StatelessWidget {
     required this.onBuy,
   });
 
+  List<String> _friendlyPrivileges(List<String> rawPrivileges) {
+    String parseOne(String raw) {
+      final parts = raw.split('=');
+      final key = parts.first.trim().toUpperCase();
+      final value = parts.length > 1 ? parts.sublist(1).join('=').trim() : '';
+
+      switch (key) {
+        case 'READ_PREMIUM':
+          return value.toLowerCase() == 'true'
+              ? 'Đọc chapter Premium'
+              : 'Không mở khoá chapter Premium';
+        case 'NO_ADS':
+          return value.toLowerCase() == 'true'
+              ? 'Không quảng cáo'
+              : 'Có quảng cáo';
+        case 'OFFLINE_DOWNLOAD':
+          return value.toLowerCase() == 'true'
+              ? 'Tải offline'
+              : 'Không tải offline';
+        case 'DAILY_CHAPTER_LIMIT':
+          return value.isEmpty
+              ? 'Giới hạn chapter mỗi ngày'
+              : '$value chapter/ngày';
+        case 'EARLY_ACCESS_DAYS':
+          return value.isEmpty ? 'Đọc sớm' : 'Đọc sớm $value ngày';
+        case 'MAX_DEVICES':
+          return value.isEmpty ? 'Đa thiết bị' : 'Tối đa $value thiết bị';
+        default:
+          final normalized = key
+              .split('_')
+              .where((e) => e.isNotEmpty)
+              .map((e) => e[0] + e.substring(1).toLowerCase())
+              .join(' ');
+
+          if (value.isEmpty) {
+            return normalized;
+          }
+
+          return '$normalized: $value';
+      }
+    }
+
+    final result = rawPrivileges
+        .where((e) => e.trim().isNotEmpty)
+        .map(parseOne)
+        .toSet()
+        .toList();
+
+    return result;
+  }
+
+  Widget _buildPrivilegeChips(List<String> privileges) {
+    final visibleCount = privileges.length > 3 ? 3 : privileges.length;
+    final visible = privileges.take(visibleCount).toList();
+    final hiddenCount = privileges.length - visibleCount;
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        ...visible.map(
+          (item) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE3CC),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              item,
+              style: const TextStyle(
+                color: Color(0xFF8E4A1A),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+        if (hiddenCount > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEDFD3),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              '+$hiddenCount quyền lợi khác',
+              style: const TextStyle(
+                color: Color(0xFF8E4A1A),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -378,7 +475,7 @@ class _VipCard extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Goi VIP',
+                  'Gói VIP',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -398,15 +495,15 @@ class _VipCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               entitlements!.hasActivePackage
-                  ? 'Trang thai: Dang co goi hoat dong'
-                  : 'Trang thai: Chua co goi hoat dong',
+                  ? 'Trạng thái: Đang có gói hoạt động'
+                  : 'Trạng thái: Chưa có gói hoạt động',
               style: const TextStyle(color: Color(0xFF555555)),
             ),
             if (entitlements!.premiumAccessExpiredAt != null)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
-                  'Het han: ${formatDate(entitlements!.premiumAccessExpiredAt!)}',
+                  'Hết hạn: ${formatDate(entitlements!.premiumAccessExpiredAt!)}',
                   style: const TextStyle(color: Color(0xFFBA541E)),
                 ),
               ),
@@ -429,81 +526,77 @@ class _VipCard extends StatelessWidget {
             )
           else if (packages.isEmpty)
             const Text(
-              'Chua co goi nao hien thi',
+              'Chưa có gói nào hiển thị',
               style: TextStyle(color: Color(0xFF666666)),
             )
           else
             Column(
-              children: packages
-                  .map(
-                    (package) => Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF5ED),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFFFD8BF)),
+              children: packages.map((package) {
+                final friendlyPrivileges = _friendlyPrivileges(
+                  package.privileges,
+                );
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF5ED),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFFD8BF)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        package.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2F2F2F),
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            package.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2F2F2F),
-                            ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${formatCurrency(package.price)} • ${package.durationDays} ngày',
+                        style: const TextStyle(color: Color(0xFF6A6A6A)),
+                      ),
+                      if (friendlyPrivileges.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: _buildPrivilegeChips(friendlyPrivileges),
+                        ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed:
+                              (isPackageActive(package.id) ||
+                                  isPackagePurchasing(package.id))
+                              ? null
+                              : () => onBuy(package),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE8742B),
+                            foregroundColor: const Color(0xFF222222),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${formatCurrency(package.price)} • ${package.durationDays} ngay',
-                            style: const TextStyle(color: Color(0xFF6A6A6A)),
-                          ),
-                          if (package.privileges.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                package.privileges.join(' • '),
-                                style: const TextStyle(
-                                  color: Color(0xFF7A4D32),
-                                  fontSize: 12,
+                          child: isPackagePurchasing(package.id)
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  isPackageActive(package.id)
+                                      ? 'Đang sử dụng'
+                                      : 'Mua gói',
                                 ),
-                              ),
-                            ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed:
-                                  (isPackageActive(package.id) ||
-                                      isPackagePurchasing(package.id))
-                                  ? null
-                                  : () => onBuy(package),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE8742B),
-                                foregroundColor: const Color(0xFF222222),
-                              ),
-                              child: isPackagePurchasing(package.id)
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(
-                                      isPackageActive(package.id)
-                                          ? 'Dang su dung'
-                                          : 'Mua goi',
-                                    ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
         ],
       ),

@@ -1,4 +1,5 @@
 import '../../domain/entities/reader_purchase_entity.dart';
+import '../../../../core/network/json_list_parser.dart';
 
 class ReaderPurchaseModel {
   final int purchaseId;
@@ -42,8 +43,9 @@ class ReaderPurchaseModel {
       return DateTime.tryParse(raw)?.toLocal();
     }
 
-    final rawPrivileges =
-        (json['packagePrevilages'] ?? json['PackagePrevilages']) as List?;
+    final rawPrivileges = JsonListParser.extractList(
+      json['packagePrevilages'] ?? json['PackagePrevilages'],
+    );
 
     return ReaderPurchaseModel(
       purchaseId: json['purchaseId'] ?? json['PurchaseId'] ?? 0,
@@ -55,12 +57,10 @@ class ReaderPurchaseModel {
           json['packageDurationDays'] ?? json['PackageDurationDays'] ?? 0,
       purchasedAt: parseDate(json['purchasedAt'] ?? json['PurchasedAt']),
       expiredAt: parseNullableDate(json['expiredAt'] ?? json['ExpiredAt']),
-      packagePrivileges:
-          rawPrivileges
-              ?.map((e) => e?.toString() ?? '')
-              .where((e) => e.isNotEmpty)
-              .toList() ??
-          const [],
+      packagePrivileges: rawPrivileges
+          .map((e) => e?.toString() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList(),
     );
   }
 
