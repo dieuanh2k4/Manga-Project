@@ -130,6 +130,16 @@ class _SearchPageState extends State<SearchPage>
               decoration: InputDecoration(
                 hintText: 'Enter title or author\'s name',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: controller.isSearching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide: const BorderSide(color: Color(0xFFCC5A15)),
