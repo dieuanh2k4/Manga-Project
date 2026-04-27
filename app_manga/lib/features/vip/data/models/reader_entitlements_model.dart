@@ -1,4 +1,5 @@
 import '../../domain/entities/reader_entitlements_entity.dart';
+import '../../../../core/network/json_list_parser.dart';
 import 'reader_purchase_model.dart';
 
 class ReaderEntitlementsModel {
@@ -26,9 +27,10 @@ class ReaderEntitlementsModel {
       return DateTime.tryParse(raw)?.toLocal();
     }
 
-    final rawFeatures = (json['features'] ?? json['Features']) as Map?;
-    final rawPackages =
-        (json['activePackages'] ?? json['ActivePackages']) as List?;
+    final rawFeatures = json['features'] ?? json['Features'];
+    final rawPackages = JsonListParser.extractList(
+      json['activePackages'] ?? json['ActivePackages'],
+    );
 
     return ReaderEntitlementsModel(
       hasActivePackage:
@@ -37,17 +39,18 @@ class ReaderEntitlementsModel {
       premiumAccessExpiredAt: parseNullableDate(
         json['premiumAccessExpiredAt'] ?? json['PremiumAccessExpiredAt'],
       ),
-      features: rawFeatures == null
-          ? const {}
-          : rawFeatures.map(
-              (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
-            ),
-      activePackages:
-          rawPackages
-              ?.whereType<Map<String, dynamic>>()
-              .map(ReaderPurchaseModel.fromJson)
-              .toList() ??
-          const [],
+      features: rawFeatures is Map
+          ? rawFeatures.entries
+                .where((entry) => !entry.key.toString().startsWith(r'$'))
+                .fold<Map<String, String>>({}, (result, entry) {
+                  result[entry.key.toString()] = entry.value?.toString() ?? '';
+                  return result;
+                })
+          : const {},
+      activePackages: rawPackages
+          .whereType<Map<String, dynamic>>()
+          .map(ReaderPurchaseModel.fromJson)
+          .toList(),
     );
   }
 

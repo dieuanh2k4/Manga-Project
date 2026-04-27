@@ -306,5 +306,54 @@ namespace backend.src.Services.helper
 
             return cleaned;
         }
+
+        // chuẩn hóa folder
+        public static string NormalizeFolder(string folder)
+        {
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                return "images";
+            }
+
+            return folder.Trim().Replace('\\', '/').Trim('/');
+        }
+
+        // ép tên file sang .webp
+        public static string BuildWebpFileName(string? inputFileName)
+        {
+            var effectiveName = string.IsNullOrWhiteSpace(inputFileName)
+                ? "image"
+                : inputFileName;
+
+            var sanitizedName = SanitizeFileName(effectiveName) ?? Guid.NewGuid().ToString("N");
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(sanitizedName);
+
+            if (string.IsNullOrWhiteSpace(nameWithoutExtension))
+            {
+                nameWithoutExtension = Guid.NewGuid().ToString("N");
+            }
+
+            return $"{nameWithoutExtension}.webp";
+        }
+
+        // xác nhận xem file đã upload hay chưa 
+        // đã upload thì trả presigned URL
+        // chưa có trên minio thì trả trạng thái Đang xử lý 
+        public async Task<bool> ObjectExistsAsync(string bucket, string objectName)
+        {
+            try
+            {
+                var statObjectArgs = new StatObjectArgs()
+                    .WithBucket(bucket)
+                    .WithObject(objectName);
+
+                await _minioClient.StatObjectAsync(statObjectArgs);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

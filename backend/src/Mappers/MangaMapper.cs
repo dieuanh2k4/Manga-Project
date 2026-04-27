@@ -23,7 +23,7 @@ namespace backend.src.Mappers
                 ReleaseDate = dto.ReleaseDate,
                 EndDate = dto.EndDate,
                 AuthorId = dto.AuthorId,
-                GenreIds = dto.GenreIds
+                GenreIds = dto.GenreIds ?? new List<int>()
             };
         }
     }

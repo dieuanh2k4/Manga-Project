@@ -132,6 +132,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.Configure<MinioOptions>(builder.Configuration.GetSection(MinioOptions.SectionName));
+builder.Services.Configure<ImageProcessingOptions>(builder.Configuration.GetSection(ImageProcessingOptions.SectionName));
+builder.Services.AddSingleton<IImageUploadBackgroundQueue, ImageUploadBackgroundQueue>();
+// kích hoạt worker khi app khởi động
+// runtime tự chạy class trong file (ExecuteAsync của worker)
+builder.Services.AddHostedService<ImageUploadBackgroundService>();
 
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
