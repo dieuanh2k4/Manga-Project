@@ -44,3 +44,5 @@ obj/Debug/net8.0/StudentActivities.AssemblyInfoInputs.cache
 obj/Debug/net8.0/StudentActivities.csproj.AssemblyReference.cache
 obj/Debug/net8.0/StudentActivities.assets.cache
 obj/Debug/net8.0/StudentActivities.GeneratedMSBuildEditorConfig.editorconfig
+
+manga-project-firebase-admin-key.json

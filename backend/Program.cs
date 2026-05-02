@@ -14,6 +14,8 @@ using Microsoft.Extensions.Options;
 using Minio;
 using Scalar.AspNetCore;
 using Server.src.Services.Implements;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 
 DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
@@ -31,6 +33,13 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 });
 
 builder.Services.AddSignalR(); // gửi thông báo realtime
+
+// sử dụng FCM để push noti
+var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "manga-project-firebase-admin-key.json");
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile(firebaseKeyPath)
+});
 
 builder.Services.AddHttpContextAccessor();
 
@@ -195,6 +204,9 @@ builder.Services.AddScoped<ILibraryService, LibraryService>();
 
 // Notification Service
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Notification FCM Service
+builder.Services.AddScoped<IFcmNotificationService, FcmNotificationService>();
 
 var app = builder.Build();
 
