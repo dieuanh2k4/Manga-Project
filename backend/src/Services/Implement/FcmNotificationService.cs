@@ -5,15 +5,16 @@ using System.Threading.Tasks;
 using backend.src.Data;
 using backend.src.Dtos.Notification;
 using backend.src.Exceptions;
-using backend.src.Hubs;
 using backend.src.Models;
 using backend.src.Services.Interface;
-using Microsoft.AspNetCore.SignalR;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Util;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace backend.src.Services.Implement
 {
-    public class NotificationService : INotificationService
+    public class FcmNotificationService : IFcmNotificationService
     {
         private static readonly string[] AllReadersRoleAliases =
         {
@@ -34,16 +35,13 @@ namespace backend.src.Services.Implement
         };
 
         private readonly ApplicationDbContext _context;
-        private readonly IHubContext<NotificationHub> _hubContext;
-        private readonly ILogger<NotificationService> _logger;
+        private readonly ILogger<FcmNotificationService> _logger;
 
-        public NotificationService(
+        public FcmNotificationService(
             ApplicationDbContext context,
-            IHubContext<NotificationHub> hubContext,
-            ILogger<NotificationService> logger)
+            ILogger<FcmNotificationService> logger)
         {
             _context = context;
-            _hubContext = hubContext;
             _logger = logger;
         }
 
@@ -58,95 +56,85 @@ namespace backend.src.Services.Implement
 
             return notifications;
         }
-
-        public async Task<Notifications> CreateNotification(CreateNotificationDto dto) 
+        
+        public async Task<Notifications> SendNotification(CreateNotificationDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            try
             {
-                throw new Result("Tiêu đề thông báo không được để trống");
-            }
-
-            if (string.IsNullOrWhiteSpace(dto.Content))
-            {
-                throw new Result("Nội dung thông báo không được để trống");
-            }
-
-            if (string.IsNullOrWhiteSpace(dto.TargetRole))
-            {
-                throw new Result("Đối tượng nhận thông báo không được để trống");
-            }
-
-            var normalizedTargetRole = dto.TargetRole.Trim().ToLower();
-
-            var notification = new Notifications
-            {
-                Title = dto.Title,
-                Content = dto.Content,
-                TargetRole = dto.TargetRole,
-                MangaId = dto.MangaId
-            };
-
-            await _context.AddAsync(notification);
-            await _context.SaveChangesAsync();
-
-            if (AllReadersRoleAliases.Contains(normalizedTargetRole))
-            {
-                try
+                var data = new Dictionary<string, string>()
                 {
-                    await _hubContext.Clients.Group(NotificationHub.ReaderGroupName).SendAsync("ReceiveNotification", new
+                    {"action", dto.Title ?? string.Empty},
+                    {"mangaId", dto.MangaId.ToString()},
+                    { "click_action", "FLUTTER_NOTIFICATION_CLICK" }
+                };
+
+                var androidConfig = new AndroidConfig
+                {
+                    Priority = Priority.High,
+                    TimeToLive = TimeSpan.FromDays(7),
+                    Notification = new AndroidNotification
                     {
-                        notification.Id,
-                        notification.Title,
-                        notification.TargetRole,
-                        notification.Content,
-                        notification.MangaId,
-                        notification.CreatedAt
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Gửi realtime notification thất bại");
-                }
-            } 
-            else if (FollowedReadersRoleAliases.Contains(normalizedTargetRole))
-            {
-                // lấy danh sách các reader lưu manga vào library
-                var targetUserIds = await _context.Libraries
-                    .Where(l => l.MangaId == notification.MangaId)
-                    .Join(
-                        _context.Readers,
-                        library => library.ReaderId,
-                        reader => reader.Id,
-                        (library, reader) => reader.UserId)
-                    .Distinct() // loại bỏ trùng lặp, đảm bảo mỗi userId chỉ xuất hiện 1 lần để gửi noti
-                    .ToListAsync();
-
-                var targetUserGroups = targetUserIds
-                    .Select(NotificationHub.UserGroupName)
-                    .ToList();
-
-                if (targetUserGroups.Count > 0)
-                {
-                    try
-                    {
-                        await _hubContext.Clients.Groups(targetUserGroups).SendAsync("ReceiveNotification", new
-                        {
-                            notification.Id,
-                            notification.Title,
-                            notification.TargetRole,
-                            notification.Content,
-                            notification.MangaId,
-                            notification.CreatedAt
-                        });
+                        ClickAction = "FLUTTER_NOTIFICATION_CLICK"
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Gửi realtime notification thất bại");
-                    }
-                }
-            };
+                };
 
-            return notification;
+                var apnsConfig = new ApnsConfig
+                {
+                    Headers = new Dictionary<string, string>
+                    {
+                        { "apns-priority", "10" },
+                        { "apns-expiration", DateTimeOffset.UtcNow.AddDays(7).ToUnixTimeSeconds().ToString() }
+                    }
+                };
+
+                // Topic-only send (admin -> users via topic). If no topic provided, reject.
+                if (!string.IsNullOrEmpty(dto.Topic))
+                {
+                    var message = new Message
+                    {
+                        Topic = dto.Topic,
+                        Notification = new Notification { Title = dto.Title, Body = dto.Content },
+                        Data = data,
+                        Android = androidConfig,
+                        Apns = apnsConfig
+                    };
+
+                    await FirebaseMessaging.DefaultInstance.SendAsync(message);
+
+                    var notification = new Notifications
+                    {
+                        Title = dto.Title,
+                        Content = dto.Content,
+                        TargetRole = dto.TargetRole,
+                        MangaId = dto.MangaId
+                    };
+
+                    await _context.AddAsync(notification);
+                    await _context.SaveChangesAsync();
+
+                    return notification;
+                }
+
+                throw new Result("Topic là bắt buộc cho chế độ gửi theo nhóm (topic-only)");
+            }
+            catch (Exception ex)
+            {
+                throw new Result($"Lỗi gửi thông báo: {ex.Message}");
+            }
+        }
+
+        public async Task<List<NotificationReads>> GetNotificationByReaderId(int readerid)
+        {
+            var notifications = await _context.NotificationReads
+                                .Where(n => n.ReaderId == readerid)
+                                .ToListAsync();
+
+            if (notifications == null)
+            {
+                throw new Result("Không có thông báo.");
+            }
+
+            return notifications;
         }
 
         public async Task MarkNotificationReaded(int notificationId, int userId)
@@ -204,13 +192,11 @@ namespace backend.src.Services.Implement
                 return 0;
             }
 
-            // danh sách các notification của reader đã đọc
             var readNotificationIds = await _context.NotificationReads
                 .Where(nr => nr.ReaderId == reader.Id && notificationIds.Contains(nr.NotificationId))
                 .Select(nr => nr.NotificationId)
                 .ToListAsync();
-            
-            // danh sách notification mà reader chưa đọc
+
             var unreadNotificationIds = notificationIds
                 .Except(readNotificationIds)
                 .ToList();
@@ -258,7 +244,6 @@ namespace backend.src.Services.Implement
                 .Distinct()
                 .CountAsync();
 
-            // trả về các notification chưa đọc
             return notificationIds.Count - readCount;
         }
 
