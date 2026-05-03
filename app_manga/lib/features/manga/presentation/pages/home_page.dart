@@ -5,6 +5,9 @@ import '../../domain/entities/manga_entity.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/manga_card.dart';
 import '../../../auth/presentation/pages/me_page.dart';
+import '../../../library/presentation/pages/library_page.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import 'package:provider/provider.dart';
 import 'manga_detail_page.dart';
 import 'search_page.dart';
 
@@ -231,6 +234,20 @@ class _HomePageState extends State<HomePage> {
       unselectedItemColor: Colors.grey,
       showUnselectedLabels: true,
       onTap: (index) {
+        if (index == 1) {
+          final auth = Provider.of<AuthController>(context, listen: false);
+          if (auth.session != null) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => LibraryPage(token: auth.session!.token),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Bạn cần đăng nhập để xem thư viện!')),
+            );
+          }
+        }
         if (index == 2) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const SearchPage()),

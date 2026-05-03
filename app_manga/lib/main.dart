@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:provider/provider.dart';
 
+import 'core/security/screen_security_service.dart';
 import 'features/auth/data/datasources/auth_local_data_source.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -26,6 +27,7 @@ import 'features/manga/domain/usecases/search_manga_usecase.dart';
 import 'features/manga/presentation/controllers/home_controller.dart';
 import 'features/manga/presentation/controllers/search_controller.dart';
 import 'features/manga/presentation/pages/home_page.dart';
+import 'features/library/library_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,44 +63,46 @@ class MangaApp extends StatelessWidget {
       local: authLocalDataSource,
     );
 
-    return MultiProvider(
-      providers: [
-        Provider<AuthRepository>.value(value: authRepository),
-        Provider<MangaRepository>.value(value: mangaRepository),
-        ChangeNotifierProvider(
-          create: (_) => AuthController(
-            loginUseCase: LoginUseCase(authRepository),
-            registerUseCase: RegisterUseCase(authRepository),
-            getMyProfileUseCase: GetMyProfileUseCase(authRepository),
-            restoreSessionUseCase: RestoreSessionUseCase(authRepository),
-            logoutUseCase: LogoutUseCase(authRepository),
-          )..bootstrap(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => HomeController(
-            getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
+    return LibraryProviders(
+      child: MultiProvider(
+        providers: [
+          Provider<AuthRepository>.value(value: authRepository),
+          Provider<MangaRepository>.value(value: mangaRepository),
+          ChangeNotifierProvider(
+            create: (_) => AuthController(
+              loginUseCase: LoginUseCase(authRepository),
+              registerUseCase: RegisterUseCase(authRepository),
+              getMyProfileUseCase: GetMyProfileUseCase(authRepository),
+              restoreSessionUseCase: RestoreSessionUseCase(authRepository),
+              logoutUseCase: LogoutUseCase(authRepository),
+            )..bootstrap(),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => MangaSearchController(
-            getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
-            searchMangaUseCase: SearchMangaUseCase(mangaRepository),
-            getOngoingMangaUseCase: GetOngoingMangaUseCase(mangaRepository),
-            getCompletedMangaUseCase: GetCompletedMangaUseCase(mangaRepository),
-            getAllGenresUseCase: GetAllGenresUseCase(mangaRepository),
-            getMangaByGenreUseCase: GetMangaByGenreUseCase(mangaRepository),
+          ChangeNotifierProvider(
+            create: (_) => HomeController(
+              getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
+            ),
           ),
+          ChangeNotifierProvider(
+            create: (_) => MangaSearchController(
+              getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
+              searchMangaUseCase: SearchMangaUseCase(mangaRepository),
+              getOngoingMangaUseCase: GetOngoingMangaUseCase(mangaRepository),
+              getCompletedMangaUseCase: GetCompletedMangaUseCase(mangaRepository),
+              getAllGenresUseCase: GetAllGenresUseCase(mangaRepository),
+              getMangaByGenreUseCase: GetMangaByGenreUseCase(mangaRepository),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Manga App',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primaryColor: const Color(0xFFC75F25),
+            scaffoldBackgroundColor: Colors.white,
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC75F25)),
+          ),
+          home: const AuthGatePage(),
         ),
-      ],
-      child: MaterialApp(
-        title: 'Manga App',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primaryColor: const Color(0xFFC75F25),
-          scaffoldBackgroundColor: Colors.white,
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC75F25)),
-        ),
-        home: const AuthGatePage(),
       ),
     );
   }
