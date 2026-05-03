@@ -1,0 +1,7 @@
+# Build outputs
+bin/
+obj/
+
+# Coverage helpers
+.mscoversourcerootsmapping_*
+coverletsourcerootsmapping_*
