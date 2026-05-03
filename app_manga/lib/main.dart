@@ -26,9 +26,14 @@ import 'features/manga/presentation/controllers/home_controller.dart';
 import 'features/manga/presentation/controllers/search_controller.dart';
 import 'features/manga/presentation/pages/home_page.dart';
 import 'features/library/library_provider.dart';
+import 'features/vip/data/datasources/vip_remote_data_source.dart';
+import 'features/vip/data/repositories/vip_repository_impl.dart';
+import 'features/vip/domain/repositories/vip_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // gọi service chống chụp màn hình trước runApp
+  // đảm bảo bật chống chụp màn hình ngay khi khởi động app
   await ScreenSecurityService.instance.initialize();
   runApp(const MangaApp());
 }
@@ -50,11 +55,17 @@ class MangaApp extends StatelessWidget {
       local: authLocalDataSource,
     );
 
+    final vipRemoteDataSource = VipRemoteDataSource();
+    final vipRepository = VipRepositoryImpl(
+      remoteDataSource: vipRemoteDataSource,
+    );
+
     return LibraryProviders(
       child: MultiProvider(
         providers: [
           Provider<AuthRepository>.value(value: authRepository),
           Provider<MangaRepository>.value(value: mangaRepository),
+          Provider<VipRepository>.value(value: vipRepository),
           ChangeNotifierProvider(
             create: (_) => AuthController(
               loginUseCase: LoginUseCase(authRepository),
@@ -74,7 +85,9 @@ class MangaApp extends StatelessWidget {
               getAllMangaUseCase: GetAllMangaUseCase(mangaRepository),
               searchMangaUseCase: SearchMangaUseCase(mangaRepository),
               getOngoingMangaUseCase: GetOngoingMangaUseCase(mangaRepository),
-              getCompletedMangaUseCase: GetCompletedMangaUseCase(mangaRepository),
+              getCompletedMangaUseCase: GetCompletedMangaUseCase(
+                mangaRepository,
+              ),
               getAllGenresUseCase: GetAllGenresUseCase(mangaRepository),
               getMangaByGenreUseCase: GetMangaByGenreUseCase(mangaRepository),
             ),
@@ -86,7 +99,9 @@ class MangaApp extends StatelessWidget {
           theme: ThemeData(
             primaryColor: const Color(0xFFC75F25),
             scaffoldBackgroundColor: Colors.white,
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC75F25)),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFC75F25),
+            ),
           ),
           home: const AuthGatePage(),
         ),
