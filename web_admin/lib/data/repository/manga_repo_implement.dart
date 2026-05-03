@@ -73,4 +73,64 @@ class MangaRepoImplement implements MangaRepository {
       return DataFailed(e);
     }
   }
+
+  @override
+  Future<DataState<bool>> createManga(
+    MangaEntity manga, {
+    UploadFileData? thumbnailFile,
+  }) async {
+    try {
+      final Response<dynamic> response = await _mangaUpdateApiService
+          .createManga(manga, thumbnailFile: thumbnailFile);
+
+      if (response.statusCode == HttpStatus.ok ||
+          response.statusCode == HttpStatus.created) {
+        return const DataSuccess(true);
+      }
+
+      return DataFailed(
+        DioError(
+          error: response.statusMessage,
+          response: response,
+          requestOptions: response.requestOptions,
+          type: DioErrorType.response,
+        ),
+      );
+    } on DioError catch (e) {
+      return DataFailed(e);
+    }
+  }
+
+  @override
+  Future<DataState<bool>> deleteManga(int mangaId) async {
+    if (mangaId <= 0) {
+      return DataFailed(
+        DioError(
+          error: 'ID manga không hợp lệ',
+          requestOptions: RequestOptions(path: 'Manga/delete-manga'),
+          type: DioErrorType.other,
+        ),
+      );
+    }
+
+    try {
+      final Response<dynamic> response = await _mangaUpdateApiService
+          .deleteManga(mangaId);
+
+      if (response.statusCode == HttpStatus.ok) {
+        return const DataSuccess(true);
+      }
+
+      return DataFailed(
+        DioError(
+          error: response.statusMessage,
+          response: response,
+          requestOptions: response.requestOptions,
+          type: DioErrorType.response,
+        ),
+      );
+    } on DioError catch (e) {
+      return DataFailed(e);
+    }
+  }
 }

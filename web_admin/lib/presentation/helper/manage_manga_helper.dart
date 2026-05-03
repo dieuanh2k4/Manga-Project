@@ -46,12 +46,13 @@ class ManageMangaHelper {
     required String allStatus,
     required Map<int, String> authorNameById,
     required Map<int, String> genreNameById,
+    String sortOption = 'A-Z',
   }) {
     final String keyword = '$globalSearchText $mangaSearchText'
         .trim()
         .toLowerCase();
 
-    return items.where((MangaEntity manga) {
+    final filtered = items.where((MangaEntity manga) {
       final String normalizedStatus = normalizeStatus(manga.status);
       final String title = (manga.title ?? '').toLowerCase();
       final String description = (manga.description ?? '').toLowerCase();
@@ -72,6 +73,32 @@ class ManageMangaHelper {
 
       return matchesKeyword && matchesStatus;
     }).toList();
+
+    return applySort(filtered, sortOption);
+  }
+
+  static List<MangaEntity> applySort(
+    List<MangaEntity> items,
+    String sortOption,
+  ) {
+    final sorted = List<MangaEntity>.from(items);
+
+    if (sortOption == 'Số chương') {
+      sorted.sort((a, b) {
+        final int aValue = a.totalChapter ?? 0;
+        final int bValue = b.totalChapter ?? 0;
+        return bValue.compareTo(aValue);
+      });
+      return sorted;
+    }
+
+    sorted.sort((a, b) {
+      final String aTitle = (a.title ?? '').toLowerCase();
+      final String bTitle = (b.title ?? '').toLowerCase();
+      return aTitle.compareTo(bTitle);
+    });
+
+    return sorted;
   }
 
   static String normalizeStatus(String? value) {

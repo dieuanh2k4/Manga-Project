@@ -11,6 +11,8 @@ class ManageMangaTableCard extends StatelessWidget {
   final String Function(MangaEntity) buildGenres;
   final String Function(MangaEntity) buildViewsText;
   final ValueChanged<MangaEntity> onEditTap;
+  final ValueChanged<MangaEntity> onViewTap;
+  final ValueChanged<MangaEntity> onDeleteTap;
 
   const ManageMangaTableCard({
     super.key,
@@ -20,6 +22,8 @@ class ManageMangaTableCard extends StatelessWidget {
     required this.buildGenres,
     required this.buildViewsText,
     required this.onEditTap,
+    required this.onViewTap,
+    required this.onDeleteTap,
   });
 
   @override
@@ -252,7 +256,7 @@ class ManageMangaTableCard extends StatelessWidget {
         _actionButton(
           Icons.visibility_outlined,
           const Color(0xFF657489),
-          () {},
+          () => onViewTap(manga),
         ),
         const SizedBox(width: 2),
         _actionButton(
@@ -264,7 +268,7 @@ class ManageMangaTableCard extends StatelessWidget {
         _actionButton(
           Icons.delete_outline_rounded,
           const Color(0xFFF56D6D),
-          () {},
+          () => onDeleteTap(manga),
         ),
       ],
     );
