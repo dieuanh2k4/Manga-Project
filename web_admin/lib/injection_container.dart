@@ -9,6 +9,8 @@ import 'package:web_admin/data/repository/lookup_repo_implement.dart';
 import 'package:web_admin/data/repository/manga_repo_implement.dart';
 import 'package:web_admin/domain/repository/lookup_repository.dart';
 import 'package:web_admin/domain/repository/manga_repository.dart';
+import 'package:web_admin/domain/usecases/create_manga.dart';
+import 'package:web_admin/domain/usecases/delete_manga.dart';
 import 'package:web_admin/domain/usecases/get_authors.dart';
 import 'package:web_admin/domain/usecases/get_genres.dart';
 import 'package:web_admin/domain/usecases/get_manga.dart';
@@ -39,13 +41,15 @@ Future<void> initilizeDependencies() async {
 
   // Usecases
   sl.registerSingleton<GetMangaUseCase>(GetMangaUseCase(sl()));
+  sl.registerSingleton<CreateMangaUseCase>(CreateMangaUseCase(sl()));
+  sl.registerSingleton<DeleteMangaUseCase>(DeleteMangaUseCase(sl()));
   sl.registerSingleton<UpdateMangaUseCase>(UpdateMangaUseCase(sl()));
   sl.registerSingleton<GetAuthorsUseCase>(GetAuthorsUseCase(sl()));
   sl.registerSingleton<GetGenresUseCase>(GetGenresUseCase(sl()));
 
   // Presentation services
   sl.registerSingleton<ManageMangaService>(
-    ManageMangaService(sl(), sl(), sl()),
+    ManageMangaService(sl(), sl(), sl(), sl(), sl()),
   );
 
   // Blocs
