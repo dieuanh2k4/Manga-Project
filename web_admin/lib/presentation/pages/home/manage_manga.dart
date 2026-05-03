@@ -10,8 +10,11 @@ import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
 import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
 import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_state.dart';
+import 'package:web_admin/presentation/pages/home/create_manga_page.dart';
+import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_submit_result.dart';
+import 'package:web_admin/presentation/pages/home/manage_manga_detail_page.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_error_state.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_filter_bar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_page_heading.dart';
@@ -35,6 +38,7 @@ class _ManageMangaState extends State<ManageManga> {
   final TextEditingController _mangaSearchController = TextEditingController();
 
   String _selectedStatus = _allStatus;
+  String _selectedSort = 'A-Z';
   List<AuthorEntity> _authors = const <AuthorEntity>[];
   List<GenreEntity> _genres = const <GenreEntity>[];
   Map<int, String> _authorNameById = const {};
@@ -113,6 +117,98 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(updateResult.message)));
 
     if (updateResult.isSuccess) {
+      context.read<RemoteMangaBloc>().add(const GetManga());
+    }
+  }
+
+  Future<void> _onAddTap() async {
+    final CreateMangaSubmitResult? createdResult =
+        await Navigator.of(context).push<CreateMangaSubmitResult>(
+          MaterialPageRoute<CreateMangaSubmitResult>(
+            builder: (_) => CreateMangaPage(
+              authors: _authors,
+              genres: _genres,
+            ),
+            fullscreenDialog: true,
+          ),
+        );
+
+    if (!mounted || createdResult == null) {
+      return;
+    }
+
+    final ManageMangaCreateResult createResult = await _manageMangaService
+        .createManga(
+          manga: createdResult.manga,
+          thumbnailFile: createdResult.thumbnailFile,
+        );
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(createResult.message)));
+
+    if (createResult.isSuccess) {
+      context.read<RemoteMangaBloc>().add(const GetManga());
+    }
+  }
+
+  void _onViewTap(MangaEntity manga) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageMangaDetailPage(manga: manga),
+      ),
+    );
+  }
+
+  Future<void> _onDeleteTap(MangaEntity manga) async {
+    final int? mangaId = manga.id;
+    if (mangaId == null || mangaId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không xác định được manga cần xóa')),
+      );
+      return;
+    }
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa manga'),
+        content: Text(
+          'Bạn có chắc muốn xóa "${manga.title ?? 'Manga'}" không?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    final ManageMangaDeleteResult deleteResult = await _manageMangaService
+        .deleteManga(mangaId);
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(deleteResult.message)));
+
+    if (deleteResult.isSuccess) {
       context.read<RemoteMangaBloc>().add(const GetManga());
     }
   }
@@ -197,12 +293,13 @@ class _ManageMangaState extends State<ManageManga> {
                             allStatus: _allStatus,
                             authorNameById: _authorNameById,
                             genreNameById: _genreNameById,
+                            sortOption: _selectedSort,
                           );
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ManageMangaPageHeading(onAddTap: () {}),
+                          ManageMangaPageHeading(onAddTap: _onAddTap),
                           const SizedBox(height: 18),
                           ManageMangaFilterBar(
                             searchController: _mangaSearchController,
@@ -211,6 +308,12 @@ class _ManageMangaState extends State<ManageManga> {
                             onStatusChanged: (value) {
                               setState(() {
                                 _selectedStatus = value;
+                              });
+                            },
+                            selectedSort: _selectedSort,
+                            onSortChanged: (value) {
+                              setState(() {
+                                _selectedSort = value;
                               });
                             },
                           ),
@@ -232,6 +335,8 @@ class _ManageMangaState extends State<ManageManga> {
                                   ),
                               buildViewsText: ManageMangaHelper.buildViewsText,
                               onEditTap: _onEditTap,
+                              onViewTap: _onViewTap,
+                              onDeleteTap: _onDeleteTap,
                             ),
                           ),
                         ],

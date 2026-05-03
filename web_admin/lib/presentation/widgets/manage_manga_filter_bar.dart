@@ -5,6 +5,8 @@ class ManageMangaFilterBar extends StatelessWidget {
   final String selectedStatus;
   final String allStatus;
   final ValueChanged<String> onStatusChanged;
+  final String selectedSort;
+  final ValueChanged<String> onSortChanged;
 
   const ManageMangaFilterBar({
     super.key,
@@ -12,6 +14,8 @@ class ManageMangaFilterBar extends StatelessWidget {
     required this.selectedStatus,
     required this.allStatus,
     required this.onStatusChanged,
+    required this.selectedSort,
+    required this.onSortChanged,
   });
 
   @override
@@ -62,13 +66,44 @@ class ManageMangaFilterBar extends StatelessWidget {
               value: 'Hoàn thành',
               child: Text('Hoàn thành'),
             ),
-            const DropdownMenuItem(value: 'Tạm dừng', child: Text('Tạm dừng')),
           ],
           onChanged: (value) {
             if (value == null) {
               return;
             }
             onStatusChanged(value);
+          },
+        ),
+      ),
+    );
+
+    final Widget sortDropdown = Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FC),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedSort,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+          style: const TextStyle(color: Color(0xFF4D5B72), fontSize: 13),
+          items: const [
+            DropdownMenuItem(
+              value: 'A-Z',
+              child: Text('A-Z'),
+            ),
+            DropdownMenuItem(
+              value: 'Số chương',
+              child: Text('Số chương'),
+            ),
+          ],
+          onChanged: (value) {
+            if (value == null) {
+              return;
+            }
+            onSortChanged(value);
           },
         ),
       ),
@@ -92,6 +127,8 @@ class ManageMangaFilterBar extends StatelessWidget {
                 searchField,
                 const SizedBox(height: 10),
                 Align(alignment: Alignment.centerLeft, child: statusDropdown),
+                const SizedBox(height: 10),
+                Align(alignment: Alignment.centerLeft, child: sortDropdown),
               ],
             );
           }
@@ -101,6 +138,8 @@ class ManageMangaFilterBar extends StatelessWidget {
               Expanded(child: searchField),
               const SizedBox(width: 12),
               statusDropdown,
+              const SizedBox(width: 12),
+              sortDropdown,
             ],
           );
         },

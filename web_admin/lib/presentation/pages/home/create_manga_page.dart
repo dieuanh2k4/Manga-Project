@@ -5,27 +5,23 @@ import 'package:web_admin/core/models/upload_file_data.dart';
 import 'package:web_admin/domain/entities/author.dart';
 import 'package:web_admin/domain/entities/genre.dart';
 import 'package:web_admin/domain/entities/manga.dart';
-import 'package:web_admin/presentation/pages/home/edit_manga_submit_result.dart';
+import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dart';
 
-class EditMangaPage extends StatefulWidget {
-  final MangaEntity manga;
+class CreateMangaPage extends StatefulWidget {
   final List<AuthorEntity> authors;
   final List<GenreEntity> genres;
-  final String Function(String?) normalizeStatus;
 
-  const EditMangaPage({
+  const CreateMangaPage({
     super.key,
-    required this.manga,
     required this.authors,
     required this.genres,
-    required this.normalizeStatus,
   });
 
   @override
-  State<EditMangaPage> createState() => _EditMangaPageState();
+  State<CreateMangaPage> createState() => _CreateMangaPageState();
 }
 
-class _EditMangaPageState extends State<EditMangaPage> {
+class _CreateMangaPageState extends State<CreateMangaPage> {
   static const List<String> _statusOptions = <String>[
     'Đang tiến hành',
     'Hoàn thành',
@@ -50,28 +46,18 @@ class _EditMangaPageState extends State<EditMangaPage> {
   @override
   void initState() {
     super.initState();
+    _titleController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _thumbnailController = TextEditingController();
+    _totalChapterController = TextEditingController(text: '0');
+    _rateController = TextEditingController(text: '0');
 
-    _titleController = TextEditingController(text: widget.manga.title ?? '');
-    _descriptionController = TextEditingController(
-      text: widget.manga.description ?? '',
-    );
-    _thumbnailController = TextEditingController(
-      text: widget.manga.thumbnail ?? '',
-    );
-    _totalChapterController = TextEditingController(
-      text: '${widget.manga.totalChapter ?? 0}',
-    );
-    _rateController = TextEditingController(text: '${widget.manga.rate ?? 0}');
-
-    _releaseDate = _normalizeDate(widget.manga.releaseDate);
-    _endDate = _normalizeDate(widget.manga.endDate);
-    final String normalizedStatus = widget.normalizeStatus(widget.manga.status);
-    _status = _statusOptions.contains(normalizedStatus)
-      ? normalizedStatus
-      : _statusOptions.first;
+    final DateTime now = DateTime.now();
+    _releaseDate = DateTime(now.year, now.month, now.day);
+    _endDate = _releaseDate;
+    _status = _statusOptions.first;
     _authorId = _resolveAuthorId();
-    _selectedGenreIds =
-        widget.manga.genreIds?.where((id) => id > 0).toSet() ?? <int>{};
+    _selectedGenreIds = <int>{};
   }
 
   @override
@@ -84,25 +70,13 @@ class _EditMangaPageState extends State<EditMangaPage> {
     super.dispose();
   }
 
-  DateTime _normalizeDate(DateTime? value) {
-    final DateTime now = DateTime.now();
-    final DateTime source = value ?? now;
-    return DateTime(source.year, source.month, source.day);
-  }
-
   int? _resolveAuthorId() {
-    final int? currentAuthorId = widget.manga.authorId;
-    if (currentAuthorId != null && currentAuthorId > 0) {
-      return currentAuthorId;
-    }
-
     for (final AuthorEntity author in widget.authors) {
       final int? id = author.id;
       if (id != null && id > 0) {
         return id;
       }
     }
-
     return null;
   }
 
@@ -111,21 +85,6 @@ class _EditMangaPageState extends State<EditMangaPage> {
     if (text.isEmpty) {
       return '$label không được để trống';
     }
-    return null;
-  }
-
-  String? _requiredNumberValidator(String? value, String label) {
-    final String text = (value ?? '').trim();
-    final int? number = int.tryParse(text);
-
-    if (number == null) {
-      return '$label phải là số hợp lệ';
-    }
-
-    if (number < 0) {
-      return '$label không được âm';
-    }
-
     return null;
   }
 
@@ -210,28 +169,6 @@ class _EditMangaPageState extends State<EditMangaPage> {
       return Image.memory(_thumbnailFile!.bytes!, fit: BoxFit.cover);
     }
 
-    final String currentThumbnail = _thumbnailController.text.trim();
-    final bool isNetworkThumbnail =
-        currentThumbnail.startsWith('http://') ||
-        currentThumbnail.startsWith('https://');
-
-    if (isNetworkThumbnail) {
-      return Image.network(
-        currentThumbnail,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
-          return Container(
-            color: const Color(0xFFE5EAF3),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.broken_image_outlined,
-              color: Color(0xFF9AA8BE),
-            ),
-          );
-        },
-      );
-    }
-
     return Container(
       color: const Color(0xFFE5EAF3),
       alignment: Alignment.center,
@@ -260,34 +197,30 @@ class _EditMangaPageState extends State<EditMangaPage> {
       return;
     }
 
-    final bool hasExistingThumbnail = _thumbnailController.text
-        .trim()
-        .isNotEmpty;
     final bool hasSelectedThumbnail = _thumbnailFile?.isValid ?? false;
 
-    if (!hasExistingThumbnail && !hasSelectedThumbnail) {
+    if (!hasSelectedThumbnail) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Chưa có ảnh thumbnail, sẽ để trống')),
       );
     }
 
-    final MangaEntity updated = MangaEntity(
-      id: widget.manga.id,
+    final MangaEntity created = MangaEntity(
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       thumbnail: _thumbnailController.text.trim(),
       status: _status.trim(),
-      totalChapter: int.tryParse(_totalChapterController.text.trim()) ?? 0,
-      rate: int.tryParse(_rateController.text.trim()) ?? 0,
+      totalChapter: 0,
+      rate: 0,
       authorId: _authorId,
       genreIds: _selectedGenreIds.toList()..sort(),
       releaseDate: _releaseDate,
       endDate: _endDate,
     );
 
-    Navigator.of(
-      context,
-    ).pop(EditMangaSubmitResult(manga: updated, thumbnailFile: _thumbnailFile));
+    Navigator.of(context).pop(
+      CreateMangaSubmitResult(manga: created, thumbnailFile: _thumbnailFile),
+    );
   }
 
   @override
@@ -320,7 +253,7 @@ class _EditMangaPageState extends State<EditMangaPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
-        title: Text('Chỉnh sửa Manga #${widget.manga.id ?? ''}'),
+        title: const Text('Tạo Manga mới'),
         centerTitle: false,
       ),
       body: Center(
@@ -404,9 +337,7 @@ class _EditMangaPageState extends State<EditMangaPage> {
                                 const SizedBox(height: 8),
                                 Text(
                                   _thumbnailFile?.fileName ??
-                                      (_thumbnailController.text.trim().isEmpty
-                                          ? 'Chưa có thumbnail hiện tại'
-                                          : 'Đang dùng thumbnail hiện tại'),
+                                      'Chưa có thumbnail',
                                   style: const TextStyle(
                                     color: Color(0xFF607089),
                                     fontSize: 12,
@@ -589,7 +520,7 @@ class _EditMangaPageState extends State<EditMangaPage> {
                           ElevatedButton.icon(
                             onPressed: _submit,
                             icon: const Icon(Icons.save_outlined),
-                            label: const Text('Lưu cập nhật'),
+                            label: const Text('Tạo manga'),
                           ),
                         ],
                       ),
