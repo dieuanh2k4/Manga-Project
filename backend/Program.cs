@@ -7,11 +7,15 @@ using backend.src.Services.Implement;
 using backend.src.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Minio;
 using Scalar.AspNetCore;
 using Server.src.Services.Implements;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 
 DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
@@ -25,10 +29,17 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddControllers().AddJsonOptions(option =>
 {
-   option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
 
 builder.Services.AddSignalR(); // gửi thông báo realtime
+
+// sử dụng FCM để push noti
+var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "manga-project-firebase-admin-key.json");
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile(firebaseKeyPath)
+});
 
 builder.Services.AddHttpContextAccessor();
 
@@ -78,6 +89,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
 
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var tokenVersionClaim = context.Principal?.FindFirst("tokenVersion")?.Value;
+
+                if (!int.TryParse(userIdClaim, out var userId))
+                {
+                    context.Fail("Invalid token claims");
+                    return;
+                }
+
+                if (!int.TryParse(tokenVersionClaim, out var tokenVersion))
+                {
+                    context.Fail("Invalid token version");
+                    return;
+                }
+
+                var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var dbUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                if (dbUser == null)
+                {
+                    context.Fail("User does not exist");
+                    return;
+                }
+
+                if (dbUser.TokenVersion != tokenVersion)
+                {
+                    context.Fail("Token has been invalidated");
+                }
             }
         };
 
@@ -100,6 +141,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.Configure<MinioOptions>(builder.Configuration.GetSection(MinioOptions.SectionName));
+builder.Services.Configure<ImageProcessingOptions>(builder.Configuration.GetSection(ImageProcessingOptions.SectionName));
+builder.Services.AddSingleton<IImageUploadBackgroundQueue, ImageUploadBackgroundQueue>();
+// kích hoạt worker khi app khởi động
+// runtime tự chạy class trong file (ExecuteAsync của worker)
+builder.Services.AddHostedService<ImageUploadBackgroundService>();
 
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
@@ -117,6 +163,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+    options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 // Manga Service
@@ -157,6 +204,9 @@ builder.Services.AddScoped<ILibraryService, LibraryService>();
 
 // Notification Service
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Notification FCM Service
+builder.Services.AddScoped<IFcmNotificationService, FcmNotificationService>();
 
 var app = builder.Build();
 

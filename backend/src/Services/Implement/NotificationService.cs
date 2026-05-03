@@ -20,7 +20,8 @@ namespace backend.src.Services.Implement
             "all_readers",
             "tất cả người dùng",
             "tat ca nguoi dung",
-            "all readers"
+            "all readers",
+            "all"
         };
 
         private static readonly string[] FollowedReadersRoleAliases =
@@ -28,7 +29,8 @@ namespace backend.src.Services.Implement
             "user_interested_manga",
             "người dùng theo dõi manga",
             "nguoi dung theo doi manga",
-            "followed_readers"
+            "followed_readers",
+            "likedmanga"
         };
 
         private readonly ApplicationDbContext _context;
@@ -195,37 +197,21 @@ namespace backend.src.Services.Implement
                 throw new Result("Không tìm thấy reader");
             }
 
-            // danh sách các manga mà reader theo dõi
-            var followedMangaIds = _context.Libraries
-                .Where(l => l.ReaderId == reader.Id)
-                .Select(l => l.MangaId);
-            
-            // lấy các notification có liên quan đến reader
-            var NotificationIds = await _context.Notifications
-                .Where(n =>
-                    // điều kiện 1: TargetRole là nhóm gửi tất cả các reader
-                    AllReadersRoleAliases.Contains((n.TargetRole ?? string.Empty).ToLower())
-                    // điều kiện 2: TargetRole là nhóm gửi cho người theo dõi manga 
-                    // và MangaId của notification nằm trong followedMangaIds
-                    || (FollowedReadersRoleAliases.Contains((n.TargetRole ?? string.Empty).ToLower())
-                        && followedMangaIds.Contains(n.MangaId))
-                )
-                .Select(n => n.Id)
-                .ToListAsync();
+            var notificationIds = await GetRelevantNotificationIds(reader.Id);
 
-            if (NotificationIds.Count == 0)
+            if (notificationIds.Count == 0)
             {
                 return 0;
             }
 
             // danh sách các notification của reader đã đọc
             var readNotificationIds = await _context.NotificationReads
-                .Where(nr => nr.ReaderId == reader.Id && NotificationIds.Contains(nr.NotificationId))
+                .Where(nr => nr.ReaderId == reader.Id && notificationIds.Contains(nr.NotificationId))
                 .Select(nr => nr.NotificationId)
                 .ToListAsync();
             
             // danh sách notification mà reader chưa đọc
-            var unreadNotificationIds = NotificationIds
+            var unreadNotificationIds = notificationIds
                 .Except(readNotificationIds)
                 .ToList();
 
@@ -259,37 +245,50 @@ namespace backend.src.Services.Implement
                 throw new Result("Không tìm thấy reader");
             }
 
-            // danh sách các manga mà reader theo dõi
-            var followedMangaIds = _context.Libraries
-                .Where(l => l.ReaderId == reader.Id)
-                .Select(l => l.MangaId);
-            
-            // lấy các notification có liên quan đến reader
-            var NotificationIds = await _context.Notifications
-                .Where(n =>
-                    // điều kiện 1: TargetRole là nhóm gửi tất cả các reader
-                    AllReadersRoleAliases.Contains((n.TargetRole ?? string.Empty).ToLower())
-                    // điều kiện 2: TargetRole là nhóm gửi cho người theo dõi manga 
-                    // và MangaId của notification nằm trong followedMangaIds
-                    || (FollowedReadersRoleAliases.Contains((n.TargetRole ?? string.Empty).ToLower())
-                        && followedMangaIds.Contains(n.MangaId))
-                )
-                .Select(n => n.Id)
-                .ToListAsync();
+            var notificationIds = await GetRelevantNotificationIds(reader.Id);
 
-            if (NotificationIds.Count == 0)
+            if (notificationIds.Count == 0)
             {
                 return 0;
             }
 
             var readCount = await _context.NotificationReads
-                .Where(nr => nr.ReaderId == reader.Id && NotificationIds.Contains(nr.NotificationId))
+                .Where(nr => nr.ReaderId == reader.Id && notificationIds.Contains(nr.NotificationId))
                 .Select(nr => nr.NotificationId)
                 .Distinct()
                 .CountAsync();
 
             // trả về các notification chưa đọc
-            return NotificationIds.Count - readCount;
+            return notificationIds.Count - readCount;
+        }
+
+        private async Task<List<int>> GetRelevantNotificationIds(int readerId)
+        {
+            var followedMangaIds = await _context.Libraries
+                .Where(l => l.ReaderId == readerId)
+                .Select(l => l.MangaId)
+                .ToListAsync();
+
+            var notifications = await _context.Notifications
+                .Select(n => new
+                {
+                    n.Id,
+                    n.TargetRole,
+                    n.MangaId
+                })
+                .ToListAsync();
+
+            return notifications
+                .Where(n =>
+                {
+                    var normalizedTargetRole = (n.TargetRole ?? string.Empty).Trim();
+
+                    return AllReadersRoleAliases.Any(alias => string.Equals(alias, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
+                        || (FollowedReadersRoleAliases.Any(alias => string.Equals(alias, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
+                            && followedMangaIds.Contains(n.MangaId));
+                })
+                .Select(n => n.Id)
+                .ToList();
         }
     }
 }

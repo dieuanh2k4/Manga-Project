@@ -124,7 +124,7 @@ namespace backend.src.Services.Implement
             return newInfoAdmin;
         }
 
-        public async Task<Admin> UpdateAdmin(UpdateAdminDto adminDto, int id) 
+        public async Task<Admin> UpdateAdmin(UpdateAdminDto adminDto, int id)
         {
             var admin = await _context.Admins.FindAsync(id);
             if (admin == null)
@@ -174,10 +174,11 @@ namespace backend.src.Services.Implement
             return admin;
         }
 
-        public async Task<Admin> DeleteAdmin(int id) 
+        public async Task<Admin> DeleteAdmin(int id)
         {
             var admin = await _context.Admins.FindAsync(id);
-            if (admin == null) {
+            if (admin == null)
+            {
                 throw new Result("Không tìm thấy admin cần xóa");
             }
 
@@ -339,6 +340,319 @@ namespace backend.src.Services.Implement
             return reader;
         }
 
-        
+        private static ReaderManagementItemDto ToReaderManagementItem(Readers reader)
+        {
+            return new ReaderManagementItemDto
+            {
+                Id = reader.Id,
+                FullName = reader.FullName,
+                Email = reader.Email,
+                UserName = reader.Users?.UserName,
+                Phone = reader.Phone,
+                Address = reader.Address,
+                Gender = reader.Gender,
+                RegisteredAt = reader.RegisteredAt,
+                IsCommentMuted = reader.IsCommentMuted,
+                IsBanned = reader.IsBanned,
+                MembershipTier = reader.IsPremium ? "VIP" : "Standard"
+            };
+        }
+
+        private async Task<Readers> GetReaderIncludeUser(int id)
+        {
+            var reader = await _context.Readers
+                .Include(r => r.Users)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (reader == null)
+            {
+                throw new Result("Người dùng không tồn tại");
+            }
+
+            return reader;
+        }
+
+        public async Task<ReaderManagementPageDto> GetReaderManagement(ReaderManagementQueryDto query)
+        {
+            var page = query.Page <= 0 ? 1 : query.Page;
+            var pageSize = query.PageSize <= 0 ? 10 : Math.Min(query.PageSize, 100);
+            var search = (query.Search ?? string.Empty).Trim().ToLower();
+            var membership = (query.Membership ?? "Tất cả").Trim();
+            var sortBy = (query.SortBy ?? "fullName").Trim().ToLower();
+            var sortDir = (query.SortDir ?? "desc").Trim().ToLower();
+            var asc = sortDir == "asc";
+
+            var readers = await _context.Readers
+                .Include(r => r.Users)
+                .ToListAsync();
+
+            var filtered = readers.Where(reader =>
+            {
+                var userName = reader.Users?.UserName ?? string.Empty;
+                var membershipLabel = reader.IsPremium ? "VIP" : "Standard";
+
+                var matchesSearch = string.IsNullOrEmpty(search)
+                    || (reader.FullName ?? string.Empty).ToLower().Contains(search)
+                    || (reader.Email ?? string.Empty).ToLower().Contains(search)
+                    || userName.ToLower().Contains(search);
+
+                var matchesMembership = membership == "Tất cả" || string.Equals(membershipLabel, membership, StringComparison.OrdinalIgnoreCase);
+
+                return matchesSearch && matchesMembership;
+            });
+
+            filtered = sortBy switch
+            {
+                "fullname" => asc
+                    ? filtered.OrderBy(r => r.FullName)
+                    : filtered.OrderByDescending(r => r.FullName),
+                "email" => asc
+                    ? filtered.OrderBy(r => r.Email)
+                    : filtered.OrderByDescending(r => r.Email),
+                "username" => asc
+                    ? filtered.OrderBy(r => r.Users != null ? r.Users.UserName : string.Empty)
+                    : filtered.OrderByDescending(r => r.Users != null ? r.Users.UserName : string.Empty),
+                "phone" => asc
+                    ? filtered.OrderBy(r => r.Phone)
+                    : filtered.OrderByDescending(r => r.Phone),
+                "address" => asc
+                    ? filtered.OrderBy(r => r.Address)
+                    : filtered.OrderByDescending(r => r.Address),
+                "gender" => asc
+                    ? filtered.OrderBy(r => r.Gender)
+                    : filtered.OrderByDescending(r => r.Gender),
+                "membership" => asc
+                    ? filtered.OrderBy(r => r.IsPremium)
+                    : filtered.OrderByDescending(r => r.IsPremium),
+                "registeredat" => asc
+                    ? filtered.OrderBy(r => r.RegisteredAt)
+                    : filtered.OrderByDescending(r => r.RegisteredAt),
+                _ => asc
+                    ? filtered.OrderBy(r => r.FullName)
+                    : filtered.OrderByDescending(r => r.FullName)
+            };
+
+            var total = filtered.Count();
+            var items = filtered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(ToReaderManagementItem)
+                .ToList();
+
+            return new ReaderManagementPageDto
+            {
+                Items = items,
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<ReaderManagementItemDto> CreateReaderManagement(CreateReaderManagementDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.UserName))
+            {
+                throw new Result("Tên đăng nhập không được để trống");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+            {
+                throw new Result("Mật khẩu không được để trống");
+            }
+
+            var existedUserName = await _context.Users.AnyAsync(u => u.UserName == dto.UserName);
+            if (existedUserName)
+            {
+                throw new Result("Tên đăng nhập đã tồn tại");
+            }
+
+            var existedEmail = await _context.Readers.AnyAsync(r => r.Email == dto.Email);
+            if (existedEmail)
+            {
+                throw new Result("Email đã tồn tại");
+            }
+
+            var user = new Users
+            {
+                UserName = dto.UserName,
+                Password = PasswordHelper.HashPassword(dto.Password),
+                Role = "Reader",
+                TokenVersion = 0
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            var reader = new Readers
+            {
+                FullName = dto.FullName,
+                Email = dto.Email,
+                Phone = dto.Phone,
+                Address = dto.Address,
+                Gender = dto.Gender,
+                Birth = DateOnly.FromDateTime(DateTime.UtcNow),
+                UserId = user.Id,
+                IsPremium = false,
+                IsCommentMuted = false,
+                IsBanned = false,
+                RegisteredAt = DateTime.UtcNow
+            };
+
+            await _context.Readers.AddAsync(reader);
+            await _context.SaveChangesAsync();
+
+            reader = await _context.Readers.Include(r => r.Users).FirstAsync(r => r.Id == reader.Id);
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> UpdateReaderManagement(int id, UpdateReaderManagementDto dto)
+        {
+            var reader = await GetReaderIncludeUser(id);
+
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+            {
+                var existedEmail = await _context.Readers.AnyAsync(r => r.Id != id && r.Email == dto.Email);
+                if (existedEmail)
+                {
+                    throw new Result("Email đã tồn tại");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.UserName))
+            {
+                var existedUserName = await _context.Users.AnyAsync(u => u.Id != reader.UserId && u.UserName == dto.UserName);
+                if (existedUserName)
+                {
+                    throw new Result("Tên đăng nhập đã tồn tại");
+                }
+            }
+
+            reader.FullName = dto.FullName ?? reader.FullName;
+            reader.Email = dto.Email ?? reader.Email;
+            reader.Phone = dto.Phone ?? reader.Phone;
+            reader.Address = dto.Address ?? reader.Address;
+            reader.Gender = dto.Gender ?? reader.Gender;
+            if (reader.Users != null && !string.IsNullOrWhiteSpace(dto.UserName))
+            {
+                reader.Users.UserName = dto.UserName;
+            }
+
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> ResetReaderPassword(int id, ResetPasswordRequestDto dto)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            if (reader.Users == null)
+            {
+                throw new Result("Tài khoản đăng nhập không tồn tại");
+            }
+
+            var newPassword = string.IsNullOrWhiteSpace(dto.NewPassword)
+                ? $"Temp{id}#{DateTime.UtcNow:MMdd}"
+                : dto.NewPassword;
+
+            reader.Users.Password = PasswordHelper.HashPassword(newPassword);
+            await _context.SaveChangesAsync();
+
+            var item = ToReaderManagementItem(reader);
+            item.TempPassword = newPassword;
+            return item;
+        }
+
+        public async Task<ReaderManagementItemDto> GrantReaderVip(int id, GrantVipRequestDto dto)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            reader.IsPremium = true;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> RevokeReaderVip(int id)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            reader.IsPremium = false;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> MuteReaderComment(int id)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            reader.IsCommentMuted = true;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> UnmuteReaderComment(int id)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            reader.IsCommentMuted = false;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> BanReader(int id)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            if (reader.Users == null)
+            {
+                throw new Result("Tài khoản đăng nhập không tồn tại");
+            }
+
+            reader.IsBanned = true;
+            reader.Users.TokenVersion += 1;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> UnbanReader(int id)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            reader.IsBanned = false;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<ReaderManagementItemDto> ForceLogoutReader(int id)
+        {
+            var reader = await GetReaderIncludeUser(id);
+            if (reader.Users == null)
+            {
+                throw new Result("Tài khoản đăng nhập không tồn tại");
+            }
+
+            reader.Users.TokenVersion += 1;
+            await _context.SaveChangesAsync();
+            return ToReaderManagementItem(reader);
+        }
+
+        public async Task<int> BulkNotifyReaders(BulkNotifyRequestDto dto)
+        {
+            if (dto.ReaderIds.Count == 0)
+            {
+                return 0;
+            }
+
+            var readers = await _context.Readers.Where(r => dto.ReaderIds.Contains(r.Id)).ToListAsync();
+
+            var notification = new Notifications
+            {
+                Title = string.IsNullOrWhiteSpace(dto.Title) ? "Thông báo hệ thống" : dto.Title,
+                Content = string.IsNullOrWhiteSpace(dto.Content) ? "Bạn có thông báo mới từ quản trị viên." : dto.Content,
+                TargetRole = "Reader",
+                MangaId = 0,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+
+            _context.Notifications.Add(notification);
+
+            await _context.SaveChangesAsync();
+            return readers.Count;
+        }
+
+
     }
 }

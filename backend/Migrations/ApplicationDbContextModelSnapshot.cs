@@ -53,6 +53,21 @@ namespace backend.Migrations
                     b.ToTable("MangaGenres", (string)null);
                 });
 
+            modelBuilder.Entity("MangaNotifications", b =>
+                {
+                    b.Property<int>("MangaId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NotificationsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MangaId", "NotificationsId");
+
+                    b.HasIndex("NotificationsId");
+
+                    b.ToTable("NotificationManga", (string)null);
+                });
+
             modelBuilder.Entity("PackagesPrevilages", b =>
                 {
                     b.Property<int>("PackagesId")
@@ -312,6 +327,73 @@ namespace backend.Migrations
                     b.ToTable("Manga");
                 });
 
+            modelBuilder.Entity("backend.src.Models.NotificationReads", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("NotificationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ReaderId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId");
+
+                    b.HasIndex("ReaderId", "NotificationId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationReads");
+                });
+
+            modelBuilder.Entity("backend.src.Models.Notifications", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .IsUnicode(true)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MangaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TargetRole")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(true)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .IsUnicode(true)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("backend.src.Models.Packages", b =>
                 {
                     b.Property<int>("Id")
@@ -476,6 +558,16 @@ namespace backend.Migrations
                         .IsUnicode(false)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<bool>("IsBanned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsCommentMuted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsPremium")
                         .HasColumnType("boolean");
 
@@ -484,6 +576,11 @@ namespace backend.Migrations
                         .HasMaxLength(15)
                         .IsUnicode(false)
                         .HasColumnType("character varying(15)");
+
+                    b.Property<DateTime>("RegisteredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -514,6 +611,11 @@ namespace backend.Migrations
                         .HasMaxLength(20)
                         .IsUnicode(true)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TokenVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -552,6 +654,21 @@ namespace backend.Migrations
                     b.HasOne("backend.src.Models.Manga", null)
                         .WithMany()
                         .HasForeignKey("MangaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MangaNotifications", b =>
+                {
+                    b.HasOne("backend.src.Models.Manga", null)
+                        .WithMany()
+                        .HasForeignKey("MangaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.Notifications", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -637,6 +754,25 @@ namespace backend.Migrations
                     b.Navigation("Manga");
 
                     b.Navigation("Readers");
+                });
+
+            modelBuilder.Entity("backend.src.Models.NotificationReads", b =>
+                {
+                    b.HasOne("backend.src.Models.Notifications", "Notification")
+                        .WithMany("NotificationReads")
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.Readers", "Reader")
+                        .WithMany("NotificationReads")
+                        .HasForeignKey("ReaderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notification");
+
+                    b.Navigation("Reader");
                 });
 
             modelBuilder.Entity("backend.src.Models.Pages", b =>
@@ -727,6 +863,11 @@ namespace backend.Migrations
                     b.Navigation("Ratings");
                 });
 
+            modelBuilder.Entity("backend.src.Models.Notifications", b =>
+                {
+                    b.Navigation("NotificationReads");
+                });
+
             modelBuilder.Entity("backend.src.Models.Packages", b =>
                 {
                     b.Navigation("ReaderPackages");
@@ -737,6 +878,8 @@ namespace backend.Migrations
                     b.Navigation("History");
 
                     b.Navigation("Libraries");
+
+                    b.Navigation("NotificationReads");
 
                     b.Navigation("Ratings");
 

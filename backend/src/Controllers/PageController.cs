@@ -47,10 +47,12 @@ namespace backend.src.Controllers
             try
             {
                 var pages = await _page.AddPageToChapter(idManga, idChapter, files);
+                var uploadStatus = files != null && files.Count > 0 ? "Đang xử lý" : null;
 
                 return Ok(new
                 {
                     message = "Thêm page thành công",
+                    uploadStatus,
                     data = pages
                 });
             }

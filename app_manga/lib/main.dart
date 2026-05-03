@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:provider/provider.dart';
 
 import 'core/security/screen_security_service.dart';
@@ -32,20 +30,7 @@ import 'features/library/library_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ScreenSecurityService.instance.initialize();
-  await _enableScreenSecurity();
   runApp(const MangaApp());
-}
-
-Future<void> _enableScreenSecurity() async {
-  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-    return;
-  }
-
-  try {
-    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-  } catch (_) {
-    // Keep app startup resilient if the platform channel is unavailable.
-  }
 }
 
 class MangaApp extends StatelessWidget {
@@ -54,7 +39,9 @@ class MangaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mangaRemoteDataSource = MangaRemoteDataSource();
-    final mangaRepository = MangaRepositoryImpl(remoteDataSource: mangaRemoteDataSource);
+    final mangaRepository = MangaRepositoryImpl(
+      remoteDataSource: mangaRemoteDataSource,
+    );
 
     final authRemoteDataSource = AuthRemoteDataSource();
     final authLocalDataSource = AuthLocalDataSource();

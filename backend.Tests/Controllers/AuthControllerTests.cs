@@ -25,7 +25,7 @@ public class AuthControllerTests
         var controller = new AuthController(
             dbContext,
             authService.Object,
-            ControllerTestHelper.CreateLogger<AdminController>());
+            ControllerTestHelper.CreateLogger<AuthController>());
 
         var result = await controller.Login(new LoginRequestDto { UserName = "u", Password = "p" });
 
@@ -47,7 +47,7 @@ public class AuthControllerTests
         var controller = new AuthController(
             dbContext,
             authService.Object,
-            ControllerTestHelper.CreateLogger<AdminController>());
+            ControllerTestHelper.CreateLogger<AuthController>());
 
         var result = await controller.Login(new LoginRequestDto { UserName = "u", Password = "wrong" });
 
@@ -70,7 +70,7 @@ public class AuthControllerTests
         var controller = new AuthController(
             dbContext,
             authService.Object,
-            ControllerTestHelper.CreateLogger<AdminController>());
+            ControllerTestHelper.CreateLogger<AuthController>());
 
         var result = await controller.Register(new RegisterDto { UserName = "reader", Password = "123" });
 
@@ -97,7 +97,7 @@ public class AuthControllerTests
         var controller = new AuthController(
             dbContext,
             authService.Object,
-            ControllerTestHelper.CreateLogger<AdminController>());
+            ControllerTestHelper.CreateLogger<AuthController>());
 
         var result = await controller.Register(new RegisterDto { UserName = "reader" });
 

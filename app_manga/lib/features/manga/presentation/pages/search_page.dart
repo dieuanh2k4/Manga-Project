@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/pages/me_page.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/search_controller.dart';
@@ -46,41 +47,41 @@ class _SearchPageState extends State<SearchPage>
         child: controller.isLoading
             ? const Center(child: CircularProgressIndicator())
             : controller.errorMessage != null
-                ? _buildError(controller)
-                : Column(
-                    children: [
-                      _buildSearchBar(controller),
-                      const SizedBox(height: 8),
-                      Container(height: 8, color: const Color(0xFFFF6200)),
-                      TabBar(
-                        controller: _tabController,
-                        labelColor: const Color(0xFFCC5A15),
-                        unselectedLabelColor: const Color(0xFF2E2E2E),
-                        indicatorColor: const Color(0xFFCC5A15),
-                        tabs: const [
-                          Tab(text: 'POPULAR'),
-                          Tab(text: 'LAST UPDATES'),
-                          Tab(text: 'DIRECTORY'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildMangaList(
-                              controller.popularItems(),
-                              isUpdateList: false,
-                            ),
-                            _buildMangaList(
-                              controller.lastUpdateItems(),
-                              isUpdateList: true,
-                            ),
-                            _buildDirectoryTab(controller),
-                          ],
-                        ),
-                      ),
+            ? _buildError(controller)
+            : Column(
+                children: [
+                  _buildSearchBar(controller),
+                  const SizedBox(height: 8),
+                  Container(height: 8, color: const Color(0xFFFF6200)),
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: const Color(0xFFCC5A15),
+                    unselectedLabelColor: const Color(0xFF2E2E2E),
+                    indicatorColor: const Color(0xFFCC5A15),
+                    tabs: const [
+                      Tab(text: 'POPULAR'),
+                      Tab(text: 'LAST UPDATES'),
+                      Tab(text: 'DIRECTORY'),
                     ],
                   ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildMangaList(
+                          controller.popularItems(),
+                          isUpdateList: false,
+                        ),
+                        _buildMangaList(
+                          controller.lastUpdateItems(),
+                          isUpdateList: true,
+                        ),
+                        _buildDirectoryTab(controller),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -129,6 +130,16 @@ class _SearchPageState extends State<SearchPage>
               decoration: InputDecoration(
                 hintText: 'Enter title or author\'s name',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: controller.isSearching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide: const BorderSide(color: Color(0xFFCC5A15)),
@@ -139,8 +150,10 @@ class _SearchPageState extends State<SearchPage>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide:
-                      const BorderSide(color: Color(0xFFCC5A15), width: 1.2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFCC5A15),
+                    width: 1.2,
+                  ),
                 ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -181,8 +194,8 @@ class _SearchPageState extends State<SearchPage>
         final imageUrl = manga.thumbnail == null || manga.thumbnail!.isEmpty
             ? 'https://via.placeholder.com/60x85?text=Manga'
             : manga.thumbnail!.startsWith('http')
-                ? manga.thumbnail!
-                : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
+            ? manga.thumbnail!
+            : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
 
         return InkWell(
           onTap: () {
@@ -196,67 +209,73 @@ class _SearchPageState extends State<SearchPage>
             color: const Color(0xFFF2F2F2),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: Image.network(
-                  imageUrl,
-                  width: 54,
-                  height: 74,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: ProtectedNetworkImage(
+                    imageUrl: imageUrl,
+                    width: 54,
+                    height: 74,
+                    fit: BoxFit.cover,
+                    errorWidget: Container(
                       width: 54,
                       height: 74,
                       color: Colors.grey.shade300,
                       alignment: Alignment.center,
-                      child: const Icon(Icons.image_not_supported_outlined,
-                          size: 18),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      manga.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF333333),
-                        fontWeight: FontWeight.w500,
+                      child: const Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 18,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      manga.status ?? 'Unknown status',
-                      style:
-                          const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'cap ${manga.totalChapter}',
-                      style:
-                          const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isUpdateList
-                          ? '${(index + 1) * 12} minutes ago'
-                          : 'This have ${(manga.id * 246813) % 99999999} views',
-                      style:
-                          const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        manga.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF333333),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        manga.status ?? 'Unknown status',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'cap ${manga.totalChapter}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isUpdateList
+                            ? '${(index + 1) * 12} minutes ago'
+                            : 'This have ${(manga.id * 246813) % 99999999} views',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -361,9 +380,9 @@ class _SearchPageState extends State<SearchPage>
           );
         }
         if (index == 3) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MePage()),
-          );
+          Navigator.of(
+            context,
+          ).pushReplacement(MaterialPageRoute(builder: (_) => const MePage()));
         }
       },
       items: const [
