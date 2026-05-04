@@ -14,9 +14,6 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # state management
-  flutter_bloc: ^9.1.1
-
   # comaparing dart object
   equatable: ^2.0.8
 

@@ -19,8 +19,8 @@ import 'package:web_admin/domain/usecases/get_genres.dart';
 import 'package:web_admin/domain/usecases/get_manga.dart';
 import 'package:web_admin/domain/usecases/login.dart';
 import 'package:web_admin/domain/usecases/update_manga.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
 import 'package:web_admin/presentation/controllers/auth_controller.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 
 final sl = GetIt.instance;
@@ -63,6 +63,5 @@ Future<void> initilizeDependencies() async {
     ManageMangaService(sl(), sl(), sl(), sl(), sl()),
   );
 
-  // Blocs
-  sl.registerFactory<RemoteMangaBloc>(() => RemoteMangaBloc(sl()));
+  sl.registerFactory<RemoteMangaController>(() => RemoteMangaController(sl()));
 }

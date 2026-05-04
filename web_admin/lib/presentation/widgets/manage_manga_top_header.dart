@@ -70,7 +70,7 @@ class ManageMangaTopHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Dang xuat',
+            tooltip: 'Logout',
             onPressed: onLogout == null ? null : () => onLogout!(),
             icon: const Icon(
               Icons.logout_rounded,
