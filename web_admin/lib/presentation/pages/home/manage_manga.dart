@@ -24,7 +24,9 @@ import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
 
 class ManageManga extends StatefulWidget {
-  const ManageManga({Key? key}) : super(key: key);
+  final Future<void> Function()? onLogout;
+
+  const ManageManga({Key? key, this.onLogout}) : super(key: key);
 
   @override
   State<ManageManga> createState() => _ManageMangaState();
@@ -123,13 +125,10 @@ class _ManageMangaState extends State<ManageManga> {
   }
 
   Future<void> _onAddTap() async {
-    final CreateMangaSubmitResult? createdResult =
-        await Navigator.of(context).push<CreateMangaSubmitResult>(
+    final CreateMangaSubmitResult? createdResult = await Navigator.of(context)
+        .push<CreateMangaSubmitResult>(
           MaterialPageRoute<CreateMangaSubmitResult>(
-            builder: (_) => CreateMangaPage(
-              authors: _authors,
-              genres: _genres,
-            ),
+            builder: (_) => CreateMangaPage(authors: _authors, genres: _genres),
             fullscreenDialog: true,
           ),
         );
@@ -277,7 +276,10 @@ class _ManageMangaState extends State<ManageManga> {
         color: const Color(0xFFF7F8FC),
         child: Column(
           children: [
-            ManageMangaTopHeader(searchController: _globalSearchController),
+            ManageMangaTopHeader(
+              searchController: _globalSearchController,
+              onLogout: widget.onLogout,
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),

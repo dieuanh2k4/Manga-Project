@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 class ManageMangaTopHeader extends StatelessWidget {
   final TextEditingController searchController;
+  final Future<void> Function()? onLogout;
   final String hintText;
 
   const ManageMangaTopHeader({
     super.key,
     required this.searchController,
+    this.onLogout,
     this.hintText = 'Tìm kiếm manga, người dùng...',
   });
 
@@ -63,6 +65,15 @@ class ManageMangaTopHeader extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(
               Icons.settings_outlined,
+              color: Color(0xFF68758C),
+              size: 20,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Dang xuat',
+            onPressed: onLogout == null ? null : () => onLogout!(),
+            icon: const Icon(
+              Icons.logout_rounded,
               color: Color(0xFF68758C),
               size: 20,
             ),

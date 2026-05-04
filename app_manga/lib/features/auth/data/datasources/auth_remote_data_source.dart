@@ -18,7 +18,7 @@ class AuthRemoteDataSource {
     final jsonMap = jsonDecode(body) as Map<String, dynamic>;
 
     if (response.statusCode != 200) {
-      final message = (jsonMap['message'] ?? 'Dang nhap that bai').toString();
+      final message = (jsonMap['message'] ?? 'Đăng nhập thất bại').toString();
       throw Exception(message);
     }
 
@@ -55,7 +55,7 @@ class AuthRemoteDataSource {
     final jsonMap = jsonDecode(body) as Map<String, dynamic>;
 
     if (streamed.statusCode != 200) {
-      final message = (jsonMap['message'] ?? 'Dang ky that bai').toString();
+      final message = (jsonMap['message'] ?? 'Đăng ký thất bại').toString();
       throw Exception(message);
     }
   }
@@ -70,7 +70,8 @@ class AuthRemoteDataSource {
     final jsonMap = jsonDecode(body) as Map<String, dynamic>;
 
     if (response.statusCode != 200) {
-      final message = (jsonMap['message'] ?? 'Khong tai duoc thong tin user').toString();
+      final message = (jsonMap['message'] ?? 'Không tải được thông tin user')
+          .toString();
       throw Exception(message);
     }
 
