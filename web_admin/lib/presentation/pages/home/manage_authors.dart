@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/resources/data_state.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
@@ -9,16 +8,22 @@ import 'package:web_admin/domain/entities/author.dart';
 import 'package:web_admin/domain/entities/manga.dart';
 import 'package:web_admin/domain/usecases/get_authors.dart';
 import 'package:web_admin/injection_container.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_state.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/widgets/manage_authors_body.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 
 class ManageAuthors extends StatefulWidget {
-  const ManageAuthors({super.key});
+  final RemoteMangaController mangaController;
+  final Future<void> Function()? onLogout;
+
+  const ManageAuthors({
+    super.key,
+    required this.mangaController,
+    this.onLogout,
+  });
 
   @override
   State<ManageAuthors> createState() => _ManageAuthorsState();
@@ -43,7 +48,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     super.initState();
     _searchController.addListener(_onFilterChanged);
     _loadAuthors();
-    context.read<RemoteMangaBloc>().add(const GetManga());
+    widget.mangaController.loadManga();
   }
 
   @override
@@ -54,10 +59,9 @@ class _ManageAuthorsState extends State<ManageAuthors> {
   }
 
   void _onFilterChanged() {
-    if (!mounted) {
-      return;
+    if (mounted) {
+      setState(() {});
     }
-    setState(() {});
   }
 
   Future<void> _loadAuthors() async {
@@ -246,9 +250,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     }
   }
 
-  List<AuthorEntity> _filterAuthors(
-    Map<int, List<MangaEntity>> mangaByAuthor,
-  ) {
+  List<AuthorEntity> _filterAuthors(Map<int, List<MangaEntity>> mangaByAuthor) {
     final String keyword = _searchController.text.trim().toLowerCase();
     final List<AuthorEntity> sorted = List<AuthorEntity>.from(_authors)
       ..sort((a, b) {
@@ -270,7 +272,8 @@ class _ManageAuthorsState extends State<ManageAuthors> {
       final String description = (author.description ?? '').toLowerCase();
       final int mangaCount = mangaByAuthor[author.id ?? 0]?.length ?? 0;
 
-      final bool matchesKeyword = keyword.isEmpty ||
+      final bool matchesKeyword =
+          keyword.isEmpty ||
           name.contains(keyword) ||
           description.contains(keyword);
       final bool matchesNoManga = !_onlyNoManga || mangaCount == 0;
@@ -279,7 +282,23 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     }).toList();
   }
 
+  Map<int, List<MangaEntity>> _groupMangaByAuthor(List<MangaEntity> mangas) {
+    final Map<int, List<MangaEntity>> mangaByAuthor =
+        <int, List<MangaEntity>>{};
+    for (final MangaEntity manga in mangas) {
+      final int authorId = manga.authorId ?? 0;
+      if (authorId <= 0) {
+        continue;
+      }
+      mangaByAuthor.putIfAbsent(authorId, () => <MangaEntity>[]).add(manga);
+    }
+    return mangaByAuthor;
+  }
+
   void _showMessage(String message) {
+    if (!mounted) {
+      return;
+    }
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -325,62 +344,15 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                     itemCount: mangaList.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
-                      final manga = mangaList[index];
+                      final MangaEntity manga = mangaList[index];
                       return ListTile(
                         dense: true,
                         title: Text(manga.title ?? 'Manga'),
-                        subtitle: Text(
-                          'Chương: ${manga.totalChapter ?? 0}',
-                        ),
+                        subtitle: Text('Chương: ${manga.totalChapter ?? 0}'),
                         trailing: IconButton(
                           tooltip: 'Xóa manga',
                           icon: const Icon(Icons.delete_outline, size: 18),
-                          onPressed: () async {
-                            final int mangaId = manga.id ?? 0;
-                            if (mangaId <= 0) {
-                              return;
-                            }
-
-                            final bool? confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Xóa manga'),
-                                content: Text(
-                                  'Xóa "${manga.title ?? 'Manga'}" không?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: const Text('Hủy'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: const Text('Xóa'),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirmed != true) {
-                              return;
-                            }
-
-                            final ManageMangaDeleteResult result =
-                                await _mangaService.deleteManga(mangaId);
-
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(result.message)),
-                              );
-                              if (result.isSuccess) {
-                                context.read<RemoteMangaBloc>().add(
-                                  const GetManga(),
-                                );
-                              }
-                            }
-                          },
+                          onPressed: () => _deleteMangaFromDialog(manga),
                         ),
                       );
                     },
@@ -417,6 +389,64 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     );
   }
 
+  Future<void> _deleteMangaFromDialog(MangaEntity manga) async {
+    final int mangaId = manga.id ?? 0;
+    if (mangaId <= 0) {
+      return;
+    }
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa manga'),
+        content: Text('Xóa "${manga.title ?? 'Manga'}" không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    final ManageMangaDeleteResult result = await _mangaService.deleteManga(
+      mangaId,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    _showMessage(result.message);
+    if (result.isSuccess) {
+      widget.mangaController.loadManga();
+    }
+  }
+
+  void _openMangaPage() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageManga(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -448,15 +478,11 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                             selectedKey: sidebarKeyAuthors,
                             onSelect: (key) {
                               if (key == sidebarKeyManga) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const ManageManga(),
-                                  ),
-                                );
+                                _openMangaPage();
                               }
                             },
                           ),
-                          Expanded(child: _buildMainContent(context)),
+                          Expanded(child: _buildMainContent()),
                         ],
                       ),
                     ),
@@ -470,7 +496,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     );
   }
 
-  Widget _buildMainContent(BuildContext context) {
+  Widget _buildMainContent() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topRight: Radius.circular(14),
@@ -482,6 +508,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
           children: [
             ManageMangaTopHeader(
               searchController: _searchController,
+              onLogout: widget.onLogout,
               hintText: 'Tìm kiếm tác giả...',
             ),
             Expanded(
@@ -491,299 +518,38 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                     ? const Center(child: CupertinoActivityIndicator())
                     : _errorMessage != null
                     ? Center(child: Text(_errorMessage!))
-                    : BlocBuilder<RemoteMangaBloc, RemoteMangaState>(
-                        builder: (_, state) {
+                    : ListenableBuilder(
+                        listenable: widget.mangaController,
+                        builder: (_, __) {
+                          final RemoteMangaState state =
+                              widget.mangaController.state;
                           final List<MangaEntity> mangaList =
                               state is RemoteMangaDone
-                                  ? (state.manga ?? const <MangaEntity>[])
-                                  : const <MangaEntity>[];
-
+                              ? (state.manga ?? const <MangaEntity>[])
+                              : const <MangaEntity>[];
                           final Map<int, List<MangaEntity>> mangaByAuthor =
-                              <int, List<MangaEntity>>{};
-                          for (final manga in mangaList) {
-                            final int authorId = manga.authorId ?? 0;
-                            if (authorId <= 0) {
-                              continue;
-                            }
-                            mangaByAuthor
-                                .putIfAbsent(authorId, () => <MangaEntity>[])
-                                .add(manga);
-                          }
-
+                              _groupMangaByAuthor(mangaList);
                           final List<AuthorEntity> visibleAuthors =
                               _filterAuthors(mangaByAuthor);
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Quản lý tác giả',
-                                        style: TextStyle(
-                                          color: Color(0xFF1D2638),
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'Danh sách tác giả và tác phẩm liên quan',
-                                        style: TextStyle(
-                                          color: Color(0xFF7B879B),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  ElevatedButton.icon(
-                                    onPressed: _showAuthorForm,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF040617),
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.add, size: 16),
-                                    label: const Text(
-                                      'Thêm tác giả',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 18),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFFE4E8F2),
-                                  ),
-                                ),
-                                child: TextField(
-                                  controller: _searchController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Nhập tên tác giả...',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFFABB3C2),
-                                      fontSize: 13,
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.search,
-                                      color: Color(0xFFABB3C2),
-                                      size: 18,
-                                    ),
-                                    isDense: true,
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(vertical: 11),
-                                    filled: true,
-                                    fillColor: const Color(0xFFF7F8FC),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFFE4E8F2),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      height: 40,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF7F8FC),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton<String>(
-                                          value: _selectedSort,
-                                          icon: const Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            size: 20,
-                                          ),
-                                          style: const TextStyle(
-                                            color: Color(0xFF4D5B72),
-                                            fontSize: 13,
-                                          ),
-                                          items: const [
-                                            DropdownMenuItem(
-                                              value: 'A-Z',
-                                              child: Text('Sắp xếp A-Z'),
-                                            ),
-                                            DropdownMenuItem(
-                                              value: 'Manga nhiều',
-                                              child: Text('Manga nhiều nhất'),
-                                            ),
-                                          ],
-                                          onChanged: (value) {
-                                            if (value == null) {
-                                              return;
-                                            }
-                                            setState(() {
-                                              _selectedSort = value;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Checkbox(
-                                      value: _onlyNoManga,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _onlyNoManga = value ?? false;
-                                        });
-                                      },
-                                    ),
-                                    const Text('Chỉ tác giả chưa có truyện'),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: const Color(0xFFE4E8F2),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          16,
-                                          16,
-                                          16,
-                                          10,
-                                        ),
-                                        child: Text(
-                                          'Danh sách tác giả (${visibleAuthors.length})',
-                                          style: const TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF1E2A3C),
-                                          ),
-                                        ),
-                                      ),
-                                      const Divider(
-                                        height: 1,
-                                        color: Color(0xFFEEF1F6),
-                                      ),
-                                      Expanded(
-                                        child: visibleAuthors.isEmpty
-                                            ? const Center(
-                                                child: Text(
-                                                  'Chưa có tác giả nào',
-                                                  style: TextStyle(
-                                                    color: Color(0xFF8491A7),
-                                                  ),
-                                                ),
-                                              )
-                                            : ListView.separated(
-                                                itemCount:
-                                                    visibleAuthors.length,
-                                                separatorBuilder: (_, __) =>
-                                                    const Divider(height: 1),
-                                                itemBuilder: (context, index) {
-                                                  final author =
-                                                      visibleAuthors[index];
-                                                  final int authorId =
-                                                      author.id ?? 0;
-                                                  final List<MangaEntity>
-                                                      authorManga =
-                                                      mangaByAuthor[authorId] ??
-                                                          const <MangaEntity>[];
-
-                                                  return ListTile(
-                                                    title: Text(
-                                                      author.fullName ??
-                                                          'Tác giả #$authorId',
-                                                      style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                    subtitle: Text(
-                                                      (author.description ?? '')
-                                                              .trim()
-                                                              .isEmpty
-                                                          ? 'Chưa có mô tả'
-                                                          : author.description!
-                                                              .trim(),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    trailing: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Text(
-                                                          '${authorManga.length}',
-                                                          style:
-                                                              const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                          ),
-                                                        ),
-                                                        const Text(
-                                                          'manga',
-                                                          style: TextStyle(
-                                                            fontSize: 11,
-                                                            color:
-                                                                Color(0xFF7B879B),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    onTap: () =>
-                                                        _showAuthorDetail(
-                                                      author,
-                                                      authorManga,
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                          return ManageAuthorsBody(
+                            searchController: _searchController,
+                            selectedSort: _selectedSort,
+                            onlyNoManga: _onlyNoManga,
+                            visibleAuthors: visibleAuthors,
+                            mangaByAuthor: mangaByAuthor,
+                            onAddAuthor: _showAuthorForm,
+                            onSortChanged: (value) {
+                              setState(() {
+                                _selectedSort = value;
+                              });
+                            },
+                            onOnlyNoMangaChanged: (value) {
+                              setState(() {
+                                _onlyNoManga = value;
+                              });
+                            },
+                            onAuthorTap: _showAuthorDetail,
                           );
                         },
                       ),

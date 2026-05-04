@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_admin/config/theme/app_themes.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
 import 'package:web_admin/presentation/controllers/auth_controller.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/auth/login_page.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/injection_container.dart';
@@ -36,6 +34,7 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   late final AuthController _authController;
+  RemoteMangaController? _mangaController;
 
   @override
   void initState() {
@@ -48,14 +47,28 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void dispose() {
     _authController.removeListener(_onAuthChanged);
+    _mangaController?.dispose();
     _authController.dispose();
     super.dispose();
   }
 
   void _onAuthChanged() {
+    if (!_authController.isAuthenticated) {
+      _disposeMangaController();
+    }
+
     if (mounted) {
       setState(() {});
     }
+  }
+
+  RemoteMangaController _ensureMangaController() {
+    return _mangaController ??= sl<RemoteMangaController>()..loadManga();
+  }
+
+  void _disposeMangaController() {
+    _mangaController?.dispose();
+    _mangaController = null;
   }
 
   @override
@@ -76,13 +89,11 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    return BlocProvider<RemoteMangaBloc>(
-      create: (context) => sl()..add(const GetManga()),
-      child: ManageManga(
-        onLogout: () async {
-          await _authController.logout();
-        },
-      ),
+    return ManageManga(
+      mangaController: _ensureMangaController(),
+      onLogout: () async {
+        await _authController.logout();
+      },
     );
   }
 }

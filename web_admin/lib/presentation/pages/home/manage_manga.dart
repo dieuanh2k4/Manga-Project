@@ -1,15 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_admin/domain/entities/author.dart';
 import 'package:web_admin/domain/entities/genre.dart';
 import 'package:web_admin/domain/entities/manga.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/helper/manage_manga_helper.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_state.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/home/create_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
@@ -24,9 +21,14 @@ import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
 
 class ManageManga extends StatefulWidget {
+  final RemoteMangaController mangaController;
   final Future<void> Function()? onLogout;
 
-  const ManageManga({Key? key, this.onLogout}) : super(key: key);
+  const ManageManga({
+    Key? key,
+    required this.mangaController,
+    this.onLogout,
+  }) : super(key: key);
 
   @override
   State<ManageManga> createState() => _ManageMangaState();
@@ -120,7 +122,7 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(updateResult.message)));
 
     if (updateResult.isSuccess) {
-      context.read<RemoteMangaBloc>().add(const GetManga());
+      widget.mangaController.loadManga();
     }
   }
 
@@ -152,7 +154,7 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(createResult.message)));
 
     if (createResult.isSuccess) {
-      context.read<RemoteMangaBloc>().add(const GetManga());
+      widget.mangaController.loadManga();
     }
   }
 
@@ -162,6 +164,11 @@ class _ManageMangaState extends State<ManageManga> {
         builder: (_) => ManageMangaDetailPage(manga: manga),
       ),
     );
+  }
+
+  Future<void> _onNestedRouteLogout() async {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    await widget.onLogout?.call();
   }
 
   Future<void> _onDeleteTap(MangaEntity manga) async {
@@ -209,7 +216,7 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(deleteResult.message)));
 
     if (deleteResult.isSuccess) {
-      context.read<RemoteMangaBloc>().add(const GetManga());
+      widget.mangaController.loadManga();
     }
   }
 
@@ -244,9 +251,12 @@ class _ManageMangaState extends State<ManageManga> {
                             selectedKey: sidebarKeyManga,
                             onSelect: (key) {
                               if (key == sidebarKeyAuthors) {
-                                Navigator.of(context).pushReplacement(
+                                Navigator.of(context).push(
                                   MaterialPageRoute<void>(
-                                    builder: (_) => const ManageAuthors(),
+                                    builder: (_) => ManageAuthors(
+                                      mangaController: widget.mangaController,
+                                      onLogout: _onNestedRouteLogout,
+                                    ),
                                   ),
                                 );
                               }
@@ -283,8 +293,11 @@ class _ManageMangaState extends State<ManageManga> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                child: BlocBuilder<RemoteMangaBloc, RemoteMangaState>(
-                  builder: (_, state) {
+                child: ListenableBuilder(
+                  listenable: widget.mangaController,
+                  builder: (_, __) {
+                    final RemoteMangaState state =
+                        widget.mangaController.state;
                     if (state is RemoteMangaLoading) {
                       return const Center(child: CupertinoActivityIndicator());
                     }
@@ -292,7 +305,7 @@ class _ManageMangaState extends State<ManageManga> {
                     if (state is RemoteMangaError) {
                       return ManageMangaErrorState(
                         onRetry: () {
-                          context.read<RemoteMangaBloc>().add(const GetManga());
+                          widget.mangaController.loadManga();
                           _loadLookupData();
                         },
                       );
