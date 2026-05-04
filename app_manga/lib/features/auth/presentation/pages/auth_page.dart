@@ -11,7 +11,8 @@ class AuthPage extends StatefulWidget {
   State<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin {
+class _AuthPageState extends State<AuthPage>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   final _loginUserName = TextEditingController(text: 'reader01');
@@ -70,23 +71,28 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                   Container(
                     width: 122,
                     height: 122,
+                    clipBehavior: Clip.antiAlias,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: Color(0xFFFF6B00),
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
-                      'M-',
-                      style: TextStyle(fontSize: 42, color: Color(0xFF2B2B2B)),
+                    child: Image.asset(
+                      'assets/images/MANGA_MINUS.png',
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Welcome to MangaMinus',
-                    style: TextStyle(
-                      color: Color(0xFFBC5308),
-                      fontSize: 30,
-                      fontWeight: FontWeight.w600,
+                  Center(
+                    child: Text(
+                      'Welcome to MangaMinus',
+                      style: TextStyle(
+                        color: Color(0xFFBC5308),
+                        fontSize: 30,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -97,6 +103,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     ),
                     child: TabBar(
                       controller: _tabController,
+                      indicatorSize: TabBarIndicatorSize.tab,
                       labelColor: Colors.white,
                       unselectedLabelColor: const Color(0xFF7A7A7A),
                       indicator: BoxDecoration(
@@ -116,16 +123,16 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                       child: Text(
                         auth.errorMessage!,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Color(0xFF9B1B1B), fontSize: 13),
+                        style: const TextStyle(
+                          color: Color(0xFF9B1B1B),
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
-                      children: [
-                        _buildLoginTab(auth),
-                        _buildRegisterTab(auth),
-                      ],
+                      children: [_buildLoginTab(auth), _buildRegisterTab(auth)],
                     ),
                   ),
                 ],
@@ -151,7 +158,10 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           const SizedBox(height: 6),
           const Align(
             alignment: Alignment.centerRight,
-            child: Text('Tài khoản seed: reader01/reader123', style: TextStyle(fontSize: 11, color: Colors.black45)),
+            child: Text(
+              'Tài khoản seed: reader01/reader123',
+              style: TextStyle(fontSize: 11, color: Colors.black45),
+            ),
           ),
           const SizedBox(height: 10),
           _MainButton(
@@ -244,7 +254,11 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     }
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Dang ky thanh cong, vui long dang nhap.')),
+                      const SnackBar(
+                        content: Text(
+                          'Dang ky thanh cong, vui long dang nhap.',
+                        ),
+                      ),
                     );
                     _tabController.animateTo(0);
                   },
@@ -282,7 +296,10 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 3),
-      child: Text(text, style: const TextStyle(fontSize: 12, color: Color(0xFF3F3F3F))),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF3F3F3F)),
+      ),
     );
   }
 }
@@ -300,7 +317,10 @@ class _RoundedInput extends StatelessWidget {
       obscureText: obscureText,
       decoration: InputDecoration(
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         filled: true,
         fillColor: const Color(0xFFF2F2F2),
         enabledBorder: OutlineInputBorder(
@@ -331,7 +351,9 @@ class _MainButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFF6B00),
           foregroundColor: const Color(0xFF222222),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
         ),
         child: Text(label),
       ),

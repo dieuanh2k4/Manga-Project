@@ -13,7 +13,7 @@ services:
       - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=postgres;Username=postgres.mruxtgnyueiermswvmzn;Password=${DB_PASSWORD}
       - ASPNETCORE_URLS=http://+:8080
       - Minio__Endpoint=minio:9000
-      - Minio__PublicEndpoint=localhost:9004
+      - Minio__PublicEndpoint=${IP_LAN}:9004
       - Minio__UseSSL=false
     depends_on:
       database:
@@ -53,7 +53,7 @@ services:
       MINIO_API_CORS_ALLOW_ORIGIN: "*"
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://${IP_LAN}:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5

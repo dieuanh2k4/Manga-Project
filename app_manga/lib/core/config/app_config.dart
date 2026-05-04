@@ -3,7 +3,7 @@ class AppConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:5001/api',
+    defaultValue: 'http://192.168.0.195:5001/api',
   );
 
   static String get apiOrigin {
