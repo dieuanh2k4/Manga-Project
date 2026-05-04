@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class ManageMangaTopHeader extends StatelessWidget {
   final TextEditingController searchController;
+  final String hintText;
 
-  const ManageMangaTopHeader({super.key, required this.searchController});
+  const ManageMangaTopHeader({
+    super.key,
+    required this.searchController,
+    this.hintText = 'Tìm kiếm manga, người dùng...',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +29,7 @@ class ManageMangaTopHeader extends StatelessWidget {
                 child: TextField(
                   controller: searchController,
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm manga, người dùng...',
+                    hintText: hintText,
                     hintStyle: const TextStyle(
                       color: Color(0xFFA6ADBB),
                       fontSize: 13,
