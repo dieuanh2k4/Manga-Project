@@ -21,6 +21,7 @@ import 'package:web_admin/presentation/widgets/manage_manga_page_heading.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_table_card.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
+import 'manage_authors.dart';
 
 class ManageManga extends StatefulWidget {
   final Future<void> Function()? onLogout;
@@ -238,7 +239,19 @@ class _ManageMangaState extends State<ManageManga> {
                       ),
                       child: Row(
                         children: [
-                          ManageMangaSidebar(compact: isCompactSidebar),
+                          ManageMangaSidebar(
+                            compact: isCompactSidebar,
+                            selectedKey: sidebarKeyManga,
+                            onSelect: (key) {
+                              if (key == sidebarKeyAuthors) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const ManageAuthors(),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
                           Expanded(child: _buildMainContent(context)),
                         ],
                       ),

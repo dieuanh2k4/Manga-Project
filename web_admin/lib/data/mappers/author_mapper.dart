@@ -3,7 +3,7 @@ import 'package:web_admin/domain/entities/author.dart';
 
 extension AuthorModelMapper on AuthorModel {
   AuthorEntity toEntity() {
-    return AuthorEntity(id: id, fullName: fullName);
+    return AuthorEntity(id: id, fullName: fullName, description: description);
   }
 }
 
