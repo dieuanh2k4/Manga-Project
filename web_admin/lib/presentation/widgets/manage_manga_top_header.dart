@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class ManageMangaTopHeader extends StatelessWidget {
   final TextEditingController searchController;
+  final Future<void> Function()? onLogout;
 
-  const ManageMangaTopHeader({super.key, required this.searchController});
+  const ManageMangaTopHeader({
+    super.key,
+    required this.searchController,
+    this.onLogout,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +63,15 @@ class ManageMangaTopHeader extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(
               Icons.settings_outlined,
+              color: Color(0xFF68758C),
+              size: 20,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Dang xuat',
+            onPressed: onLogout == null ? null : () => onLogout!(),
+            icon: const Icon(
+              Icons.logout_rounded,
               color: Color(0xFF68758C),
               size: 20,
             ),
