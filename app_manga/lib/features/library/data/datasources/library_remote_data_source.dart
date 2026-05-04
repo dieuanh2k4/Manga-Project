@@ -12,8 +12,28 @@ class LibraryRemoteDataSource {
     if (response.statusCode != 200) {
       throw Exception('API get-manga-in-library failed: ${response.statusCode} ${response.body}');
     }
-    final List<dynamic> data = json.decode(response.body)['data'] ?? [];
-    return data.map((e) => LibraryMangaModel.fromJson(e)).toList();
+    final decoded = json.decode(response.body);
+    final List<dynamic> data;
+
+    if (decoded is List) {
+      data = decoded;
+    } else if (decoded is Map<String, dynamic>) {
+      final rawData = decoded['data'];
+      if (rawData is List) {
+        data = rawData;
+      } else if (rawData is Map<String, dynamic>) {
+        data = [rawData];
+      } else {
+        data = [];
+      }
+    } else {
+      data = [];
+    }
+
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(LibraryMangaModel.fromJson)
+        .toList();
   }
 
   Future<void> addMangaToLibrary(int mangaId, String token) async {
