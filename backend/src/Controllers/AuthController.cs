@@ -28,13 +28,40 @@ namespace backend.src.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            var result = await _auth.Login(request);
-            if (!result.IsSuccess)
+            try
             {
-                return BadRequest(result);
-            }
+                var result = await _auth.Login(request);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(result);
+                }
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return ReturnException(e);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("admin-login")]
+        public async Task<IActionResult> AdminLogin([FromBody] LoginRequestDto request)
+        {
+            try
+            {
+                var result = await _auth.AdminLogin(request);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return ReturnException(e);
+            }
         }
 
         [AllowAnonymous] 
