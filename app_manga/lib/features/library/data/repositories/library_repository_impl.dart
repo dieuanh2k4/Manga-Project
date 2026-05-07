@@ -1,7 +1,6 @@
 import '../../domain/entities/library_manga_entity.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../datasources/library_remote_data_source.dart';
-import '../models/library_manga_model.dart';
 
 class LibraryRepositoryImpl implements LibraryRepository {
   final LibraryRemoteDataSource remoteDataSource;
@@ -10,16 +9,20 @@ class LibraryRepositoryImpl implements LibraryRepository {
   @override
   Future<List<LibraryMangaEntity>> getLibraryManga(String token) async {
     final models = await remoteDataSource.getLibraryManga(token);
-    return models.map((e) => LibraryMangaEntity(
-      id: e.id,
-      title: e.title,
-      description: e.description,
-      thumbnail: e.thumbnail,
-      totalChapter: e.totalChapter,
-      rate: e.rate,
-      status: e.status,
-      genres: e.genres.map((g) => g.toEntity()).toList(),
-    )).toList();
+    return models
+        .map(
+          (e) => LibraryMangaEntity(
+            id: e.id,
+            title: e.title,
+            description: e.description,
+            thumbnail: e.thumbnail,
+            totalChapter: e.totalChapter,
+            rate: e.rate,
+            status: e.status,
+            genres: e.genres.map((g) => g.toEntity()).toList(),
+          ),
+        )
+        .toList();
   }
 
   @override

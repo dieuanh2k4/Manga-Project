@@ -1,12 +1,23 @@
+import 'dart:math' as math;
+
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/injection_container.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
+import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
+import 'package:web_admin/presentation/pages/home/manage_authors.dart';
 
 class ManageUsers extends StatefulWidget {
-  const ManageUsers({super.key});
+  final RemoteMangaController mangaController;
+  final Future<void> Function()? onLogout;
+
+  const ManageUsers({super.key, required this.mangaController, this.onLogout});
 
   @override
   State<ManageUsers> createState() => _ManageUsersState();
@@ -27,6 +38,7 @@ enum _SortField {
 
 class _AdminUser {
   final int id;
+  final String uniqueKey;
   String fullName;
   String email;
   String userName;
@@ -37,9 +49,11 @@ class _AdminUser {
   bool isCommentMuted;
   bool isBanned;
   String membershipTier;
+  String role;
 
   _AdminUser({
     required this.id,
+    required this.uniqueKey,
     required this.fullName,
     required this.email,
     required this.userName,
@@ -50,11 +64,14 @@ class _AdminUser {
     required this.isCommentMuted,
     required this.isBanned,
     required this.membershipTier,
+    required this.role,
   });
 }
 
 class _ManageUsersState extends State<ManageUsers> {
   static const int _pageSize = 8;
+  static const double _tableMinWidth = 1400;
+  static const double _scrollbarHeight = 18;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
@@ -66,13 +83,20 @@ class _ManageUsersState extends State<ManageUsers> {
 
   final Dio _dio = sl<Dio>();
   final AuthTokenStorage _tokenStorage = sl<AuthTokenStorage>();
+  final ScrollController _tableHorizontalController = ScrollController();
+  final ScrollController _gutterHorizontalController = ScrollController();
+  final ScrollController _leftGutterController = ScrollController();
+  final ScrollController _leftTableController = ScrollController();
+  bool _isSyncingScroll = false;
+  bool _isSyncingLeftScroll = false;
 
   final List<_AdminUser> _users = <_AdminUser>[];
-  final Set<int> _selectedUserIds = <int>{};
+  final Set<String> _selectedUserIds = <String>{};
 
   String _selectedMembership = 'Tất cả';
   int _currentPage = 0;
   int? _editingUserId;
+  String _editingRole = 'User';
   bool _isLoading = false;
   String? _errorMessage;
   _SortField? _sortField;
@@ -83,6 +107,30 @@ class _ManageUsersState extends State<ManageUsers> {
     super.initState();
     _searchController.addListener(_onFilterChanged);
     _loadUsers();
+    _tableHorizontalController.addListener(() {
+      _syncHorizontalScroll(
+        source: _tableHorizontalController,
+        target: _gutterHorizontalController,
+      );
+    });
+    _gutterHorizontalController.addListener(() {
+      _syncHorizontalScroll(
+        source: _gutterHorizontalController,
+        target: _tableHorizontalController,
+      );
+    });
+    _leftTableController.addListener(() {
+      _syncLeftHorizontalScroll(
+        source: _leftTableController,
+        target: _leftGutterController,
+      );
+    });
+    _leftGutterController.addListener(() {
+      _syncLeftHorizontalScroll(
+        source: _leftGutterController,
+        target: _leftTableController,
+      );
+    });
   }
 
   @override
@@ -95,7 +143,43 @@ class _ManageUsersState extends State<ManageUsers> {
     _phoneController.dispose();
     _addressController.dispose();
     _genderController.dispose();
+    _tableHorizontalController.dispose();
+    _gutterHorizontalController.dispose();
+    _leftGutterController.dispose();
+    _leftTableController.dispose();
     super.dispose();
+  }
+
+  void _syncHorizontalScroll({
+    required ScrollController source,
+    required ScrollController target,
+  }) {
+    if (_isSyncingScroll || !target.hasClients) {
+      return;
+    }
+
+    _isSyncingScroll = true;
+    final double clamped = source.offset
+        .clamp(target.position.minScrollExtent, target.position.maxScrollExtent)
+        .toDouble();
+    target.jumpTo(clamped);
+    _isSyncingScroll = false;
+  }
+
+  void _syncLeftHorizontalScroll({
+    required ScrollController source,
+    required ScrollController target,
+  }) {
+    if (_isSyncingLeftScroll || !target.hasClients) {
+      return;
+    }
+
+    _isSyncingLeftScroll = true;
+    final double clamped = source.offset
+        .clamp(target.position.minScrollExtent, target.position.maxScrollExtent)
+        .toDouble();
+    target.jumpTo(clamped);
+    _isSyncingLeftScroll = false;
   }
 
   void _onFilterChanged() {
@@ -143,6 +227,56 @@ class _ManageUsersState extends State<ManageUsers> {
     return <dynamic>[];
   }
 
+  String _makeUniqueKey({
+    required String role,
+    required dynamic idRaw,
+    required String email,
+    required String userName,
+  }) {
+    final String idText = idRaw is num
+        ? idRaw.toInt().toString()
+        : (idRaw?.toString().trim().isNotEmpty ?? false)
+        ? idRaw.toString()
+        : '';
+    final String fallback = email.isNotEmpty
+        ? email
+        : (userName.isNotEmpty ? userName : 'unknown');
+    return '$role:$idText:$fallback'.toLowerCase();
+  }
+
+  _AdminUser _fromAdminJson(Map<String, dynamic> data) {
+    final dynamic idRaw = _readField(data, <String>['id', 'Id']);
+    final dynamic usersData =
+        _readField(data, <String>['users', 'Users']) ?? <String, dynamic>{};
+    final String email = (_readField(data, <String>['email', 'Email']) ?? '')
+        .toString();
+    final String userName =
+        (_readField(usersData, <String>['userName', 'UserName']) ?? '')
+            .toString();
+
+    return _AdminUser(
+      id: idRaw is num ? idRaw.toInt() : 0,
+      uniqueKey: _makeUniqueKey(
+        role: 'admin',
+        idRaw: idRaw,
+        email: email,
+        userName: userName,
+      ),
+      fullName: (_readField(data, <String>['name', 'Name']) ?? '').toString(),
+      email: email,
+      userName: userName,
+      phone: (_readField(data, <String>['phone', 'Phone']) ?? '').toString(),
+      address: (_readField(data, <String>['address', 'Address']) ?? '')
+          .toString(),
+      gender: (_readField(data, <String>['gender', 'Gender']) ?? '').toString(),
+      registeredAt: DateTime.now(),
+      isCommentMuted: false,
+      isBanned: false,
+      membershipTier: 'Admin',
+      role: 'Admin',
+    );
+  }
+
   _AdminUser _fromReaderJson(Map<String, dynamic> data) {
     final dynamic idRaw = _readField(data, <String>['id', 'Id']);
     final String registeredAtRaw =
@@ -150,14 +284,23 @@ class _ManageUsersState extends State<ManageUsers> {
             .toString();
     final DateTime registeredAt =
         DateTime.tryParse(registeredAtRaw)?.toLocal() ?? DateTime.now();
+    final String email = (_readField(data, <String>['email', 'Email']) ?? '')
+        .toString();
+    final String userName =
+        (_readField(data, <String>['userName', 'UserName']) ?? '').toString();
 
     return _AdminUser(
       id: idRaw is num ? idRaw.toInt() : 0,
+      uniqueKey: _makeUniqueKey(
+        role: 'reader',
+        idRaw: idRaw,
+        email: email,
+        userName: userName,
+      ),
       fullName: (_readField(data, <String>['fullName', 'FullName']) ?? '')
           .toString(),
-      email: (_readField(data, <String>['email', 'Email']) ?? '').toString(),
-      userName: (_readField(data, <String>['userName', 'UserName']) ?? '')
-          .toString(),
+      email: email,
+      userName: userName,
       phone: (_readField(data, <String>['phone', 'Phone']) ?? '').toString(),
       address: (_readField(data, <String>['address', 'Address']) ?? '')
           .toString(),
@@ -171,6 +314,7 @@ class _ManageUsersState extends State<ManageUsers> {
           (_readField(data, <String>['membershipTier', 'MembershipTier']) ??
                   'Standard')
               .toString(),
+      role: 'User',
     );
   }
 
@@ -213,6 +357,17 @@ class _ManageUsersState extends State<ManageUsers> {
           .map(_fromReaderJson)
           .toList();
 
+      final Response<dynamic> resAdmins = await _dio.get(
+        '${newAPIBaseURL}Admin/get-info-admin',
+        options: options,
+      );
+      final dynamic adminsBody = resAdmins.data;
+      final List<dynamic> adminItems = _extractList(adminsBody);
+      final List<_AdminUser> mappedAdmins = adminItems
+          .whereType<Map<String, dynamic>>()
+          .map(_fromAdminJson)
+          .toList();
+
       if (!mounted) {
         return;
       }
@@ -220,6 +375,7 @@ class _ManageUsersState extends State<ManageUsers> {
       setState(() {
         _users
           ..clear()
+          ..addAll(mappedAdmins)
           ..addAll(mapped);
       });
     } catch (e) {
@@ -475,89 +631,142 @@ class _ManageUsersState extends State<ManageUsers> {
     _addressController.text = user?.address ?? '';
     _genderController.text = user?.gender ?? '';
     _editingUserId = user?.id;
+    _editingRole = user?.role ?? 'User';
 
     await showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(user == null ? 'Thêm độc giả mới' : 'Chỉnh sửa độc giả'),
-          content: SizedBox(
-            width: 520,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _buildDialogInput(_fullNameController, 'Họ và tên'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_emailController, 'Email'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_userNameController, 'Username'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_phoneController, 'Số điện thoại'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_addressController, 'Địa chỉ'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_genderController, 'Giới tính'),
-                ],
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text(
+                user == null ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng',
               ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final Options options = await _authorizedOptions();
-                  if (_editingUserId == null) {
-                    await _dio.post(
-                      '${newAPIBaseURL}Admin/reader-management',
-                      options: options,
-                      data: <String, dynamic>{
-                        'FullName': _fullNameController.text.trim(),
-                        'Email': _emailController.text.trim(),
-                        'UserName': _userNameController.text.trim(),
-                        'Password': 'Temp@123',
-                        'Phone': _phoneController.text.trim(),
-                        'Address': _addressController.text.trim(),
-                        'Gender': _genderController.text.trim(),
-                      },
-                    );
-                  } else {
-                    await _dio.put(
-                      '${newAPIBaseURL}Admin/reader-management/$_editingUserId',
-                      options: options,
-                      data: <String, dynamic>{
-                        'FullName': _fullNameController.text.trim(),
-                        'Email': _emailController.text.trim(),
-                        'UserName': _userNameController.text.trim(),
-                        'Phone': _phoneController.text.trim(),
-                        'Address': _addressController.text.trim(),
-                        'Gender': _genderController.text.trim(),
-                      },
-                    );
-                  }
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _buildDialogInput(_fullNameController, 'Họ và tên'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_emailController, 'Email'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_userNameController, 'Username'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_phoneController, 'Số điện thoại'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_addressController, 'Địa chỉ'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_genderController, 'Giới tính'),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _editingRole,
+                        decoration: InputDecoration(
+                          labelText: 'Vai trò',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFDCDFEA),
+                            ),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Admin',
+                            child: Text('Admin'),
+                          ),
+                          DropdownMenuItem(value: 'User', child: Text('User')),
+                        ],
+                        onChanged: _editingUserId == null
+                            ? (String? val) {
+                                if (val != null)
+                                  setStateDialog(() {
+                                    _editingRole = val;
+                                  });
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final Options options = await _authorizedOptions();
+                      if (_editingRole == 'Admin') {
+                        final Map<String, dynamic> payload = <String, dynamic>{
+                          'Name': _fullNameController.text.trim(),
+                          'Email': _emailController.text.trim(),
+                          'UserName': _userNameController.text.trim(),
+                          'Birth': '1990-01-01',
+                          'Phone': _phoneController.text.trim(),
+                          'Address': _addressController.text.trim(),
+                          'Gender': _genderController.text.trim(),
+                        };
+                        if (_editingUserId == null) {
+                          payload['Password'] = 'Temp@123';
+                          await _dio.post(
+                            '${newAPIBaseURL}Admin/create-admin',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        } else {
+                          await _dio.put(
+                            '${newAPIBaseURL}Admin/update-admin/$_editingUserId',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        }
+                      } else {
+                        final Map<String, dynamic> payload = <String, dynamic>{
+                          'FullName': _fullNameController.text.trim(),
+                          'Email': _emailController.text.trim(),
+                          'UserName': _userNameController.text.trim(),
+                          'Phone': _phoneController.text.trim(),
+                          'Address': _addressController.text.trim(),
+                          'Gender': _genderController.text.trim(),
+                        };
+                        if (_editingUserId == null) {
+                          payload['Password'] = 'Temp@123';
+                          await _dio.post(
+                            '${newAPIBaseURL}Admin/create-reader',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        } else {
+                          await _dio.put(
+                            '${newAPIBaseURL}Admin/update-reader/$_editingUserId',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        }
+                      }
 
-                  if (!mounted) {
-                    return;
-                  }
-                  Navigator.of(this.context).pop();
+                      if (!mounted) return;
+                      Navigator.of(dialogContext).pop();
 
-                  await _loadUsers();
-                  _showMessage(
-                    _editingUserId == null
-                        ? 'Đã thêm tài khoản mới.'
-                        : 'Đã cập nhật thông tin người dùng.',
-                  );
-                } catch (e) {
-                  _showMessage('Không thể lưu người dùng: $e');
-                }
-              },
-              child: const Text('Lưu'),
-            ),
-          ],
+                      await _loadUsers();
+                      _showMessage(
+                        _editingUserId == null
+                            ? 'Đã thêm tài khoản mới.'
+                            : 'Đã cập nhật thông tin người dùng.',
+                      );
+                    } catch (e) {
+                      _showMessage('Không thể lưu người dùng: $e');
+                    }
+                  },
+                  child: const Text('Lưu'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -694,20 +903,30 @@ class _ManageUsersState extends State<ManageUsers> {
       return;
     }
 
+    final List<int> readerIds = _users
+        .where(
+          (_AdminUser u) =>
+              u.role == 'User' && _selectedUserIds.contains(u.uniqueKey),
+        )
+        .map((_AdminUser u) => u.id)
+        .toList();
+
+    if (readerIds.isEmpty) {
+      return;
+    }
+
     try {
       final Options options = await _authorizedOptions();
       await _dio.post(
         '${newAPIBaseURL}Admin/reader-management/bulk-notify',
         options: options,
         data: <String, dynamic>{
-          'ReaderIds': _selectedUserIds.toList(),
+          'ReaderIds': readerIds,
           'Title': 'Thông báo từ quản trị viên',
           'Content': 'Bạn có thông báo mới từ hệ thống quản trị.',
         },
       );
-      _showMessage(
-        'Đã gửi thông báo tới ${_selectedUserIds.length} tài khoản.',
-      );
+      _showMessage('Đã gửi thông báo tới ${readerIds.length} tài khoản.');
     } catch (e) {
       _showMessage('Không thể gửi thông báo hàng loạt: $e');
     }
@@ -804,8 +1023,119 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  void _openMangaPage() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageManga(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
+  void _openAuthorsPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageAuthors(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onNestedRouteLogout() async {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    await widget.onLogout?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isCompactSidebar = constraints.maxWidth < 1120;
+        final double shellHeight = (constraints.maxHeight - 24)
+            .clamp(620.0, 920.0)
+            .toDouble();
+
+        return Scaffold(
+          backgroundColor: const Color(0xFF2F3034),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1440),
+                  child: SizedBox(
+                    height: shellHeight,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7FC),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          ManageMangaSidebar(
+                            compact: isCompactSidebar,
+                            selectedKey: sidebarKeyUsers,
+                            onSelect: (key) {
+                              if (key == sidebarKeyManga) {
+                                _openMangaPage();
+                              } else if (key == sidebarKeyAuthors) {
+                                _openAuthorsPage();
+                              }
+                            },
+                          ),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(14),
+                                bottomRight: Radius.circular(14),
+                              ),
+                              child: Container(
+                                color: const Color(0xFFF7F8FC),
+                                child: Column(
+                                  children: [
+                                    ManageMangaTopHeader(
+                                      searchController: _searchController,
+                                      onLogout: widget.onLogout,
+                                      hintText: 'Tìm kiếm người dùng...',
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          20,
+                                          20,
+                                          16,
+                                        ),
+                                        child: _buildMainContent(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMainContent(BuildContext context) {
     final List<_AdminUser> filteredUsers = _getFilteredAndSortedUsers();
     final List<_AdminUser> pageUsers = _getPagedUsers(filteredUsers);
     final int totalPages = filteredUsers.isEmpty
@@ -815,7 +1145,9 @@ class _ManageUsersState extends State<ManageUsers> {
 
     final bool allSelectedOnPage =
         pageUsers.isNotEmpty &&
-        pageUsers.every((_AdminUser u) => _selectedUserIds.contains(u.id));
+        pageUsers.every(
+          (_AdminUser u) => _selectedUserIds.contains(u.uniqueKey),
+        );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1011,7 +1343,8 @@ class _ManageUsersState extends State<ManageUsers> {
                     onPressed: () {
                       final List<_AdminUser> selected = _users
                           .where(
-                            (_AdminUser u) => _selectedUserIds.contains(u.id),
+                            (_AdminUser u) =>
+                                _selectedUserIds.contains(u.uniqueKey),
                           )
                           .toList();
                       _bulkExportCsv(selected);
@@ -1051,321 +1384,652 @@ class _ManageUsersState extends State<ManageUsers> {
                               style: TextStyle(color: Color(0xFF8491A7)),
                             ),
                           )
-                        : SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 8,
-                            ),
-                            child: LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
-                                return DataTable(
-                                  sortColumnIndex: _sortColumnIndex(),
-                                  sortAscending: _sortAscending,
-                                  horizontalMargin: 6,
-                                  checkboxHorizontalMargin: 4,
-                                  columnSpacing: 8,
-                                  dataRowMinHeight: 46,
-                                  dataRowMaxHeight: 52,
-                                  headingRowHeight: 44,
-                                  columns: <DataColumn>[
-                                    DataColumn(
-                                      label: Checkbox(
-                                        value: allSelectedOnPage,
+                        : LayoutBuilder(
+                            builder: (BuildContext context, BoxConstraints constraints) {
+                              const double leftTableWidth = 380;
+                              const double leftScrollWidth = 720;
+                              final ScrollBehavior dragScrollBehavior =
+                                  const ScrollBehavior().copyWith(
+                                    dragDevices: <PointerDeviceKind>{
+                                      PointerDeviceKind.mouse,
+                                      PointerDeviceKind.touch,
+                                      PointerDeviceKind.stylus,
+                                      PointerDeviceKind.unknown,
+                                    },
+                                  );
+                              final double rightTableWidth = math.max(
+                                _tableMinWidth,
+                                constraints.maxWidth + 240,
+                              );
+
+                              final List<DataRow> leftRows = pageUsers.map((
+                                _AdminUser user,
+                              ) {
+                                final bool selected = _selectedUserIds.contains(
+                                  user.uniqueKey,
+                                );
+                                return DataRow(
+                                  selected: selected,
+                                  color: MaterialStateProperty.resolveWith((
+                                    Set<MaterialState> states,
+                                  ) {
+                                    if (states.contains(
+                                      MaterialState.selected,
+                                    )) {
+                                      return const Color(0xFFF3F6FF);
+                                    }
+                                    return null;
+                                  }),
+                                  cells: <DataCell>[
+                                    DataCell(
+                                      Checkbox(
+                                        value: selected,
                                         onChanged: (bool? checked) {
                                           setState(() {
                                             if (checked ?? false) {
-                                              for (final _AdminUser user
-                                                  in pageUsers) {
-                                                _selectedUserIds.add(user.id);
-                                              }
+                                              _selectedUserIds.add(
+                                                user.uniqueKey,
+                                              );
                                             } else {
-                                              for (final _AdminUser user
-                                                  in pageUsers) {
-                                                _selectedUserIds.remove(
-                                                  user.id,
-                                                );
-                                              }
+                                              _selectedUserIds.remove(
+                                                user.uniqueKey,
+                                              );
                                             }
                                           });
                                         },
                                       ),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Họ tên'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.fullName, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Email'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.email, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Username'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.userName, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('SĐT'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.phone, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Địa chỉ'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.address, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Giới tính'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.gender, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Ngày đăng ký'),
-                                      onSort: (int _, bool asc) => _setSort(
-                                        _SortField.registeredAt,
-                                        asc,
+                                    DataCell(
+                                      _buildCompactText(
+                                        user.fullName,
+                                        width: 120,
                                       ),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Hạng'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.membership, asc),
+                                    DataCell(
+                                      _buildCompactText(user.email, width: 165),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Bình luận'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.comment, asc),
+                                    DataCell(
+                                      _buildCompactText(
+                                        user.userName,
+                                        width: 94,
+                                      ),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Tài khoản'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.account, asc),
-                                    ),
-                                    const DataColumn(label: Text('Thao tác')),
                                   ],
-                                  rows: pageUsers.map((_AdminUser user) {
-                                    final bool selected = _selectedUserIds
-                                        .contains(user.id);
-                                    final bool isVip =
-                                        user.membershipTier == 'VIP';
-                                    final bool isMuted = user.isCommentMuted;
-                                    final bool isBanned = user.isBanned;
+                                );
+                              }).toList();
 
-                                    return DataRow(
-                                      selected: selected,
-                                      cells: <DataCell>[
-                                        DataCell(
-                                          Checkbox(
-                                            value: selected,
-                                            onChanged: (bool? checked) {
-                                              setState(() {
-                                                if (checked ?? false) {
-                                                  _selectedUserIds.add(user.id);
-                                                } else {
-                                                  _selectedUserIds.remove(
-                                                    user.id,
-                                                  );
-                                                }
-                                              });
+                              final List<DataRow> rightRows = pageUsers.map((
+                                _AdminUser user,
+                              ) {
+                                final bool isVip = user.membershipTier == 'VIP';
+                                final bool isMuted = user.isCommentMuted;
+                                final bool isBanned = user.isBanned;
+
+                                return DataRow(
+                                  selected: _selectedUserIds.contains(
+                                    user.uniqueKey,
+                                  ),
+                                  color: MaterialStateProperty.resolveWith((
+                                    Set<MaterialState> states,
+                                  ) {
+                                    if (states.contains(
+                                      MaterialState.selected,
+                                    )) {
+                                      return const Color(0xFFF3F6FF);
+                                    }
+                                    return null;
+                                  }),
+                                  cells: <DataCell>[
+                                    DataCell(
+                                      _buildPreviewButton(
+                                        label: 'Xem',
+                                        title: 'Số điện thoại',
+                                        value: user.phone,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildPreviewButton(
+                                        label: 'Xem',
+                                        title: 'Địa chỉ',
+                                        value: user.address,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildCompactText(user.gender, width: 84),
+                                    ),
+                                    DataCell(
+                                      _buildCompactText(
+                                        _formatDateTime(user.registeredAt),
+                                        width: 88,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        user.role,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: user.role == 'Admin'
+                                              ? Colors.red
+                                              : Colors.blue,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildMembershipBadge(
+                                        user.membershipTier,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildFlagBadge(
+                                        active: isMuted,
+                                        activeLabel: 'Đang mute',
+                                        inactiveLabel: 'Bình thường',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildFlagBadge(
+                                        active: isBanned,
+                                        activeLabel: 'Đã khóa',
+                                        inactiveLabel: 'Hoạt động',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                              size: 17,
+                                            ),
+                                            onPressed: () =>
+                                                _showUserDialog(user: user),
+                                            tooltip: 'Sửa thông tin',
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                          PopupMenuButton<String>(
+                                            tooltip: 'Thao tác',
+                                            onSelected: (String action) {
+                                              switch (action) {
+                                                case 'reset_password':
+                                                  _resetPassword(user);
+                                                case 'grant_vip':
+                                                  _grantVip(user);
+                                                case 'revoke_vip':
+                                                  _revokeVip(user);
+                                                case 'mute_comment':
+                                                  _muteComment(user);
+                                                case 'unmute_comment':
+                                                  _unmuteComment(user);
+                                                case 'ban_user':
+                                                  _banUser(user);
+                                                case 'unban_user':
+                                                  _unbanUser(user);
+                                                case 'force_logout':
+                                                  _forceLogout(user);
+                                              }
                                             },
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.fullName,
-                                            width: 120,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.email,
-                                            width: 165,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.userName,
-                                            width: 94,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildPreviewButton(
-                                            label: 'Xem',
-                                            title: 'Số điện thoại',
-                                            value: user.phone,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildPreviewButton(
-                                            label: 'Xem',
-                                            title: 'Địa chỉ',
-                                            value: user.address,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.gender,
-                                            width: 84,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            _formatDateTime(user.registeredAt),
-                                            width: 88,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildMembershipBadge(
-                                            user.membershipTier,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildFlagBadge(
-                                            active: isMuted,
-                                            activeLabel: 'Đang mute',
-                                            inactiveLabel: 'Bình thường',
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildFlagBadge(
-                                            active: isBanned,
-                                            activeLabel: 'Đã khóa',
-                                            inactiveLabel: 'Hoạt động',
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: <Widget>[
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 17,
-                                                ),
-                                                onPressed: () =>
-                                                    _showUserDialog(user: user),
-                                                tooltip: 'Sửa thông tin',
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                              ),
-                                              PopupMenuButton<String>(
-                                                tooltip: 'Thao tác',
-                                                onSelected: (String action) {
-                                                  switch (action) {
-                                                    case 'reset_password':
-                                                      _resetPassword(user);
-                                                    case 'grant_vip':
-                                                      _grantVip(user);
-                                                    case 'revoke_vip':
-                                                      _revokeVip(user);
-                                                    case 'mute_comment':
-                                                      _muteComment(user);
-                                                    case 'unmute_comment':
-                                                      _unmuteComment(user);
-                                                    case 'ban_user':
-                                                      _banUser(user);
-                                                    case 'unban_user':
-                                                      _unbanUser(user);
-                                                    case 'force_logout':
-                                                      _forceLogout(user);
-                                                  }
-                                                },
-                                                itemBuilder:
-                                                    (
-                                                      BuildContext context,
-                                                    ) => <PopupMenuEntry<String>>[
-                                                      const PopupMenuItem<
-                                                        String
-                                                      >(
-                                                        value: 'reset_password',
-                                                        child: Text(
-                                                          'Khôi phục mật khẩu',
-                                                        ),
-                                                      ),
-                                                      if (!isVip)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'grant_vip',
-                                                          child: Text(
-                                                            'Nâng hạng VIP',
-                                                          ),
-                                                        ),
-                                                      if (isVip)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'revoke_vip',
-                                                          child: Text(
-                                                            'Hạ hạng Standard',
-                                                          ),
-                                                        ),
-                                                      if (!isMuted)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'mute_comment',
-                                                          child: Text(
-                                                            'Cấm bình luận',
-                                                          ),
-                                                        ),
-                                                      if (isMuted)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value:
-                                                              'unmute_comment',
-                                                          child: Text(
-                                                            'Mở bình luận',
-                                                          ),
-                                                        ),
-                                                      if (!isBanned)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'ban_user',
-                                                          child: Text(
-                                                            'Khóa tài khoản',
-                                                          ),
-                                                        ),
-                                                      if (isBanned)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'unban_user',
-                                                          child: Text(
-                                                            'Mở khóa tài khoản',
-                                                          ),
-                                                        ),
-                                                      const PopupMenuItem<
-                                                        String
-                                                      >(
-                                                        value: 'force_logout',
-                                                        child: Text(
-                                                          'Buộc đăng xuất',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                child: const Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 4,
+                                            itemBuilder:
+                                                (
+                                                  BuildContext context,
+                                                ) => <PopupMenuEntry<String>>[
+                                                  const PopupMenuItem<String>(
+                                                    value: 'reset_password',
+                                                    child: Text(
+                                                      'Khôi phục mật khẩu',
+                                                    ),
                                                   ),
-                                                  child: Icon(
-                                                    Icons.more_vert,
-                                                    size: 17,
+                                                  if (!isVip)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'grant_vip',
+                                                      child: Text(
+                                                        'Nâng hạng VIP',
+                                                      ),
+                                                    ),
+                                                  if (isVip)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'revoke_vip',
+                                                      child: Text(
+                                                        'Hạ hạng Standard',
+                                                      ),
+                                                    ),
+                                                  if (!isMuted)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'mute_comment',
+                                                      child: Text(
+                                                        'Cấm bình luận',
+                                                      ),
+                                                    ),
+                                                  if (isMuted)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'unmute_comment',
+                                                      child: Text(
+                                                        'Mở bình luận',
+                                                      ),
+                                                    ),
+                                                  if (!isBanned)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'ban_user',
+                                                      child: Text(
+                                                        'Khóa tài khoản',
+                                                      ),
+                                                    ),
+                                                  if (isBanned)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'unban_user',
+                                                      child: Text(
+                                                        'Mở khóa tài khoản',
+                                                      ),
+                                                    ),
+                                                  const PopupMenuItem<String>(
+                                                    value: 'force_logout',
+                                                    child: Text(
+                                                      'Buộc đăng xuất',
+                                                    ),
+                                                  ),
+                                                ],
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 4,
+                                              ),
+                                              child: Icon(
+                                                Icons.more_vert,
+                                                size: 17,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList();
+
+                              final int? leftSortIndex = () {
+                                switch (_sortField) {
+                                  case _SortField.fullName:
+                                    return 1;
+                                  case _SortField.email:
+                                    return 2;
+                                  case _SortField.userName:
+                                    return 3;
+                                  default:
+                                    return null;
+                                }
+                              }();
+
+                              final int? rightSortIndex = () {
+                                switch (_sortField) {
+                                  case _SortField.phone:
+                                    return 0;
+                                  case _SortField.address:
+                                    return 1;
+                                  case _SortField.gender:
+                                    return 2;
+                                  case _SortField.registeredAt:
+                                    return 3;
+                                  case _SortField.membership:
+                                    return 5;
+                                  case _SortField.comment:
+                                    return 6;
+                                  case _SortField.account:
+                                    return 7;
+                                  default:
+                                    return null;
+                                }
+                              }();
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          width: leftTableWidth,
+                                          height: _scrollbarHeight,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF2F5FB),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0xFFE3E8F4),
+                                            ),
+                                          ),
+                                          child: ScrollbarTheme(
+                                            data: ScrollbarThemeData(
+                                              thickness:
+                                                  MaterialStateProperty.all(8),
+                                              radius: const Radius.circular(8),
+                                              thumbColor:
+                                                  MaterialStateProperty.all(
+                                                    const Color(0xFFB5C0D6),
+                                                  ),
+                                              trackColor:
+                                                  MaterialStateProperty.all(
+                                                    const Color(0xFFE7ECF5),
+                                                  ),
+                                              trackBorderColor:
+                                                  MaterialStateProperty.all(
+                                                    const Color(0xFFD5DDEA),
+                                                  ),
+                                            ),
+                                            child: Scrollbar(
+                                              controller: _leftGutterController,
+                                              thumbVisibility: true,
+                                              trackVisibility: true,
+                                              interactive: true,
+                                              scrollbarOrientation:
+                                                  ScrollbarOrientation.bottom,
+                                              child: ScrollConfiguration(
+                                                behavior: dragScrollBehavior,
+                                                child: SingleChildScrollView(
+                                                  controller:
+                                                      _leftGutterController,
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  physics:
+                                                      const ClampingScrollPhysics(),
+                                                  child: SizedBox(
+                                                    width: leftScrollWidth,
                                                   ),
                                                 ),
                                               ),
-                                            ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Container(
+                                            height: _scrollbarHeight,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF2F5FB),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: const Color(0xFFE3E8F4),
+                                              ),
+                                            ),
+                                            child: ScrollbarTheme(
+                                              data: ScrollbarThemeData(
+                                                thickness:
+                                                    MaterialStateProperty.all(
+                                                      8,
+                                                    ),
+                                                radius: const Radius.circular(
+                                                  8,
+                                                ),
+                                                thumbColor:
+                                                    MaterialStateProperty.all(
+                                                      const Color(0xFFB5C0D6),
+                                                    ),
+                                                trackColor:
+                                                    MaterialStateProperty.all(
+                                                      const Color(0xFFE7ECF5),
+                                                    ),
+                                                trackBorderColor:
+                                                    MaterialStateProperty.all(
+                                                      const Color(0xFFD5DDEA),
+                                                    ),
+                                              ),
+                                              child: Scrollbar(
+                                                controller:
+                                                    _gutterHorizontalController,
+                                                thumbVisibility: true,
+                                                trackVisibility: true,
+                                                interactive: true,
+                                                scrollbarOrientation:
+                                                    ScrollbarOrientation.bottom,
+                                                child: SingleChildScrollView(
+                                                  controller:
+                                                      _gutterHorizontalController,
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  child: SizedBox(
+                                                    width: rightTableWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
-                                    );
-                                  }).toList(),
-                                );
-                              },
-                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Expanded(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: leftTableWidth,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            border: Border(
+                                              right: BorderSide(
+                                                color: const Color(0xFFE4E8F2),
+                                              ),
+                                            ),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: ScrollConfiguration(
+                                              behavior: dragScrollBehavior,
+                                              child: SingleChildScrollView(
+                                                controller:
+                                                    _leftTableController,
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                physics:
+                                                    const ClampingScrollPhysics(),
+                                                child: SizedBox(
+                                                  width: leftScrollWidth,
+                                                  child: DataTable(
+                                                    sortColumnIndex:
+                                                        leftSortIndex,
+                                                    sortAscending: _sortAscending,
+                                                    horizontalMargin: 6,
+                                                    checkboxHorizontalMargin: 4,
+                                                    columnSpacing: 8,
+                                                    dataRowMinHeight: 46,
+                                                    dataRowMaxHeight: 52,
+                                                    headingRowHeight: 44,
+                                                    columns: <DataColumn>[
+                                                      DataColumn(
+                                                        label: Checkbox(
+                                                          value:
+                                                              allSelectedOnPage,
+                                                          onChanged: (bool? checked) {
+                                                            setState(() {
+                                                              if (checked ??
+                                                                  false) {
+                                                                for (final _AdminUser
+                                                                    user
+                                                                    in pageUsers) {
+                                                                  _selectedUserIds
+                                                                      .add(
+                                                                        user.uniqueKey,
+                                                                      );
+                                                                }
+                                                              } else {
+                                                                for (final _AdminUser
+                                                                    user
+                                                                    in pageUsers) {
+                                                                  _selectedUserIds
+                                                                      .remove(
+                                                                        user.uniqueKey,
+                                                                      );
+                                                                }
+                                                              }
+                                                            });
+                                                          },
+                                                        ),
+                                                      ),
+                                                      DataColumn(
+                                                        label: const Text(
+                                                          'Họ tên',
+                                                        ),
+                                                        onSort:
+                                                            (
+                                                              int _,
+                                                              bool asc,
+                                                            ) => _setSort(
+                                                              _SortField.fullName,
+                                                              asc,
+                                                            ),
+                                                      ),
+                                                      DataColumn(
+                                                        label: const Text(
+                                                          'Email',
+                                                        ),
+                                                        onSort:
+                                                            (
+                                                              int _,
+                                                              bool asc,
+                                                            ) => _setSort(
+                                                              _SortField.email,
+                                                              asc,
+                                                            ),
+                                                      ),
+                                                      DataColumn(
+                                                        label: const Text(
+                                                          'Username',
+                                                        ),
+                                                        onSort:
+                                                            (
+                                                              int _,
+                                                              bool asc,
+                                                            ) => _setSort(
+                                                              _SortField.userName,
+                                                              asc,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                    rows: leftRows,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: SingleChildScrollView(
+                                            controller:
+                                                _tableHorizontalController,
+                                            scrollDirection: Axis.horizontal,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 8,
+                                            ),
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                minWidth: rightTableWidth,
+                                              ),
+                                              child: DataTable(
+                                                sortColumnIndex: rightSortIndex,
+                                                sortAscending: _sortAscending,
+                                                horizontalMargin: 6,
+                                                checkboxHorizontalMargin: 4,
+                                                columnSpacing: 8,
+                                                dataRowMinHeight: 46,
+                                                dataRowMaxHeight: 52,
+                                                headingRowHeight: 44,
+                                                columns: <DataColumn>[
+                                                  DataColumn(
+                                                    label: const Text('SĐT'),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.phone,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Địa chỉ',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.address,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Giới tính',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.gender,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Ngày đăng ký',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField
+                                                              .registeredAt,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Vai trò',
+                                                    ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text('Hạng'),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.membership,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Bình luận',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.comment,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Tài khoản',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.account,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  const DataColumn(
+                                                    label: Text('Thao tác'),
+                                                  ),
+                                                ],
+                                                rows: rightRows,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                   ),
                   Container(

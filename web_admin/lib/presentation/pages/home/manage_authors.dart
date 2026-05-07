@@ -11,6 +11,7 @@ import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/pages/home/manage_users.dart';
 import 'package:web_admin/presentation/widgets/manage_authors_body.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
@@ -48,7 +49,9 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     super.initState();
     _searchController.addListener(_onFilterChanged);
     _loadAuthors();
-    widget.mangaController.loadManga();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.mangaController.loadManga();
+    });
   }
 
   @override
@@ -479,6 +482,15 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                             onSelect: (key) {
                               if (key == sidebarKeyManga) {
                                 _openMangaPage();
+                              } else if (key == sidebarKeyUsers) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageUsers(
+                                      mangaController: widget.mangaController,
+                                      onLogout: widget.onLogout,
+                                    ),
+                                  ),
+                                );
                               }
                             },
                           ),
