@@ -26,7 +26,7 @@ namespace backend.src.Services.Implement
 
         public async Task<List<Admin>> GetInfoAdmin()
         {
-            var admin = await _context.Admins.ToListAsync();
+            var admin = await _context.Admins.Include(a => a.Users).ToListAsync();
 
             return admin;
         }

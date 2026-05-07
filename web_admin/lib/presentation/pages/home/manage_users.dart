@@ -4,9 +4,22 @@ import 'package:flutter/services.dart';
 import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/injection_container.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
+import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
+import 'package:web_admin/presentation/pages/home/manage_authors.dart';
+
 
 class ManageUsers extends StatefulWidget {
-  const ManageUsers({super.key});
+  final RemoteMangaController mangaController;
+  final Future<void> Function()? onLogout;
+
+  const ManageUsers({
+    super.key,
+    required this.mangaController,
+    this.onLogout,
+  });
 
   @override
   State<ManageUsers> createState() => _ManageUsersState();
@@ -27,6 +40,7 @@ enum _SortField {
 
 class _AdminUser {
   final int id;
+  final String uniqueKey;
   String fullName;
   String email;
   String userName;
@@ -37,9 +51,11 @@ class _AdminUser {
   bool isCommentMuted;
   bool isBanned;
   String membershipTier;
+  String role;
 
   _AdminUser({
     required this.id,
+    required this.uniqueKey,
     required this.fullName,
     required this.email,
     required this.userName,
@@ -50,6 +66,7 @@ class _AdminUser {
     required this.isCommentMuted,
     required this.isBanned,
     required this.membershipTier,
+    required this.role,
   });
 }
 
@@ -68,11 +85,12 @@ class _ManageUsersState extends State<ManageUsers> {
   final AuthTokenStorage _tokenStorage = sl<AuthTokenStorage>();
 
   final List<_AdminUser> _users = <_AdminUser>[];
-  final Set<int> _selectedUserIds = <int>{};
+  final Set<String> _selectedUserIds = <String>{};
 
   String _selectedMembership = 'Tất cả';
   int _currentPage = 0;
   int? _editingUserId;
+  String _editingRole = 'User';
   bool _isLoading = false;
   String? _errorMessage;
   _SortField? _sortField;
@@ -143,6 +161,56 @@ class _ManageUsersState extends State<ManageUsers> {
     return <dynamic>[];
   }
 
+  String _makeUniqueKey({
+    required String role,
+    required dynamic idRaw,
+    required String email,
+    required String userName,
+  }) {
+    final String idText = idRaw is num
+        ? idRaw.toInt().toString()
+        : (idRaw?.toString().trim().isNotEmpty ?? false)
+            ? idRaw.toString()
+            : '';
+    final String fallback = email.isNotEmpty
+        ? email
+        : (userName.isNotEmpty ? userName : 'unknown');
+    return '$role:$idText:$fallback'.toLowerCase();
+  }
+
+  _AdminUser _fromAdminJson(Map<String, dynamic> data) {
+    final dynamic idRaw = _readField(data, <String>['id', 'Id']);
+    final dynamic usersData =
+        _readField(data, <String>['users', 'Users']) ?? <String, dynamic>{};
+    final String email =
+        (_readField(data, <String>['email', 'Email']) ?? '').toString();
+    final String userName =
+        (_readField(usersData, <String>['userName', 'UserName']) ?? '')
+            .toString();
+
+    return _AdminUser(
+      id: idRaw is num ? idRaw.toInt() : 0,
+      uniqueKey: _makeUniqueKey(
+        role: 'admin',
+        idRaw: idRaw,
+        email: email,
+        userName: userName,
+      ),
+      fullName: (_readField(data, <String>['name', 'Name']) ?? '').toString(),
+      email: email,
+      userName: userName,
+      phone: (_readField(data, <String>['phone', 'Phone']) ?? '').toString(),
+      address: (_readField(data, <String>['address', 'Address']) ?? '')
+          .toString(),
+      gender: (_readField(data, <String>['gender', 'Gender']) ?? '').toString(),
+      registeredAt: DateTime.now(),
+      isCommentMuted: false,
+      isBanned: false,
+      membershipTier: 'Admin',
+      role: 'Admin',
+    );
+  }
+
   _AdminUser _fromReaderJson(Map<String, dynamic> data) {
     final dynamic idRaw = _readField(data, <String>['id', 'Id']);
     final String registeredAtRaw =
@@ -150,14 +218,23 @@ class _ManageUsersState extends State<ManageUsers> {
             .toString();
     final DateTime registeredAt =
         DateTime.tryParse(registeredAtRaw)?.toLocal() ?? DateTime.now();
+    final String email =
+        (_readField(data, <String>['email', 'Email']) ?? '').toString();
+    final String userName =
+        (_readField(data, <String>['userName', 'UserName']) ?? '').toString();
 
     return _AdminUser(
       id: idRaw is num ? idRaw.toInt() : 0,
+      uniqueKey: _makeUniqueKey(
+        role: 'reader',
+        idRaw: idRaw,
+        email: email,
+        userName: userName,
+      ),
       fullName: (_readField(data, <String>['fullName', 'FullName']) ?? '')
           .toString(),
-      email: (_readField(data, <String>['email', 'Email']) ?? '').toString(),
-      userName: (_readField(data, <String>['userName', 'UserName']) ?? '')
-          .toString(),
+      email: email,
+      userName: userName,
       phone: (_readField(data, <String>['phone', 'Phone']) ?? '').toString(),
       address: (_readField(data, <String>['address', 'Address']) ?? '')
           .toString(),
@@ -171,6 +248,7 @@ class _ManageUsersState extends State<ManageUsers> {
           (_readField(data, <String>['membershipTier', 'MembershipTier']) ??
                   'Standard')
               .toString(),
+      role: 'User',
     );
   }
 
@@ -213,6 +291,14 @@ class _ManageUsersState extends State<ManageUsers> {
           .map(_fromReaderJson)
           .toList();
 
+      final Response<dynamic> resAdmins = await _dio.get(
+        '${newAPIBaseURL}Admin/get-info-admin',
+        options: options,
+      );
+      final dynamic adminsBody = resAdmins.data;
+      final List<dynamic> adminItems = _extractList(adminsBody);
+      final List<_AdminUser> mappedAdmins = adminItems.whereType<Map<String, dynamic>>().map(_fromAdminJson).toList();
+
       if (!mounted) {
         return;
       }
@@ -220,6 +306,7 @@ class _ManageUsersState extends State<ManageUsers> {
       setState(() {
         _users
           ..clear()
+          ..addAll(mappedAdmins)
           ..addAll(mapped);
       });
     } catch (e) {
@@ -475,89 +562,130 @@ class _ManageUsersState extends State<ManageUsers> {
     _addressController.text = user?.address ?? '';
     _genderController.text = user?.gender ?? '';
     _editingUserId = user?.id;
+    _editingRole = user?.role ?? 'User';
 
     await showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(user == null ? 'Thêm độc giả mới' : 'Chỉnh sửa độc giả'),
-          content: SizedBox(
-            width: 520,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _buildDialogInput(_fullNameController, 'Họ và tên'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_emailController, 'Email'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_userNameController, 'Username'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_phoneController, 'Số điện thoại'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_addressController, 'Địa chỉ'),
-                  const SizedBox(height: 12),
-                  _buildDialogInput(_genderController, 'Giới tính'),
-                ],
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text(user == null ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng'),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _buildDialogInput(_fullNameController, 'Họ và tên'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_emailController, 'Email'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_userNameController, 'Username'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_phoneController, 'Số điện thoại'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_addressController, 'Địa chỉ'),
+                      const SizedBox(height: 12),
+                      _buildDialogInput(_genderController, 'Giới tính'),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _editingRole,
+                        decoration: InputDecoration(
+                          labelText: 'Vai trò',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Color(0xFFDCDFEA)),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Admin', child: Text('Admin')),
+                          DropdownMenuItem(value: 'User', child: Text('User')),
+                        ],
+                        onChanged: _editingUserId == null ? (String? val) {
+                          if (val != null) setStateDialog(() { _editingRole = val; });
+                        } : null,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final Options options = await _authorizedOptions();
-                  if (_editingUserId == null) {
-                    await _dio.post(
-                      '${newAPIBaseURL}Admin/reader-management',
-                      options: options,
-                      data: <String, dynamic>{
-                        'FullName': _fullNameController.text.trim(),
-                        'Email': _emailController.text.trim(),
-                        'UserName': _userNameController.text.trim(),
-                        'Password': 'Temp@123',
-                        'Phone': _phoneController.text.trim(),
-                        'Address': _addressController.text.trim(),
-                        'Gender': _genderController.text.trim(),
-                      },
-                    );
-                  } else {
-                    await _dio.put(
-                      '${newAPIBaseURL}Admin/reader-management/$_editingUserId',
-                      options: options,
-                      data: <String, dynamic>{
-                        'FullName': _fullNameController.text.trim(),
-                        'Email': _emailController.text.trim(),
-                        'UserName': _userNameController.text.trim(),
-                        'Phone': _phoneController.text.trim(),
-                        'Address': _addressController.text.trim(),
-                        'Gender': _genderController.text.trim(),
-                      },
-                    );
-                  }
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final Options options = await _authorizedOptions();
+                      if (_editingRole == 'Admin') {
+                        final Map<String, dynamic> payload = <String, dynamic>{
+                          'Name': _fullNameController.text.trim(),
+                          'Email': _emailController.text.trim(),
+                          'UserName': _userNameController.text.trim(),
+                          'Birth': '1990-01-01',
+                          'Phone': _phoneController.text.trim(),
+                          'Address': _addressController.text.trim(),
+                          'Gender': _genderController.text.trim(),
+                        };
+                        if (_editingUserId == null) {
+                          payload['Password'] = 'Temp@123';
+                          await _dio.post(
+                            '${newAPIBaseURL}Admin/create-admin',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        } else {
+                          await _dio.put(
+                            '${newAPIBaseURL}Admin/update-admin/$_editingUserId',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        }
+                      } else {
+                        final Map<String, dynamic> payload = <String, dynamic>{
+                          'FullName': _fullNameController.text.trim(),
+                          'Email': _emailController.text.trim(),
+                          'UserName': _userNameController.text.trim(),
+                          'Phone': _phoneController.text.trim(),
+                          'Address': _addressController.text.trim(),
+                          'Gender': _genderController.text.trim(),
+                        };
+                        if (_editingUserId == null) {
+                          payload['Password'] = 'Temp@123';
+                          await _dio.post(
+                            '${newAPIBaseURL}Admin/create-reader',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        } else {
+                          await _dio.put(
+                            '${newAPIBaseURL}Admin/update-reader/$_editingUserId',
+                            options: options,
+                            data: FormData.fromMap(payload),
+                          );
+                        }
+                      }
 
-                  if (!mounted) {
-                    return;
-                  }
-                  Navigator.of(this.context).pop();
+                      if (!mounted) return;
+                      Navigator.of(dialogContext).pop();
 
-                  await _loadUsers();
-                  _showMessage(
-                    _editingUserId == null
-                        ? 'Đã thêm tài khoản mới.'
-                        : 'Đã cập nhật thông tin người dùng.',
-                  );
-                } catch (e) {
-                  _showMessage('Không thể lưu người dùng: $e');
-                }
-              },
-              child: const Text('Lưu'),
-            ),
-          ],
+                      await _loadUsers();
+                      _showMessage(
+                        _editingUserId == null
+                            ? 'Đã thêm tài khoản mới.'
+                            : 'Đã cập nhật thông tin người dùng.',
+                      );
+                    } catch (e) {
+                      _showMessage('Không thể lưu người dùng: $e');
+                    }
+                  },
+                  child: const Text('Lưu'),
+                ),
+              ],
+            );
+          }
         );
       },
     );
@@ -694,19 +822,29 @@ class _ManageUsersState extends State<ManageUsers> {
       return;
     }
 
+    final List<int> readerIds = _users
+        .where((_AdminUser u) =>
+            u.role == 'User' && _selectedUserIds.contains(u.uniqueKey))
+        .map((_AdminUser u) => u.id)
+        .toList();
+
+    if (readerIds.isEmpty) {
+      return;
+    }
+
     try {
       final Options options = await _authorizedOptions();
       await _dio.post(
         '${newAPIBaseURL}Admin/reader-management/bulk-notify',
         options: options,
         data: <String, dynamic>{
-          'ReaderIds': _selectedUserIds.toList(),
+          'ReaderIds': readerIds,
           'Title': 'Thông báo từ quản trị viên',
           'Content': 'Bạn có thông báo mới từ hệ thống quản trị.',
         },
       );
       _showMessage(
-        'Đã gửi thông báo tới ${_selectedUserIds.length} tài khoản.',
+        'Đã gửi thông báo tới ${readerIds.length} tài khoản.',
       );
     } catch (e) {
       _showMessage('Không thể gửi thông báo hàng loạt: $e');
@@ -804,8 +942,112 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  void _openMangaPage() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageManga(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
+  void _openAuthorsPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageAuthors(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onNestedRouteLogout() async {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    await widget.onLogout?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isCompactSidebar = constraints.maxWidth < 1120;
+        final double shellHeight = (constraints.maxHeight - 24).clamp(620.0, 920.0).toDouble();
+
+        return Scaffold(
+          backgroundColor: const Color(0xFF2F3034),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1440),
+                  child: SizedBox(
+                    height: shellHeight,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7FC),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          ManageMangaSidebar(
+                            compact: isCompactSidebar,
+                            selectedKey: sidebarKeyUsers,
+                            onSelect: (key) {
+                              if (key == sidebarKeyManga) {
+                                _openMangaPage();
+                              } else if (key == sidebarKeyAuthors) {
+                                _openAuthorsPage();
+                              }
+                            },
+                          ),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(14),
+                                bottomRight: Radius.circular(14),
+                              ),
+                              child: Container(
+                                color: const Color(0xFFF7F8FC),
+                                child: Column(
+                                  children: [
+                                    ManageMangaTopHeader(
+                                      searchController: _searchController,
+                                      onLogout: widget.onLogout,
+                                      hintText: 'Tìm kiếm người dùng...',
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                                        child: _buildMainContent(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMainContent(BuildContext context) {
     final List<_AdminUser> filteredUsers = _getFilteredAndSortedUsers();
     final List<_AdminUser> pageUsers = _getPagedUsers(filteredUsers);
     final int totalPages = filteredUsers.isEmpty
@@ -814,8 +1056,9 @@ class _ManageUsersState extends State<ManageUsers> {
     final int safePage = _currentPage.clamp(0, totalPages - 1);
 
     final bool allSelectedOnPage =
-        pageUsers.isNotEmpty &&
-        pageUsers.every((_AdminUser u) => _selectedUserIds.contains(u.id));
+      pageUsers.isNotEmpty &&
+      pageUsers
+        .every((_AdminUser u) => _selectedUserIds.contains(u.uniqueKey));
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1011,7 +1254,8 @@ class _ManageUsersState extends State<ManageUsers> {
                     onPressed: () {
                       final List<_AdminUser> selected = _users
                           .where(
-                            (_AdminUser u) => _selectedUserIds.contains(u.id),
+                            (_AdminUser u) =>
+                                _selectedUserIds.contains(u.uniqueKey),
                           )
                           .toList();
                       _bulkExportCsv(selected);
@@ -1051,15 +1295,18 @@ class _ManageUsersState extends State<ManageUsers> {
                               style: TextStyle(color: Color(0xFF8491A7)),
                             ),
                           )
-                        : SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 8,
-                            ),
-                            child: LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
-                                return DataTable(
-                                  sortColumnIndex: _sortColumnIndex(),
+                        : LayoutBuilder(
+                            builder: (BuildContext context, BoxConstraints constraints) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 8,
+                                ),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                  child: DataTable(
+                                    sortColumnIndex: _sortColumnIndex(),
                                   sortAscending: _sortAscending,
                                   horizontalMargin: 6,
                                   checkboxHorizontalMargin: 4,
@@ -1076,13 +1323,14 @@ class _ManageUsersState extends State<ManageUsers> {
                                             if (checked ?? false) {
                                               for (final _AdminUser user
                                                   in pageUsers) {
-                                                _selectedUserIds.add(user.id);
+                                                _selectedUserIds
+                                                    .add(user.uniqueKey);
                                               }
                                             } else {
                                               for (final _AdminUser user
                                                   in pageUsers) {
                                                 _selectedUserIds.remove(
-                                                  user.id,
+                                                  user.uniqueKey,
                                                 );
                                               }
                                             }
@@ -1128,6 +1376,9 @@ class _ManageUsersState extends State<ManageUsers> {
                                       ),
                                     ),
                                     DataColumn(
+                                      label: const Text('Vai trò'),
+                                    ),
+                                    DataColumn(
                                       label: const Text('Hạng'),
                                       onSort: (int _, bool asc) =>
                                           _setSort(_SortField.membership, asc),
@@ -1146,7 +1397,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                   ],
                                   rows: pageUsers.map((_AdminUser user) {
                                     final bool selected = _selectedUserIds
-                                        .contains(user.id);
+                                        .contains(user.uniqueKey);
                                     final bool isVip =
                                         user.membershipTier == 'VIP';
                                     final bool isMuted = user.isCommentMuted;
@@ -1161,10 +1412,11 @@ class _ManageUsersState extends State<ManageUsers> {
                                             onChanged: (bool? checked) {
                                               setState(() {
                                                 if (checked ?? false) {
-                                                  _selectedUserIds.add(user.id);
+                                                  _selectedUserIds
+                                                      .add(user.uniqueKey);
                                                 } else {
                                                   _selectedUserIds.remove(
-                                                    user.id,
+                                                    user.uniqueKey,
                                                   );
                                                 }
                                               });
@@ -1214,6 +1466,9 @@ class _ManageUsersState extends State<ManageUsers> {
                                             _formatDateTime(user.registeredAt),
                                             width: 88,
                                           ),
+                                        ),
+                                        DataCell(
+                                          Text(user.role, style: TextStyle(fontWeight: FontWeight.bold, color: user.role == 'Admin' ? Colors.red : Colors.blue)),
                                         ),
                                         DataCell(
                                           _buildMembershipBadge(
@@ -1362,10 +1617,11 @@ class _ManageUsersState extends State<ManageUsers> {
                                         ),
                                       ],
                                     );
-                                  }).toList(),
-                                );
-                              },
-                            ),
+                                    }).toList(),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                   ),
                   Container(
