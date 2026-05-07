@@ -49,7 +49,9 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     super.initState();
     _searchController.addListener(_onFilterChanged);
     _loadAuthors();
-    widget.mangaController.loadManga();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.mangaController.loadManga();
+    });
   }
 
   @override

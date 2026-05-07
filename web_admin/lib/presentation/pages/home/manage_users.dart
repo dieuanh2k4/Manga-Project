@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:web_admin/core/constants/constants.dart';
@@ -10,16 +13,11 @@ import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
 
-
 class ManageUsers extends StatefulWidget {
   final RemoteMangaController mangaController;
   final Future<void> Function()? onLogout;
 
-  const ManageUsers({
-    super.key,
-    required this.mangaController,
-    this.onLogout,
-  });
+  const ManageUsers({super.key, required this.mangaController, this.onLogout});
 
   @override
   State<ManageUsers> createState() => _ManageUsersState();
@@ -72,6 +70,8 @@ class _AdminUser {
 
 class _ManageUsersState extends State<ManageUsers> {
   static const int _pageSize = 8;
+  static const double _tableMinWidth = 1400;
+  static const double _scrollbarHeight = 18;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
@@ -83,6 +83,12 @@ class _ManageUsersState extends State<ManageUsers> {
 
   final Dio _dio = sl<Dio>();
   final AuthTokenStorage _tokenStorage = sl<AuthTokenStorage>();
+  final ScrollController _tableHorizontalController = ScrollController();
+  final ScrollController _gutterHorizontalController = ScrollController();
+  final ScrollController _leftGutterController = ScrollController();
+  final ScrollController _leftTableController = ScrollController();
+  bool _isSyncingScroll = false;
+  bool _isSyncingLeftScroll = false;
 
   final List<_AdminUser> _users = <_AdminUser>[];
   final Set<String> _selectedUserIds = <String>{};
@@ -101,6 +107,30 @@ class _ManageUsersState extends State<ManageUsers> {
     super.initState();
     _searchController.addListener(_onFilterChanged);
     _loadUsers();
+    _tableHorizontalController.addListener(() {
+      _syncHorizontalScroll(
+        source: _tableHorizontalController,
+        target: _gutterHorizontalController,
+      );
+    });
+    _gutterHorizontalController.addListener(() {
+      _syncHorizontalScroll(
+        source: _gutterHorizontalController,
+        target: _tableHorizontalController,
+      );
+    });
+    _leftTableController.addListener(() {
+      _syncLeftHorizontalScroll(
+        source: _leftTableController,
+        target: _leftGutterController,
+      );
+    });
+    _leftGutterController.addListener(() {
+      _syncLeftHorizontalScroll(
+        source: _leftGutterController,
+        target: _leftTableController,
+      );
+    });
   }
 
   @override
@@ -113,7 +143,43 @@ class _ManageUsersState extends State<ManageUsers> {
     _phoneController.dispose();
     _addressController.dispose();
     _genderController.dispose();
+    _tableHorizontalController.dispose();
+    _gutterHorizontalController.dispose();
+    _leftGutterController.dispose();
+    _leftTableController.dispose();
     super.dispose();
+  }
+
+  void _syncHorizontalScroll({
+    required ScrollController source,
+    required ScrollController target,
+  }) {
+    if (_isSyncingScroll || !target.hasClients) {
+      return;
+    }
+
+    _isSyncingScroll = true;
+    final double clamped = source.offset
+        .clamp(target.position.minScrollExtent, target.position.maxScrollExtent)
+        .toDouble();
+    target.jumpTo(clamped);
+    _isSyncingScroll = false;
+  }
+
+  void _syncLeftHorizontalScroll({
+    required ScrollController source,
+    required ScrollController target,
+  }) {
+    if (_isSyncingLeftScroll || !target.hasClients) {
+      return;
+    }
+
+    _isSyncingLeftScroll = true;
+    final double clamped = source.offset
+        .clamp(target.position.minScrollExtent, target.position.maxScrollExtent)
+        .toDouble();
+    target.jumpTo(clamped);
+    _isSyncingLeftScroll = false;
   }
 
   void _onFilterChanged() {
@@ -170,8 +236,8 @@ class _ManageUsersState extends State<ManageUsers> {
     final String idText = idRaw is num
         ? idRaw.toInt().toString()
         : (idRaw?.toString().trim().isNotEmpty ?? false)
-            ? idRaw.toString()
-            : '';
+        ? idRaw.toString()
+        : '';
     final String fallback = email.isNotEmpty
         ? email
         : (userName.isNotEmpty ? userName : 'unknown');
@@ -182,8 +248,8 @@ class _ManageUsersState extends State<ManageUsers> {
     final dynamic idRaw = _readField(data, <String>['id', 'Id']);
     final dynamic usersData =
         _readField(data, <String>['users', 'Users']) ?? <String, dynamic>{};
-    final String email =
-        (_readField(data, <String>['email', 'Email']) ?? '').toString();
+    final String email = (_readField(data, <String>['email', 'Email']) ?? '')
+        .toString();
     final String userName =
         (_readField(usersData, <String>['userName', 'UserName']) ?? '')
             .toString();
@@ -218,8 +284,8 @@ class _ManageUsersState extends State<ManageUsers> {
             .toString();
     final DateTime registeredAt =
         DateTime.tryParse(registeredAtRaw)?.toLocal() ?? DateTime.now();
-    final String email =
-        (_readField(data, <String>['email', 'Email']) ?? '').toString();
+    final String email = (_readField(data, <String>['email', 'Email']) ?? '')
+        .toString();
     final String userName =
         (_readField(data, <String>['userName', 'UserName']) ?? '').toString();
 
@@ -297,7 +363,10 @@ class _ManageUsersState extends State<ManageUsers> {
       );
       final dynamic adminsBody = resAdmins.data;
       final List<dynamic> adminItems = _extractList(adminsBody);
-      final List<_AdminUser> mappedAdmins = adminItems.whereType<Map<String, dynamic>>().map(_fromAdminJson).toList();
+      final List<_AdminUser> mappedAdmins = adminItems
+          .whereType<Map<String, dynamic>>()
+          .map(_fromAdminJson)
+          .toList();
 
       if (!mounted) {
         return;
@@ -570,7 +639,9 @@ class _ManageUsersState extends State<ManageUsers> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: Text(user == null ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng'),
+              title: Text(
+                user == null ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng',
+              ),
               content: SizedBox(
                 width: 520,
                 child: SingleChildScrollView(
@@ -595,16 +666,26 @@ class _ManageUsersState extends State<ManageUsers> {
                           labelText: 'Vai trò',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Color(0xFFDCDFEA)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFDCDFEA),
+                            ),
                           ),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'Admin', child: Text('Admin')),
+                          DropdownMenuItem(
+                            value: 'Admin',
+                            child: Text('Admin'),
+                          ),
                           DropdownMenuItem(value: 'User', child: Text('User')),
                         ],
-                        onChanged: _editingUserId == null ? (String? val) {
-                          if (val != null) setStateDialog(() { _editingRole = val; });
-                        } : null,
+                        onChanged: _editingUserId == null
+                            ? (String? val) {
+                                if (val != null)
+                                  setStateDialog(() {
+                                    _editingRole = val;
+                                  });
+                              }
+                            : null,
                       ),
                     ],
                   ),
@@ -685,7 +766,7 @@ class _ManageUsersState extends State<ManageUsers> {
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -823,8 +904,10 @@ class _ManageUsersState extends State<ManageUsers> {
     }
 
     final List<int> readerIds = _users
-        .where((_AdminUser u) =>
-            u.role == 'User' && _selectedUserIds.contains(u.uniqueKey))
+        .where(
+          (_AdminUser u) =>
+              u.role == 'User' && _selectedUserIds.contains(u.uniqueKey),
+        )
         .map((_AdminUser u) => u.id)
         .toList();
 
@@ -843,9 +926,7 @@ class _ManageUsersState extends State<ManageUsers> {
           'Content': 'Bạn có thông báo mới từ hệ thống quản trị.',
         },
       );
-      _showMessage(
-        'Đã gửi thông báo tới ${readerIds.length} tài khoản.',
-      );
+      _showMessage('Đã gửi thông báo tới ${readerIds.length} tài khoản.');
     } catch (e) {
       _showMessage('Không thể gửi thông báo hàng loạt: $e');
     }
@@ -978,7 +1059,9 @@ class _ManageUsersState extends State<ManageUsers> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight = (constraints.maxHeight - 24).clamp(620.0, 920.0).toDouble();
+        final double shellHeight = (constraints.maxHeight - 24)
+            .clamp(620.0, 920.0)
+            .toDouble();
 
         return Scaffold(
           backgroundColor: const Color(0xFF2F3034),
@@ -1025,7 +1108,12 @@ class _ManageUsersState extends State<ManageUsers> {
                                     ),
                                     Expanded(
                                       child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          20,
+                                          20,
+                                          16,
+                                        ),
                                         child: _buildMainContent(context),
                                       ),
                                     ),
@@ -1056,9 +1144,10 @@ class _ManageUsersState extends State<ManageUsers> {
     final int safePage = _currentPage.clamp(0, totalPages - 1);
 
     final bool allSelectedOnPage =
-      pageUsers.isNotEmpty &&
-      pageUsers
-        .every((_AdminUser u) => _selectedUserIds.contains(u.uniqueKey));
+        pageUsers.isNotEmpty &&
+        pageUsers.every(
+          (_AdminUser u) => _selectedUserIds.contains(u.uniqueKey),
+        );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1297,329 +1386,648 @@ class _ManageUsersState extends State<ManageUsers> {
                           )
                         : LayoutBuilder(
                             builder: (BuildContext context, BoxConstraints constraints) {
-                              return SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 8,
-                                ),
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                                  child: DataTable(
-                                    sortColumnIndex: _sortColumnIndex(),
-                                  sortAscending: _sortAscending,
-                                  horizontalMargin: 6,
-                                  checkboxHorizontalMargin: 4,
-                                  columnSpacing: 8,
-                                  dataRowMinHeight: 46,
-                                  dataRowMaxHeight: 52,
-                                  headingRowHeight: 44,
-                                  columns: <DataColumn>[
-                                    DataColumn(
-                                      label: Checkbox(
-                                        value: allSelectedOnPage,
+                              const double leftTableWidth = 380;
+                              const double leftScrollWidth = 720;
+                              final ScrollBehavior dragScrollBehavior =
+                                  const ScrollBehavior().copyWith(
+                                    dragDevices: <PointerDeviceKind>{
+                                      PointerDeviceKind.mouse,
+                                      PointerDeviceKind.touch,
+                                      PointerDeviceKind.stylus,
+                                      PointerDeviceKind.unknown,
+                                    },
+                                  );
+                              final double rightTableWidth = math.max(
+                                _tableMinWidth,
+                                constraints.maxWidth + 240,
+                              );
+
+                              final List<DataRow> leftRows = pageUsers.map((
+                                _AdminUser user,
+                              ) {
+                                final bool selected = _selectedUserIds.contains(
+                                  user.uniqueKey,
+                                );
+                                return DataRow(
+                                  selected: selected,
+                                  color: MaterialStateProperty.resolveWith((
+                                    Set<MaterialState> states,
+                                  ) {
+                                    if (states.contains(
+                                      MaterialState.selected,
+                                    )) {
+                                      return const Color(0xFFF3F6FF);
+                                    }
+                                    return null;
+                                  }),
+                                  cells: <DataCell>[
+                                    DataCell(
+                                      Checkbox(
+                                        value: selected,
                                         onChanged: (bool? checked) {
                                           setState(() {
                                             if (checked ?? false) {
-                                              for (final _AdminUser user
-                                                  in pageUsers) {
-                                                _selectedUserIds
-                                                    .add(user.uniqueKey);
-                                              }
+                                              _selectedUserIds.add(
+                                                user.uniqueKey,
+                                              );
                                             } else {
-                                              for (final _AdminUser user
-                                                  in pageUsers) {
-                                                _selectedUserIds.remove(
-                                                  user.uniqueKey,
-                                                );
-                                              }
+                                              _selectedUserIds.remove(
+                                                user.uniqueKey,
+                                              );
                                             }
                                           });
                                         },
                                       ),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Họ tên'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.fullName, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Email'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.email, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Username'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.userName, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('SĐT'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.phone, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Địa chỉ'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.address, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Giới tính'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.gender, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Ngày đăng ký'),
-                                      onSort: (int _, bool asc) => _setSort(
-                                        _SortField.registeredAt,
-                                        asc,
+                                    DataCell(
+                                      _buildCompactText(
+                                        user.fullName,
+                                        width: 120,
                                       ),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Vai trò'),
+                                    DataCell(
+                                      _buildCompactText(user.email, width: 165),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Hạng'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.membership, asc),
+                                    DataCell(
+                                      _buildCompactText(
+                                        user.userName,
+                                        width: 94,
+                                      ),
                                     ),
-                                    DataColumn(
-                                      label: const Text('Bình luận'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.comment, asc),
-                                    ),
-                                    DataColumn(
-                                      label: const Text('Tài khoản'),
-                                      onSort: (int _, bool asc) =>
-                                          _setSort(_SortField.account, asc),
-                                    ),
-                                    const DataColumn(label: Text('Thao tác')),
                                   ],
-                                  rows: pageUsers.map((_AdminUser user) {
-                                    final bool selected = _selectedUserIds
-                                        .contains(user.uniqueKey);
-                                    final bool isVip =
-                                        user.membershipTier == 'VIP';
-                                    final bool isMuted = user.isCommentMuted;
-                                    final bool isBanned = user.isBanned;
+                                );
+                              }).toList();
 
-                                    return DataRow(
-                                      selected: selected,
-                                      cells: <DataCell>[
-                                        DataCell(
-                                          Checkbox(
-                                            value: selected,
-                                            onChanged: (bool? checked) {
-                                              setState(() {
-                                                if (checked ?? false) {
-                                                  _selectedUserIds
-                                                      .add(user.uniqueKey);
-                                                } else {
-                                                  _selectedUserIds.remove(
-                                                    user.uniqueKey,
-                                                  );
-                                                }
-                                              });
+                              final List<DataRow> rightRows = pageUsers.map((
+                                _AdminUser user,
+                              ) {
+                                final bool isVip = user.membershipTier == 'VIP';
+                                final bool isMuted = user.isCommentMuted;
+                                final bool isBanned = user.isBanned;
+
+                                return DataRow(
+                                  selected: _selectedUserIds.contains(
+                                    user.uniqueKey,
+                                  ),
+                                  color: MaterialStateProperty.resolveWith((
+                                    Set<MaterialState> states,
+                                  ) {
+                                    if (states.contains(
+                                      MaterialState.selected,
+                                    )) {
+                                      return const Color(0xFFF3F6FF);
+                                    }
+                                    return null;
+                                  }),
+                                  cells: <DataCell>[
+                                    DataCell(
+                                      _buildPreviewButton(
+                                        label: 'Xem',
+                                        title: 'Số điện thoại',
+                                        value: user.phone,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildPreviewButton(
+                                        label: 'Xem',
+                                        title: 'Địa chỉ',
+                                        value: user.address,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildCompactText(user.gender, width: 84),
+                                    ),
+                                    DataCell(
+                                      _buildCompactText(
+                                        _formatDateTime(user.registeredAt),
+                                        width: 88,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        user.role,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: user.role == 'Admin'
+                                              ? Colors.red
+                                              : Colors.blue,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildMembershipBadge(
+                                        user.membershipTier,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildFlagBadge(
+                                        active: isMuted,
+                                        activeLabel: 'Đang mute',
+                                        inactiveLabel: 'Bình thường',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _buildFlagBadge(
+                                        active: isBanned,
+                                        activeLabel: 'Đã khóa',
+                                        inactiveLabel: 'Hoạt động',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                              size: 17,
+                                            ),
+                                            onPressed: () =>
+                                                _showUserDialog(user: user),
+                                            tooltip: 'Sửa thông tin',
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                          PopupMenuButton<String>(
+                                            tooltip: 'Thao tác',
+                                            onSelected: (String action) {
+                                              switch (action) {
+                                                case 'reset_password':
+                                                  _resetPassword(user);
+                                                case 'grant_vip':
+                                                  _grantVip(user);
+                                                case 'revoke_vip':
+                                                  _revokeVip(user);
+                                                case 'mute_comment':
+                                                  _muteComment(user);
+                                                case 'unmute_comment':
+                                                  _unmuteComment(user);
+                                                case 'ban_user':
+                                                  _banUser(user);
+                                                case 'unban_user':
+                                                  _unbanUser(user);
+                                                case 'force_logout':
+                                                  _forceLogout(user);
+                                              }
                                             },
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.fullName,
-                                            width: 120,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.email,
-                                            width: 165,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.userName,
-                                            width: 94,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildPreviewButton(
-                                            label: 'Xem',
-                                            title: 'Số điện thoại',
-                                            value: user.phone,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildPreviewButton(
-                                            label: 'Xem',
-                                            title: 'Địa chỉ',
-                                            value: user.address,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            user.gender,
-                                            width: 84,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildCompactText(
-                                            _formatDateTime(user.registeredAt),
-                                            width: 88,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(user.role, style: TextStyle(fontWeight: FontWeight.bold, color: user.role == 'Admin' ? Colors.red : Colors.blue)),
-                                        ),
-                                        DataCell(
-                                          _buildMembershipBadge(
-                                            user.membershipTier,
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildFlagBadge(
-                                            active: isMuted,
-                                            activeLabel: 'Đang mute',
-                                            inactiveLabel: 'Bình thường',
-                                          ),
-                                        ),
-                                        DataCell(
-                                          _buildFlagBadge(
-                                            active: isBanned,
-                                            activeLabel: 'Đã khóa',
-                                            inactiveLabel: 'Hoạt động',
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: <Widget>[
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 17,
-                                                ),
-                                                onPressed: () =>
-                                                    _showUserDialog(user: user),
-                                                tooltip: 'Sửa thông tin',
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                              ),
-                                              PopupMenuButton<String>(
-                                                tooltip: 'Thao tác',
-                                                onSelected: (String action) {
-                                                  switch (action) {
-                                                    case 'reset_password':
-                                                      _resetPassword(user);
-                                                    case 'grant_vip':
-                                                      _grantVip(user);
-                                                    case 'revoke_vip':
-                                                      _revokeVip(user);
-                                                    case 'mute_comment':
-                                                      _muteComment(user);
-                                                    case 'unmute_comment':
-                                                      _unmuteComment(user);
-                                                    case 'ban_user':
-                                                      _banUser(user);
-                                                    case 'unban_user':
-                                                      _unbanUser(user);
-                                                    case 'force_logout':
-                                                      _forceLogout(user);
-                                                  }
-                                                },
-                                                itemBuilder:
-                                                    (
-                                                      BuildContext context,
-                                                    ) => <PopupMenuEntry<String>>[
-                                                      const PopupMenuItem<
-                                                        String
-                                                      >(
-                                                        value: 'reset_password',
-                                                        child: Text(
-                                                          'Khôi phục mật khẩu',
-                                                        ),
-                                                      ),
-                                                      if (!isVip)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'grant_vip',
-                                                          child: Text(
-                                                            'Nâng hạng VIP',
-                                                          ),
-                                                        ),
-                                                      if (isVip)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'revoke_vip',
-                                                          child: Text(
-                                                            'Hạ hạng Standard',
-                                                          ),
-                                                        ),
-                                                      if (!isMuted)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'mute_comment',
-                                                          child: Text(
-                                                            'Cấm bình luận',
-                                                          ),
-                                                        ),
-                                                      if (isMuted)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value:
-                                                              'unmute_comment',
-                                                          child: Text(
-                                                            'Mở bình luận',
-                                                          ),
-                                                        ),
-                                                      if (!isBanned)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'ban_user',
-                                                          child: Text(
-                                                            'Khóa tài khoản',
-                                                          ),
-                                                        ),
-                                                      if (isBanned)
-                                                        const PopupMenuItem<
-                                                          String
-                                                        >(
-                                                          value: 'unban_user',
-                                                          child: Text(
-                                                            'Mở khóa tài khoản',
-                                                          ),
-                                                        ),
-                                                      const PopupMenuItem<
-                                                        String
-                                                      >(
-                                                        value: 'force_logout',
-                                                        child: Text(
-                                                          'Buộc đăng xuất',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                child: const Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 4,
+                                            itemBuilder:
+                                                (
+                                                  BuildContext context,
+                                                ) => <PopupMenuEntry<String>>[
+                                                  const PopupMenuItem<String>(
+                                                    value: 'reset_password',
+                                                    child: Text(
+                                                      'Khôi phục mật khẩu',
+                                                    ),
                                                   ),
-                                                  child: Icon(
-                                                    Icons.more_vert,
-                                                    size: 17,
+                                                  if (!isVip)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'grant_vip',
+                                                      child: Text(
+                                                        'Nâng hạng VIP',
+                                                      ),
+                                                    ),
+                                                  if (isVip)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'revoke_vip',
+                                                      child: Text(
+                                                        'Hạ hạng Standard',
+                                                      ),
+                                                    ),
+                                                  if (!isMuted)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'mute_comment',
+                                                      child: Text(
+                                                        'Cấm bình luận',
+                                                      ),
+                                                    ),
+                                                  if (isMuted)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'unmute_comment',
+                                                      child: Text(
+                                                        'Mở bình luận',
+                                                      ),
+                                                    ),
+                                                  if (!isBanned)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'ban_user',
+                                                      child: Text(
+                                                        'Khóa tài khoản',
+                                                      ),
+                                                    ),
+                                                  if (isBanned)
+                                                    const PopupMenuItem<String>(
+                                                      value: 'unban_user',
+                                                      child: Text(
+                                                        'Mở khóa tài khoản',
+                                                      ),
+                                                    ),
+                                                  const PopupMenuItem<String>(
+                                                    value: 'force_logout',
+                                                    child: Text(
+                                                      'Buộc đăng xuất',
+                                                    ),
+                                                  ),
+                                                ],
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 4,
+                                              ),
+                                              child: Icon(
+                                                Icons.more_vert,
+                                                size: 17,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList();
+
+                              final int? leftSortIndex = () {
+                                switch (_sortField) {
+                                  case _SortField.fullName:
+                                    return 1;
+                                  case _SortField.email:
+                                    return 2;
+                                  case _SortField.userName:
+                                    return 3;
+                                  default:
+                                    return null;
+                                }
+                              }();
+
+                              final int? rightSortIndex = () {
+                                switch (_sortField) {
+                                  case _SortField.phone:
+                                    return 0;
+                                  case _SortField.address:
+                                    return 1;
+                                  case _SortField.gender:
+                                    return 2;
+                                  case _SortField.registeredAt:
+                                    return 3;
+                                  case _SortField.membership:
+                                    return 5;
+                                  case _SortField.comment:
+                                    return 6;
+                                  case _SortField.account:
+                                    return 7;
+                                  default:
+                                    return null;
+                                }
+                              }();
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          width: leftTableWidth,
+                                          height: _scrollbarHeight,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF2F5FB),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0xFFE3E8F4),
+                                            ),
+                                          ),
+                                          child: ScrollbarTheme(
+                                            data: ScrollbarThemeData(
+                                              thickness:
+                                                  MaterialStateProperty.all(8),
+                                              radius: const Radius.circular(8),
+                                              thumbColor:
+                                                  MaterialStateProperty.all(
+                                                    const Color(0xFFB5C0D6),
+                                                  ),
+                                              trackColor:
+                                                  MaterialStateProperty.all(
+                                                    const Color(0xFFE7ECF5),
+                                                  ),
+                                              trackBorderColor:
+                                                  MaterialStateProperty.all(
+                                                    const Color(0xFFD5DDEA),
+                                                  ),
+                                            ),
+                                            child: Scrollbar(
+                                              controller: _leftGutterController,
+                                              thumbVisibility: true,
+                                              trackVisibility: true,
+                                              interactive: true,
+                                              scrollbarOrientation:
+                                                  ScrollbarOrientation.bottom,
+                                              child: ScrollConfiguration(
+                                                behavior: dragScrollBehavior,
+                                                child: SingleChildScrollView(
+                                                  controller:
+                                                      _leftGutterController,
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  physics:
+                                                      const ClampingScrollPhysics(),
+                                                  child: SizedBox(
+                                                    width: leftScrollWidth,
                                                   ),
                                                 ),
                                               ),
-                                            ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Container(
+                                            height: _scrollbarHeight,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF2F5FB),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: const Color(0xFFE3E8F4),
+                                              ),
+                                            ),
+                                            child: ScrollbarTheme(
+                                              data: ScrollbarThemeData(
+                                                thickness:
+                                                    MaterialStateProperty.all(
+                                                      8,
+                                                    ),
+                                                radius: const Radius.circular(
+                                                  8,
+                                                ),
+                                                thumbColor:
+                                                    MaterialStateProperty.all(
+                                                      const Color(0xFFB5C0D6),
+                                                    ),
+                                                trackColor:
+                                                    MaterialStateProperty.all(
+                                                      const Color(0xFFE7ECF5),
+                                                    ),
+                                                trackBorderColor:
+                                                    MaterialStateProperty.all(
+                                                      const Color(0xFFD5DDEA),
+                                                    ),
+                                              ),
+                                              child: Scrollbar(
+                                                controller:
+                                                    _gutterHorizontalController,
+                                                thumbVisibility: true,
+                                                trackVisibility: true,
+                                                interactive: true,
+                                                scrollbarOrientation:
+                                                    ScrollbarOrientation.bottom,
+                                                child: SingleChildScrollView(
+                                                  controller:
+                                                      _gutterHorizontalController,
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  child: SizedBox(
+                                                    width: rightTableWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
-                                    );
-                                    }).toList(),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(height: 6),
+                                  Expanded(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: leftTableWidth,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            border: Border(
+                                              right: BorderSide(
+                                                color: const Color(0xFFE4E8F2),
+                                              ),
+                                            ),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: ScrollConfiguration(
+                                              behavior: dragScrollBehavior,
+                                              child: SingleChildScrollView(
+                                                controller:
+                                                    _leftTableController,
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                physics:
+                                                    const ClampingScrollPhysics(),
+                                                child: SizedBox(
+                                                  width: leftScrollWidth,
+                                                  child: DataTable(
+                                                    sortColumnIndex:
+                                                        leftSortIndex,
+                                                    sortAscending: _sortAscending,
+                                                    horizontalMargin: 6,
+                                                    checkboxHorizontalMargin: 4,
+                                                    columnSpacing: 8,
+                                                    dataRowMinHeight: 46,
+                                                    dataRowMaxHeight: 52,
+                                                    headingRowHeight: 44,
+                                                    columns: <DataColumn>[
+                                                      DataColumn(
+                                                        label: Checkbox(
+                                                          value:
+                                                              allSelectedOnPage,
+                                                          onChanged: (bool? checked) {
+                                                            setState(() {
+                                                              if (checked ??
+                                                                  false) {
+                                                                for (final _AdminUser
+                                                                    user
+                                                                    in pageUsers) {
+                                                                  _selectedUserIds
+                                                                      .add(
+                                                                        user.uniqueKey,
+                                                                      );
+                                                                }
+                                                              } else {
+                                                                for (final _AdminUser
+                                                                    user
+                                                                    in pageUsers) {
+                                                                  _selectedUserIds
+                                                                      .remove(
+                                                                        user.uniqueKey,
+                                                                      );
+                                                                }
+                                                              }
+                                                            });
+                                                          },
+                                                        ),
+                                                      ),
+                                                      DataColumn(
+                                                        label: const Text(
+                                                          'Họ tên',
+                                                        ),
+                                                        onSort:
+                                                            (
+                                                              int _,
+                                                              bool asc,
+                                                            ) => _setSort(
+                                                              _SortField.fullName,
+                                                              asc,
+                                                            ),
+                                                      ),
+                                                      DataColumn(
+                                                        label: const Text(
+                                                          'Email',
+                                                        ),
+                                                        onSort:
+                                                            (
+                                                              int _,
+                                                              bool asc,
+                                                            ) => _setSort(
+                                                              _SortField.email,
+                                                              asc,
+                                                            ),
+                                                      ),
+                                                      DataColumn(
+                                                        label: const Text(
+                                                          'Username',
+                                                        ),
+                                                        onSort:
+                                                            (
+                                                              int _,
+                                                              bool asc,
+                                                            ) => _setSort(
+                                                              _SortField.userName,
+                                                              asc,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                    rows: leftRows,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: SingleChildScrollView(
+                                            controller:
+                                                _tableHorizontalController,
+                                            scrollDirection: Axis.horizontal,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 8,
+                                            ),
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                minWidth: rightTableWidth,
+                                              ),
+                                              child: DataTable(
+                                                sortColumnIndex: rightSortIndex,
+                                                sortAscending: _sortAscending,
+                                                horizontalMargin: 6,
+                                                checkboxHorizontalMargin: 4,
+                                                columnSpacing: 8,
+                                                dataRowMinHeight: 46,
+                                                dataRowMaxHeight: 52,
+                                                headingRowHeight: 44,
+                                                columns: <DataColumn>[
+                                                  DataColumn(
+                                                    label: const Text('SĐT'),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.phone,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Địa chỉ',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.address,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Giới tính',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.gender,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Ngày đăng ký',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField
+                                                              .registeredAt,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Vai trò',
+                                                    ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text('Hạng'),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.membership,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Bình luận',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.comment,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      'Tài khoản',
+                                                    ),
+                                                    onSort: (int _, bool asc) =>
+                                                        _setSort(
+                                                          _SortField.account,
+                                                          asc,
+                                                        ),
+                                                  ),
+                                                  const DataColumn(
+                                                    label: Text('Thao tác'),
+                                                  ),
+                                                ],
+                                                rows: rightRows,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               );
                             },
                           ),
