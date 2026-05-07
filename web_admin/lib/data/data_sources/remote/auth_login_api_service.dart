@@ -12,7 +12,7 @@ class AuthLoginApiService {
   Future<AuthModel> login(String userName, String password) async {
     try {
       final response = await _dio.post(
-        '${newAPIBaseURL}Auth/login',
+        '${newAPIBaseURL}Auth/admin-login',
         data: {"userName": userName, "password": password},
       );
 
