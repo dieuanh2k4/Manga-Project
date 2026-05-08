@@ -12,6 +12,7 @@ import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dar
 import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga_detail_page.dart';
+import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_error_state.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_filter_bar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_page_heading.dart';
@@ -172,6 +173,17 @@ class _ManageMangaState extends State<ManageManga> {
     await widget.onLogout?.call();
   }
 
+  void _openNotificationsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageNotifications(
+          mangaController: widget.mangaController,
+          onLogout: _onNestedRouteLogout,
+        ),
+      ),
+    );
+  }
+
   Future<void> _onDeleteTap(MangaEntity manga) async {
     final int? mangaId = manga.id;
     if (mangaId == null || mangaId <= 0) {
@@ -269,6 +281,8 @@ class _ManageMangaState extends State<ManageManga> {
                                     ),
                                   ),
                                 );
+                              } else if (key == sidebarKeyNotifications) {
+                                _openNotificationsPage();
                               }
                             },
                           ),
@@ -299,6 +313,7 @@ class _ManageMangaState extends State<ManageManga> {
             ManageMangaTopHeader(
               searchController: _globalSearchController,
               onLogout: widget.onLogout,
+              onNotificationTap: _openNotificationsPage,
             ),
             Expanded(
               child: Padding(
