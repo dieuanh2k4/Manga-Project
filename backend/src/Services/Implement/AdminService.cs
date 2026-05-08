@@ -644,7 +644,6 @@ namespace backend.src.Services.Implement
                 TargetRole = "Reader",
                 MangaId = 0,
                 CreatedAt = DateTime.UtcNow,
-                IsRead = false
             };
 
             _context.Notifications.Add(notification);

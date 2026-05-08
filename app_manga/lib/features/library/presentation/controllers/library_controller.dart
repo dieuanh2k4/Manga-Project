@@ -2,6 +2,7 @@ import '../../domain/entities/library_manga_entity.dart';
 import '../../domain/usecases/get_library_manga_usecase.dart';
 import '../../domain/usecases/add_manga_to_library_usecase.dart';
 import '../../domain/usecases/delete_manga_from_library_usecase.dart';
+import '../../../../core/notifications/fcm_notification_service.dart';
 import 'package:flutter/material.dart';
 
 class LibraryController extends ChangeNotifier {
@@ -25,6 +26,9 @@ class LibraryController extends ChangeNotifier {
     notifyListeners();
     try {
       libraryManga = await getLibraryMangaUseCase(token);
+      await FcmNotificationService.instance.syncMangaTopics(
+        libraryManga.map((manga) => manga.id),
+      );
     } catch (e) {
       error = e.toString();
     }
@@ -35,6 +39,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> addManga(int mangaId, String token) async {
     try {
       await addMangaToLibraryUseCase(mangaId, token);
+      await FcmNotificationService.instance.subscribeToManga(mangaId);
       await fetchLibraryManga(token);
     } catch (e) {
       error = e.toString();
@@ -45,6 +50,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> deleteManga(int mangaId, String token) async {
     try {
       await deleteMangaFromLibraryUseCase(mangaId, token);
+      await FcmNotificationService.instance.unsubscribeFromManga(mangaId);
       await fetchLibraryManga(token);
     } catch (e) {
       error = e.toString();

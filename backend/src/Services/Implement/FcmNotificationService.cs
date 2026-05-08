@@ -112,6 +112,9 @@ namespace backend.src.Services.Implement
                     await _context.AddAsync(notification);
                     await _context.SaveChangesAsync();
 
+                    // Ghi liên kết vào NotificationReads dựa trên TargetRole
+                    await PopulateNotificationReads(notification);
+
                     return notification;
                 }
 
@@ -123,16 +126,61 @@ namespace backend.src.Services.Implement
             }
         }
 
-        public async Task<List<NotificationReads>> GetNotificationByReaderId(int readerid)
+        private async Task PopulateNotificationReads(Notifications notification)
         {
-            var notifications = await _context.NotificationReads
-                                .Where(n => n.ReaderId == readerid)
-                                .ToListAsync();
+            List<int> readerIds = new List<int>();
 
-            if (notifications == null)
+            var normalizedTargetRole = (notification.TargetRole ?? string.Empty).Trim();
+
+            if (AllReadersRoleAliases.Any(alias => string.Equals(alias, normalizedTargetRole, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new Result("Không có thông báo.");
+                readerIds = await _context.Readers
+                    .Select(r => r.Id)
+                    .ToListAsync();
             }
+            else if (FollowedReadersRoleAliases.Any(alias => string.Equals(alias, normalizedTargetRole, StringComparison.OrdinalIgnoreCase)))
+            {
+                readerIds = await _context.Libraries
+                    .Where(l => l.MangaId == notification.MangaId)
+                    .Select(l => l.ReaderId)
+                    .Distinct()
+                    .ToListAsync();
+            }
+
+            if (readerIds.Count > 0)
+            {
+                var notificationReads = readerIds
+                    .Select(readerId => new NotificationReads
+                    {
+                        ReaderId = readerId,
+                        NotificationId = notification.Id,
+                        ReadAt = DateTime.UtcNow,
+                        IsRead = false
+                        
+                    })
+                    .ToList();
+
+                await _context.NotificationReads.AddRangeAsync(notificationReads);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<List<Notifications>> GetNotificationByReaderId(int userId)
+        {
+            var reader = await _context.Readers
+                .FirstOrDefaultAsync(r => r.UserId == userId || r.Id == userId);
+
+            if (reader == null)
+            {
+                return new List<Notifications>();
+            }
+
+            var notifications = await _context.NotificationReads
+                .Where(nr => nr.ReaderId == reader.Id)
+                .Where(nr => nr.Notification != null)
+                .Select(nr => nr.Notification!)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
 
             return notifications;
         }
@@ -156,22 +204,17 @@ namespace backend.src.Services.Implement
                 throw new Result("Không tìm thấy thông báo");
             }
 
-            var checkReaded = await _context.NotificationReads
+            var notificationRead = await _context.NotificationReads
                 .FirstOrDefaultAsync(nr => nr.ReaderId == reader.Id && nr.NotificationId == notificationId);
 
-            if (checkReaded != null)
+            if (notificationRead == null)
             {
-                return;
+                throw new Result("Không tìm thấy bản ghi thông báo");
             }
 
-            var readState = new NotificationReads
-            {
-                ReaderId = reader.Id,
-                NotificationId = notificationId,
-                ReadAt = DateTime.UtcNow
-            };
+            notificationRead.IsRead = true;
 
-            await _context.NotificationReads.AddAsync(readState);
+            _context.NotificationReads.Update(notificationRead);
             await _context.SaveChangesAsync();
         }
 
@@ -185,40 +228,24 @@ namespace backend.src.Services.Implement
                 throw new Result("Không tìm thấy reader");
             }
 
-            var notificationIds = await GetRelevantNotificationIds(reader.Id);
-
-            if (notificationIds.Count == 0)
-            {
-                return 0;
-            }
-
-            var readNotificationIds = await _context.NotificationReads
-                .Where(nr => nr.ReaderId == reader.Id && notificationIds.Contains(nr.NotificationId))
-                .Select(nr => nr.NotificationId)
+            var unreadNotifications = await _context.NotificationReads
+                .Where(nr => nr.ReaderId == reader.Id && nr.IsRead == false)
                 .ToListAsync();
 
-            var unreadNotificationIds = notificationIds
-                .Except(readNotificationIds)
-                .ToList();
-
-            if (unreadNotificationIds.Count == 0)
+            if (unreadNotifications.Count == 0)
             {
                 return 0;
             }
 
-            var readStates = unreadNotificationIds
-                .Select(notificationId => new NotificationReads
-                {
-                    ReaderId = reader.Id,
-                    NotificationId = notificationId,
-                    ReadAt = DateTime.UtcNow
-                })
-                .ToList();
+            foreach (var notification in unreadNotifications)
+            {
+                notification.IsRead = true;
+            }
 
-            await _context.NotificationReads.AddRangeAsync(readStates);
+            _context.NotificationReads.UpdateRange(unreadNotifications);
             await _context.SaveChangesAsync();
 
-            return unreadNotificationIds.Count;
+            return unreadNotifications.Count;
         }
 
         public async Task<int> CountUnreadNotification(int userId)
@@ -231,49 +258,11 @@ namespace backend.src.Services.Implement
                 throw new Result("Không tìm thấy reader");
             }
 
-            var notificationIds = await GetRelevantNotificationIds(reader.Id);
-
-            if (notificationIds.Count == 0)
-            {
-                return 0;
-            }
-
-            var readCount = await _context.NotificationReads
-                .Where(nr => nr.ReaderId == reader.Id && notificationIds.Contains(nr.NotificationId))
-                .Select(nr => nr.NotificationId)
-                .Distinct()
+            var unreadCount = await _context.NotificationReads
+                .Where(nr => nr.ReaderId == reader.Id && nr.IsRead == false)
                 .CountAsync();
 
-            return notificationIds.Count - readCount;
-        }
-
-        private async Task<List<int>> GetRelevantNotificationIds(int readerId)
-        {
-            var followedMangaIds = await _context.Libraries
-                .Where(l => l.ReaderId == readerId)
-                .Select(l => l.MangaId)
-                .ToListAsync();
-
-            var notifications = await _context.Notifications
-                .Select(n => new
-                {
-                    n.Id,
-                    n.TargetRole,
-                    n.MangaId
-                })
-                .ToListAsync();
-
-            return notifications
-                .Where(n =>
-                {
-                    var normalizedTargetRole = (n.TargetRole ?? string.Empty).Trim();
-
-                    return AllReadersRoleAliases.Any(alias => string.Equals(alias, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
-                        || (FollowedReadersRoleAliases.Any(alias => string.Equals(alias, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
-                            && followedMangaIds.Contains(n.MangaId));
-                })
-                .Select(n => n.Id)
-                .ToList();
+            return unreadCount;
         }
     }
 }
