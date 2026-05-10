@@ -4,6 +4,7 @@ const String sidebarKeyOverview = 'overview';
 const String sidebarKeyManga = 'manga';
 const String sidebarKeyAuthors = 'authors';
 const String sidebarKeyUsers = 'users';
+const String sidebarKeyNotifications = 'notifications';
 const String sidebarKeyAnalytics = 'analytics';
 
 class ManageMangaSidebar extends StatelessWidget {
@@ -72,10 +73,17 @@ class ManageMangaSidebar extends StatelessWidget {
           ),
           _SidebarItem(
             icon: Icons.people_outline_rounded,
-            label: 'Người dùng',
+            label: 'Quản lý Người dùng',
             compact: compact,
             selected: selectedKey == sidebarKeyUsers,
             onTap: () => onSelect(sidebarKeyUsers),
+          ),
+          _SidebarItem(
+            icon: Icons.notifications_none_rounded,
+            label: 'Quản lý Thông báo',
+            compact: compact,
+            selected: selectedKey == sidebarKeyNotifications,
+            onTap: () => onSelect(sidebarKeyNotifications),
           ),
           _SidebarItem(
             icon: Icons.bar_chart_rounded,

@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/notifications/fcm_notification_service.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/manga_card.dart';
 import '../../../auth/presentation/pages/me_page.dart';
 import '../../../library/presentation/pages/library_page.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
-import 'package:provider/provider.dart';
+import '../../../notification/presentation/controllers/notification_controller.dart';
+import '../../../notification/presentation/pages/notification_page.dart';
 import 'manga_detail_page.dart';
 import 'search_page.dart';
 
@@ -19,12 +23,40 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  StreamSubscription? _notificationSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomeController>().loadManga();
+      final token = context.read<AuthController>().session?.token;
+      if (token != null) {
+        context.read<NotificationController>().fetchUnreadCount(token);
+      }
     });
+
+    _notificationSubscription =
+        FcmNotificationService.instance.foregroundMessages.listen((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final token = context.read<AuthController>().session?.token;
+      if (token == null) {
+        return;
+      }
+
+      final notificationController = context.read<NotificationController>();
+      notificationController.fetchNotifications(token);
+      notificationController.fetchUnreadCount(token);
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -135,6 +167,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBanner() {
+    final unreadCount = context.watch<NotificationController>().unreadCount;
+
     return Container(
       height: 220,
       margin: const EdgeInsets.only(bottom: 20),
@@ -148,14 +182,64 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       child: SafeArea(
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFFE8742B),
-              child: const Icon(Icons.person, color: Colors.white),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                backgroundColor: Color(0xFFE8742B),
+                child: Icon(Icons.person, color: Colors.white),
+              ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.92),
+                    child: IconButton(
+                      tooltip: 'Thong bao',
+                      icon: const Icon(
+                        Icons.notifications_outlined,
+                        color: Color(0xFFBA541E),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE53935),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          unreadCount > 99 ? '99+' : unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

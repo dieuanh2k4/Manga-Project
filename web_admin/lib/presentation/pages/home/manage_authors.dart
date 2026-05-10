@@ -11,6 +11,7 @@ import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
 import 'package:web_admin/presentation/widgets/manage_authors_body.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
@@ -450,6 +451,17 @@ class _ManageAuthorsState extends State<ManageAuthors> {
     );
   }
 
+  void _openNotificationsPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageNotifications(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -491,6 +503,8 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                                     ),
                                   ),
                                 );
+                              } else if (key == sidebarKeyNotifications) {
+                                _openNotificationsPage();
                               }
                             },
                           ),
@@ -521,6 +535,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
             ManageMangaTopHeader(
               searchController: _searchController,
               onLogout: widget.onLogout,
+              onNotificationTap: _openNotificationsPage,
               hintText: 'Tìm kiếm tác giả...',
             ),
             Expanded(
