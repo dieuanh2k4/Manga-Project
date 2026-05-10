@@ -11,7 +11,7 @@ namespace backend.src.Services.Interface
     {
         Task<List<Notifications>> GetAllNotification();
         Task<Notifications> SendNotification(CreateNotificationDto dto);
-        Task<List<Notifications>> GetNotificationByReaderId(int readerid);
+        Task<List<NotificationWithReadStateDto>> GetNotificationByReaderId(int readerid);
         Task MarkNotificationReaded(int notificationId, int userId);
         Task<int> MarkAllUnreadNotifications(int userId);
         Task<int> CountUnreadNotification(int userId);

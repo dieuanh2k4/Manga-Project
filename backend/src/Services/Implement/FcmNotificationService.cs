@@ -166,20 +166,29 @@ namespace backend.src.Services.Implement
             }
         }
 
-        public async Task<List<Notifications>> GetNotificationByReaderId(int userId)
+        public async Task<List<NotificationWithReadStateDto>> GetNotificationByReaderId(int userId)
         {
             var reader = await _context.Readers
                 .FirstOrDefaultAsync(r => r.UserId == userId || r.Id == userId);
 
             if (reader == null)
             {
-                return new List<Notifications>();
+                return new List<NotificationWithReadStateDto>();
             }
 
             var notifications = await _context.NotificationReads
                 .Where(nr => nr.ReaderId == reader.Id)
                 .Where(nr => nr.Notification != null)
-                .Select(nr => nr.Notification!)
+                .Select(nr => new NotificationWithReadStateDto
+                {
+                    Id = nr.Notification!.Id,
+                    Title = nr.Notification.Title,
+                    Content = nr.Notification.Content,
+                    TargetRole = nr.Notification.TargetRole,
+                    MangaId = nr.Notification.MangaId,
+                    CreatedAt = nr.Notification.CreatedAt,
+                    IsRead = nr.IsRead
+                })
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
 
