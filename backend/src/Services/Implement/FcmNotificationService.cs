@@ -99,6 +99,7 @@ namespace backend.src.Services.Implement
                         Apns = apnsConfig
                     };
 
+                    // gửi thông báo thật lên Firebase Cloud Messaging
                     await FirebaseMessaging.DefaultInstance.SendAsync(message);
 
                     var notification = new Notifications

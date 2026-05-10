@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/notifications/fcm_notification_service.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/manga_card.dart';
@@ -20,6 +23,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  StreamSubscription? _notificationSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +35,28 @@ class _HomePageState extends State<HomePage> {
         context.read<NotificationController>().fetchUnreadCount(token);
       }
     });
+
+    _notificationSubscription =
+        FcmNotificationService.instance.foregroundMessages.listen((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final token = context.read<AuthController>().session?.token;
+      if (token == null) {
+        return;
+      }
+
+      final notificationController = context.read<NotificationController>();
+      notificationController.fetchNotifications(token);
+      notificationController.fetchUnreadCount(token);
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   @override

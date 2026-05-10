@@ -39,6 +39,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> addManga(int mangaId, String token) async {
     try {
       await addMangaToLibraryUseCase(mangaId, token);
+      // app subcribe topic khi user add manga vào library
       await FcmNotificationService.instance.subscribeToManga(mangaId);
       await fetchLibraryManga(token);
     } catch (e) {
@@ -50,6 +51,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> deleteManga(int mangaId, String token) async {
     try {
       await deleteMangaFromLibraryUseCase(mangaId, token);
+      // app unsubcribe topic khi user add manga vào library
       await FcmNotificationService.instance.unsubscribeFromManga(mangaId);
       await fetchLibraryManga(token);
     } catch (e) {
