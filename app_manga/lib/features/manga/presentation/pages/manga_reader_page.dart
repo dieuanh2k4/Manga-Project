@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../../../../core/services/reading_progress_service.dart';
 import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
@@ -48,12 +50,29 @@ class _MangaReaderView extends StatefulWidget {
 }
 
 class _MangaReaderViewState extends State<_MangaReaderView> {
-  final ScrollController _verticalScrollController = ScrollController();
   final PageController _horizontalPageController = PageController();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
+  int? _restoredChapterId;
+  bool _isRestoring = false;
+  int _lastSavedIndex = -1;
+  bool _positionsListenerAttached = false;
+  bool _isSwitchingChapterForRestore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _itemPositionsListener.itemPositions.addListener(_onItemPositionsChanged);
+    _positionsListenerAttached = true;
+  }
 
   @override
   void dispose() {
-    _verticalScrollController.dispose();
+    if (_positionsListenerAttached) {
+      _itemPositionsListener.itemPositions
+          .removeListener(_onItemPositionsChanged);
+    }
     _horizontalPageController.dispose();
     super.dispose();
   }
@@ -61,6 +80,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<MangaReaderController>();
+    _restoreProgressIfNeeded(controller);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -113,16 +133,16 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
               controller: controller,
               onSelectChapter: (index) async {
                 await controller.goToChapter(index);
-                _verticalScrollController.jumpTo(0);
+                _jumpToFirstPage(controller);
               },
               onModeChanged: controller.setReaderMode,
               onPrevChapter: () async {
                 await controller.previousChapter();
-                _verticalScrollController.jumpTo(0);
+                _jumpToFirstPage(controller);
               },
               onNextChapter: () async {
                 await controller.nextChapter();
-                _verticalScrollController.jumpTo(0);
+                _jumpToFirstPage(controller);
               },
             ),
           ),
@@ -206,7 +226,10 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
             child: PageView.builder(
               controller: _horizontalPageController,
               itemCount: controller.pages.length,
-              onPageChanged: controller.onHorizontalPageChanged,
+              onPageChanged: (index) {
+                controller.onHorizontalPageChanged(index);
+                _saveProgress(controller, index);
+              },
               itemBuilder: (context, index) {
                 final page = controller.pages[index];
                 return Center(
@@ -236,8 +259,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
         controller.updateTaskbarOnScroll(notification.direction);
         return false;
       },
-      child: ListView.builder(
-        controller: _verticalScrollController,
+      child: ScrollablePositionedList.builder(
+        itemScrollController: _itemScrollController,
+        itemPositionsListener: _itemPositionsListener,
         padding: EdgeInsets.only(bottom: controller.showTaskbar ? 90 : 20),
         itemCount: controller.pages.length,
         itemBuilder: (context, index) {
@@ -261,6 +285,143 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
         },
       ),
     );
+  }
+
+  Future<void> _restoreProgressIfNeeded(MangaReaderController controller) async {
+    if (_isRestoring || controller.isLoading) {
+      return;
+    }
+
+    final chapterId = controller.currentChapter.id;
+    if (_restoredChapterId == chapterId) {
+      return;
+    }
+
+    _isRestoring = true;
+    final savedChapterId = await ReadingProgressService.getLastChapter(
+      mangaId: controller.mangaId,
+    );
+
+    if (!mounted) {
+      _isRestoring = false;
+      return;
+    }
+
+    final targetChapterId = savedChapterId ?? chapterId;
+    if (targetChapterId != chapterId && !_isSwitchingChapterForRestore) {
+      final targetIndex = controller.chapters
+          .indexWhere((chapter) => chapter.id == targetChapterId);
+      if (targetIndex != -1) {
+        _isSwitchingChapterForRestore = true;
+        _isRestoring = false;
+        await controller.goToChapter(targetIndex);
+        _isSwitchingChapterForRestore = false;
+        return;
+      }
+    }
+
+    if (controller.pages.isEmpty) {
+      _isRestoring = false;
+      return;
+    }
+
+    final savedIndex = await ReadingProgressService.getProgress(
+      mangaId: controller.mangaId,
+      chapterId: chapterId,
+    );
+
+    if (!mounted) {
+      _isRestoring = false;
+      return;
+    }
+
+    final index = (savedIndex ?? 0).clamp(0, controller.pages.length - 1);
+    controller.setCurrentImageIndex(index);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      if (controller.mode == ReaderMode.horizontal &&
+          _horizontalPageController.hasClients) {
+        _horizontalPageController.jumpToPage(index);
+      }
+
+      if (controller.mode == ReaderMode.vertical &&
+          _itemScrollController.isAttached) {
+        _itemScrollController.jumpTo(index: index, alignment: 0);
+      }
+
+      _restoredChapterId = chapterId;
+      _isRestoring = false;
+      _lastSavedIndex = index;
+    });
+  }
+
+  void _saveProgress(MangaReaderController controller, int index) {
+    if (_lastSavedIndex == index) {
+      return;
+    }
+
+    _lastSavedIndex = index;
+    ReadingProgressService.saveProgress(
+      mangaId: controller.mangaId,
+      chapterId: controller.currentChapter.id,
+      pageIndex: index,
+    );
+  }
+
+  void _jumpToFirstPage(MangaReaderController controller) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      if (controller.mode == ReaderMode.horizontal &&
+          _horizontalPageController.hasClients) {
+        _horizontalPageController.jumpToPage(0);
+      }
+
+      if (controller.mode == ReaderMode.vertical &&
+          _itemScrollController.isAttached) {
+        _itemScrollController.jumpTo(index: 0, alignment: 0);
+      }
+    });
+  }
+
+  void _onItemPositionsChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    final controller = context.read<MangaReaderController>();
+    if (_isRestoring || controller.isLoading || controller.pages.isEmpty) {
+      return;
+    }
+
+    if (controller.mode != ReaderMode.vertical) {
+      return;
+    }
+
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) {
+      return;
+    }
+
+    final visible = positions.where(
+      (p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1,
+    );
+
+    if (visible.isEmpty) {
+      return;
+    }
+
+    final topMost = visible.reduce(
+      (a, b) => a.itemLeadingEdge < b.itemLeadingEdge ? a : b,
+    );
+
+    _saveProgress(controller, topMost.index);
   }
 }
 
