@@ -141,6 +141,13 @@ class MangaReaderController extends ChangeNotifier {
     lastVerticalIndex = index;
     currentImageIndex = index;
     _scheduleHistoryUpdate(pageIndex: index);
+  void setCurrentImageIndex(int index) {
+    if (index == currentImageIndex) {
+      return;
+    }
+
+    currentImageIndex = index;
+    notifyListeners();
   }
 
   void previousImage() {

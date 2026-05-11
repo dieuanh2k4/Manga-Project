@@ -85,13 +85,18 @@ class _AuthPageState extends State<AuthPage>
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Center(
-                    child: Text(
-                      'Welcome to MangaMinus',
-                      style: TextStyle(
-                        color: Color(0xFFBC5308),
-                        fontSize: 30,
-                        fontWeight: FontWeight.w600,
+                  SizedBox(
+                    width: double.infinity,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Welcome to MangaMinus',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFFBC5308),
+                          fontSize: 30,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),

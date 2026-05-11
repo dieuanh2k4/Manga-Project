@@ -26,7 +26,7 @@ namespace backend.src.Services.Implement
 
         public async Task<List<Admin>> GetInfoAdmin()
         {
-            var admin = await _context.Admins.ToListAsync();
+            var admin = await _context.Admins.Include(a => a.Users).ToListAsync();
 
             return admin;
         }
@@ -644,7 +644,6 @@ namespace backend.src.Services.Implement
                 TargetRole = "Reader",
                 MangaId = 0,
                 CreatedAt = DateTime.UtcNow,
-                IsRead = false
             };
 
             _context.Notifications.Add(notification);

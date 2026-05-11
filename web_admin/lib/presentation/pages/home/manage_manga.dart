@@ -1,29 +1,36 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_admin/domain/entities/author.dart';
 import 'package:web_admin/domain/entities/genre.dart';
 import 'package:web_admin/domain/entities/manga.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/helper/manage_manga_helper.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_bloc.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_event.dart';
-import 'package:web_admin/presentation/bloc/manga/remote/remote_manga_state.dart';
+import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/home/create_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga_detail_page.dart';
+import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_error_state.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_filter_bar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_page_heading.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_table_card.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
+import 'manage_authors.dart';
+import 'manage_users.dart';
 
 class ManageManga extends StatefulWidget {
-  const ManageManga({Key? key}) : super(key: key);
+  final RemoteMangaController mangaController;
+  final Future<void> Function()? onLogout;
+
+  const ManageManga({
+    Key? key,
+    required this.mangaController,
+    this.onLogout,
+  }) : super(key: key);
 
   @override
   State<ManageManga> createState() => _ManageMangaState();
@@ -117,18 +124,15 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(updateResult.message)));
 
     if (updateResult.isSuccess) {
-      context.read<RemoteMangaBloc>().add(const GetManga());
+      widget.mangaController.loadManga();
     }
   }
 
   Future<void> _onAddTap() async {
-    final CreateMangaSubmitResult? createdResult =
-        await Navigator.of(context).push<CreateMangaSubmitResult>(
+    final CreateMangaSubmitResult? createdResult = await Navigator.of(context)
+        .push<CreateMangaSubmitResult>(
           MaterialPageRoute<CreateMangaSubmitResult>(
-            builder: (_) => CreateMangaPage(
-              authors: _authors,
-              genres: _genres,
-            ),
+            builder: (_) => CreateMangaPage(authors: _authors, genres: _genres),
             fullscreenDialog: true,
           ),
         );
@@ -152,7 +156,7 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(createResult.message)));
 
     if (createResult.isSuccess) {
-      context.read<RemoteMangaBloc>().add(const GetManga());
+      widget.mangaController.loadManga();
     }
   }
 
@@ -160,6 +164,22 @@ class _ManageMangaState extends State<ManageManga> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ManageMangaDetailPage(manga: manga),
+      ),
+    );
+  }
+
+  Future<void> _onNestedRouteLogout() async {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    await widget.onLogout?.call();
+  }
+
+  void _openNotificationsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageNotifications(
+          mangaController: widget.mangaController,
+          onLogout: _onNestedRouteLogout,
+        ),
       ),
     );
   }
@@ -209,7 +229,7 @@ class _ManageMangaState extends State<ManageManga> {
     ).showSnackBar(SnackBar(content: Text(deleteResult.message)));
 
     if (deleteResult.isSuccess) {
-      context.read<RemoteMangaBloc>().add(const GetManga());
+      widget.mangaController.loadManga();
     }
   }
 
@@ -239,7 +259,33 @@ class _ManageMangaState extends State<ManageManga> {
                       ),
                       child: Row(
                         children: [
-                          ManageMangaSidebar(compact: isCompactSidebar),
+                          ManageMangaSidebar(
+                            compact: isCompactSidebar,
+                            selectedKey: sidebarKeyManga,
+                            onSelect: (key) {
+                              if (key == sidebarKeyAuthors) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageAuthors(
+                                      mangaController: widget.mangaController,
+                                      onLogout: _onNestedRouteLogout,
+                                    ),
+                                  ),
+                                );
+                              } else if (key == sidebarKeyUsers) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageUsers(
+                                      mangaController: widget.mangaController,
+                                      onLogout: _onNestedRouteLogout,
+                                    ),
+                                  ),
+                                );
+                              } else if (key == sidebarKeyNotifications) {
+                                _openNotificationsPage();
+                              }
+                            },
+                          ),
                           Expanded(child: _buildMainContent(context)),
                         ],
                       ),
@@ -264,12 +310,19 @@ class _ManageMangaState extends State<ManageManga> {
         color: const Color(0xFFF7F8FC),
         child: Column(
           children: [
-            ManageMangaTopHeader(searchController: _globalSearchController),
+            ManageMangaTopHeader(
+              searchController: _globalSearchController,
+              onLogout: widget.onLogout,
+              onNotificationTap: _openNotificationsPage,
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                child: BlocBuilder<RemoteMangaBloc, RemoteMangaState>(
-                  builder: (_, state) {
+                child: ListenableBuilder(
+                  listenable: widget.mangaController,
+                  builder: (_, __) {
+                    final RemoteMangaState state =
+                        widget.mangaController.state;
                     if (state is RemoteMangaLoading) {
                       return const Center(child: CupertinoActivityIndicator());
                     }
@@ -277,7 +330,7 @@ class _ManageMangaState extends State<ManageManga> {
                     if (state is RemoteMangaError) {
                       return ManageMangaErrorState(
                         onRetry: () {
-                          context.read<RemoteMangaBloc>().add(const GetManga());
+                          widget.mangaController.loadManga();
                           _loadLookupData();
                         },
                       );

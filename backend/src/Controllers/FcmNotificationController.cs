@@ -86,12 +86,21 @@ namespace backend.src.Controllers
         }
 
         [Authorize(Policy = "ReaderOnly")]
-        [HttpPost("get-notification-by-readerid")]
-        public async Task<IActionResult> GetNotificationByReaderId(int readerid) 
+        [HttpGet("get-notification-by-readerid")]
+        public async Task<IActionResult> GetNotificationByReaderId() 
         {
             try
             {
-                var notifications = await _fcmNotification.GetNotificationByReaderId(readerid);
+                var currentUserId = GetCurrentUserId();
+
+                if (currentUserId == null)
+                {
+                    throw new UnauthorizedAccessException("Cần đăng nhập để xem thông báo");
+                }
+
+                var userId = currentUserId.Value;
+
+                var notifications = await _fcmNotification.GetNotificationByReaderId(userId);
 
                 return Ok(notifications);
             }

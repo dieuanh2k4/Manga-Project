@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 
 class ManageMangaTopHeader extends StatelessWidget {
   final TextEditingController searchController;
+  final Future<void> Function()? onLogout;
+  final VoidCallback? onNotificationTap;
+  final String hintText;
 
-  const ManageMangaTopHeader({super.key, required this.searchController});
+  const ManageMangaTopHeader({
+    super.key,
+    required this.searchController,
+    this.onLogout,
+    this.onNotificationTap,
+    this.hintText = 'Tim kiem manga, nguoi dung...',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +33,7 @@ class ManageMangaTopHeader extends StatelessWidget {
                 child: TextField(
                   controller: searchController,
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm manga, người dùng...',
+                    hintText: hintText,
                     hintStyle: const TextStyle(
                       color: Color(0xFFA6ADBB),
                       fontSize: 13,
@@ -48,7 +57,8 @@ class ManageMangaTopHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            tooltip: 'Notifications',
+            onPressed: onNotificationTap,
             icon: const Icon(
               Icons.notifications_none_rounded,
               color: Color(0xFF68758C),
@@ -58,6 +68,15 @@ class ManageMangaTopHeader extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(
               Icons.settings_outlined,
+              color: Color(0xFF68758C),
+              size: 20,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Logout',
+            onPressed: onLogout == null ? null : () => onLogout!(),
+            icon: const Icon(
+              Icons.logout_rounded,
               color: Color(0xFF68758C),
               size: 20,
             ),

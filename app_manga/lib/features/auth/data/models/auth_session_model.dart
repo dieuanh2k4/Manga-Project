@@ -14,12 +14,12 @@ class AuthSessionModel {
   factory AuthSessionModel.fromLoginResponse(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>?;
     if (data == null) {
-      throw Exception('Dang nhap that bai: thieu data');
+      throw Exception('Đăng nhập thất bại: thiếu data');
     }
 
     final isSuccess = json['isSuccess'] == true;
     if (!isSuccess) {
-      final message = (json['message'] ?? 'Dang nhap that bai').toString();
+      final message = (json['message'] ?? 'Đăng nhập thất bại').toString();
       throw Exception(message);
     }
 
@@ -39,11 +39,7 @@ class AuthSessionModel {
   }
 
   Map<String, dynamic> toStorage() {
-    return {
-      'userName': userName,
-      'role': role,
-      'token': token,
-    };
+    return {'userName': userName, 'role': role, 'token': token};
   }
 
   AuthSessionEntity toEntity() {
