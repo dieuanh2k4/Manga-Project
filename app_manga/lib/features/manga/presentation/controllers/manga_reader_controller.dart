@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../domain/entities/chapter_entity.dart';
 import '../../domain/entities/chapter_page_entity.dart';
 import '../../domain/usecases/get_pages_by_chapter_usecase.dart';
+import '../../domain/usecases/upsert_history_usecase.dart';
 
 enum ReaderMode { vertical, horizontal }
 
@@ -13,12 +16,14 @@ class MangaReaderController extends ChangeNotifier {
   final List<ChapterEntity> chapters;
   final String? token;
   final GetPagesByChapterUseCase getPagesByChapterUseCase;
+  final UpsertHistoryUseCase upsertHistoryUseCase;
 
   MangaReaderController({
     required this.mangaId,
     required this.mangaTitle,
     required this.chapters,
     required this.getPagesByChapterUseCase,
+    required this.upsertHistoryUseCase,
     this.token,
   });
 
@@ -29,6 +34,12 @@ class MangaReaderController extends ChangeNotifier {
 
   int currentChapterIndex = 0;
   int currentImageIndex = 0;
+
+  int lastVerticalIndex = 0;
+  Timer? _historyDebounce;
+  int? _lastHistoryPageId;
+  int? _lastHistoryChapterId;
+  bool _lastHistoryCompleted = false;
 
   List<ChapterPageEntity> pages = const [];
 
@@ -54,6 +65,9 @@ class MangaReaderController extends ChangeNotifier {
       );
       if (pages.isEmpty) {
         errorMessage = 'Chapter nay chua co noi dung';
+      } else {
+        lastVerticalIndex = 0;
+        _scheduleHistoryUpdate(pageIndex: 0);
       }
     } catch (e) {
       errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -102,6 +116,10 @@ class MangaReaderController extends ChangeNotifier {
 
     mode = value;
     showTaskbar = true;
+    if (mode == ReaderMode.horizontal) {
+      currentImageIndex = lastVerticalIndex.clamp(0, pages.length - 1);
+      _scheduleHistoryUpdate(pageIndex: currentImageIndex);
+    }
     notifyListeners();
   }
 
@@ -111,9 +129,18 @@ class MangaReaderController extends ChangeNotifier {
     }
 
     currentImageIndex = index;
+    _scheduleHistoryUpdate(pageIndex: index);
     notifyListeners();
   }
 
+  void onVerticalPageSelected(int index) {
+    if (index < 0 || index >= pages.length) {
+      return;
+    }
+
+    lastVerticalIndex = index;
+    currentImageIndex = index;
+    _scheduleHistoryUpdate(pageIndex: index);
   void setCurrentImageIndex(int index) {
     if (index == currentImageIndex) {
       return;
@@ -161,5 +188,51 @@ class MangaReaderController extends ChangeNotifier {
       showTaskbar = true;
       notifyListeners();
     }
+  }
+
+  void _scheduleHistoryUpdate({required int pageIndex}) {
+    if (token == null || token!.isEmpty) {
+      return;
+    }
+    if (pageIndex < 0 || pageIndex >= pages.length) {
+      return;
+    }
+
+    final pageId = pages[pageIndex].id;
+    if (pageId <= 0) {
+      return;
+    }
+
+    final chapterId = currentChapter.id;
+    final isCompleted = pageIndex == pages.length - 1 ? true : null;
+    if (_lastHistoryPageId == pageId &&
+        _lastHistoryChapterId == chapterId &&
+        _lastHistoryCompleted == (isCompleted ?? false)) {
+      return;
+    }
+
+    _historyDebounce?.cancel();
+    _historyDebounce = Timer(const Duration(milliseconds: 900), () async {
+      _lastHistoryPageId = pageId;
+      _lastHistoryChapterId = chapterId;
+      _lastHistoryCompleted = isCompleted ?? false;
+      try {
+        await upsertHistoryUseCase(
+          mangaId: mangaId,
+          chapterId: chapterId,
+          pageId: pageId,
+          token: token!,
+          isCompleted: isCompleted,
+        );
+      } catch (_) {
+        // Ignore history update failures to avoid disrupting reading.
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _historyDebounce?.cancel();
+    super.dispose();
   }
 }

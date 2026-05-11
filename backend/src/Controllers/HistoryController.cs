@@ -75,7 +75,7 @@ namespace backend.src.Controllers
                         LastChapterId = dto.ChapterId,
                         LastPageId = dto.PageNumber,
                         IsCompleted = dto.IsCompleted ?? false,
-                        UpdateAt = TimeOnly.FromDateTime(DateTime.UtcNow)
+                        UpdateAt = DateTime.UtcNow
                     };
 
                     _context.History.Add(history);
@@ -85,7 +85,7 @@ namespace backend.src.Controllers
                     history.LastChapterId = dto.ChapterId;
                     history.LastPageId = dto.PageNumber;
                     history.IsCompleted = dto.IsCompleted ?? history.IsCompleted;
-                    history.UpdateAt = TimeOnly.FromDateTime(DateTime.UtcNow);
+                    history.UpdateAt = DateTime.UtcNow;
                 }
 
                 await _context.SaveChangesAsync();
@@ -121,6 +121,8 @@ namespace backend.src.Controllers
 
                 var history = await _context.History
                     .Where(h => h.ReaderId == reader.Id)
+                    .Include(h => h.Manga)
+                    .ThenInclude(manga => manga.Authors)
                     .OrderByDescending(h => h.UpdateAt)
                     .Select(h => new HistoryItemDto
                     {
@@ -130,7 +132,10 @@ namespace backend.src.Controllers
                         IsCompleted = h.IsCompleted,
                         UpdateAt = h.UpdateAt,
                         MangaTitle = h.Manga != null ? h.Manga.Title : null,
-                        MangaThumbnail = h.Manga != null ? h.Manga.Thumbnail : null
+                        MangaThumbnail = h.Manga != null ? h.Manga.Thumbnail : null,
+                        MangaAuthor = h.Manga != null
+                            ? h.Manga.Authors.Select(author => author.FullName).FirstOrDefault()
+                            : null
                     })
                     .ToListAsync();
 
