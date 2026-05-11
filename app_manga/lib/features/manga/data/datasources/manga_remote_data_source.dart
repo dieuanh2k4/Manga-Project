@@ -16,7 +16,9 @@ class MangaRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API get-all-manga failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API get-all-manga failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     return _parseMangaList(response.body);
@@ -24,13 +26,15 @@ class MangaRemoteDataSource {
 
   Future<List<MangaModel>> searchManga(String query) async {
     final response = await http.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/Manga/search').replace(
-        queryParameters: {'query': query},
-      ),
+      Uri.parse(
+        '${AppConfig.apiBaseUrl}/Manga/search',
+      ).replace(queryParameters: {'query': query}),
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API search manga failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API search manga failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     return _parseMangaList(response.body);
@@ -42,7 +46,9 @@ class MangaRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API manga-ongoing failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API manga-ongoing failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     return _parseMangaList(response.body);
@@ -54,7 +60,9 @@ class MangaRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API manga-completed failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API manga-completed failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     return _parseMangaList(response.body);
@@ -62,13 +70,15 @@ class MangaRemoteDataSource {
 
   Future<List<MangaModel>> getMangaByGenre(int genreId) async {
     final response = await http.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/Manga/sort-by-genre').replace(
-        queryParameters: {'genreId': '$genreId'},
-      ),
+      Uri.parse(
+        '${AppConfig.apiBaseUrl}/Manga/sort-by-genre',
+      ).replace(queryParameters: {'genreId': '$genreId'}),
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API sort-by-genre failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API sort-by-genre failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     return _parseMangaList(response.body);
@@ -80,7 +90,9 @@ class MangaRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API get-all-genre failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API get-all-genre failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     final data = json.decode(response.body);
@@ -100,7 +112,9 @@ class MangaRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API get-manga-by-id failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API get-manga-by-id failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     final data = json.decode(response.body);
@@ -117,7 +131,9 @@ class MangaRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API get-all-chapter failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API get-all-chapter failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     final data = json.decode(response.body);
@@ -137,16 +153,18 @@ class MangaRemoteDataSource {
     String? token,
   }) async {
     final response = await http.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/Page/get-all-page/$mangaId/$chapterId'),
+      Uri.parse(
+        '${AppConfig.apiBaseUrl}/Page/get-all-page/$mangaId/$chapterId',
+      ),
       headers: token == null || token.isEmpty
           ? const {}
-          : {
-              'Authorization': 'Bearer $token',
-            },
+          : {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode != 200) {
-      throw Exception('API get-all-page failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+        'API get-all-page failed: ${response.statusCode} ${response.body}',
+      );
     }
 
     final data = json.decode(response.body);
@@ -160,13 +178,45 @@ class MangaRemoteDataSource {
         .toList();
   }
 
+  Future<void> upsertHistory({
+    required int mangaId,
+    required int chapterId,
+    required int pageId,
+    required String token,
+    bool? isCompleted,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${AppConfig.apiBaseUrl}/History/upsert-history'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'mangaId': mangaId,
+        'chapterId': chapterId,
+        'pageNumber': pageId,
+        if (isCompleted != null) 'isCompleted': isCompleted,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'API upsert-history failed: ${response.statusCode} ${response.body}',
+      );
+    }
+  }
+
   List<MangaModel> _parseMangaList(String rawBody) {
     final data = json.decode(rawBody);
     final listData = JsonListParser.extractList(data);
 
     return listData
         .whereType<Map<String, dynamic>>()
-        .where((e) => !e.containsKey(r'$ref') && (e.containsKey('id') || e.containsKey('Id')))
+        .where(
+          (e) =>
+              !e.containsKey(r'$ref') &&
+              (e.containsKey('id') || e.containsKey('Id')),
+        )
         .map(MangaModel.fromJson)
         .toList();
   }

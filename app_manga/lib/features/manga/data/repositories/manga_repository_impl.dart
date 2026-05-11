@@ -72,4 +72,21 @@ class MangaRepositoryImpl implements MangaRepository {
 
     return data.map((e) => e.toEntity()).toList();
   }
+
+  @override
+  Future<void> upsertHistory({
+    required int mangaId,
+    required int chapterId,
+    required int pageId,
+    required String token,
+    bool? isCompleted,
+  }) {
+    return remoteDataSource.upsertHistory(
+      mangaId: mangaId,
+      chapterId: chapterId,
+      pageId: pageId,
+      token: token,
+      isCompleted: isCompleted,
+    );
+  }
 }

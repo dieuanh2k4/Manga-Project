@@ -6,6 +6,7 @@ import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
 import '../../domain/repositories/manga_repository.dart';
 import '../../domain/usecases/get_pages_by_chapter_usecase.dart';
+import '../../domain/usecases/upsert_history_usecase.dart';
 import '../controllers/manga_reader_controller.dart';
 
 class MangaReaderPage extends StatelessWidget {
@@ -34,6 +35,7 @@ class MangaReaderPage extends StatelessWidget {
         chapters: chapters,
         token: auth.session?.token,
         getPagesByChapterUseCase: GetPagesByChapterUseCase(mangaRepository),
+        upsertHistoryUseCase: UpsertHistoryUseCase(mangaRepository),
       )..initialize(initialChapterId),
       child: const _MangaReaderView(),
     );
@@ -50,12 +52,82 @@ class _MangaReaderView extends StatefulWidget {
 class _MangaReaderViewState extends State<_MangaReaderView> {
   final ScrollController _verticalScrollController = ScrollController();
   final PageController _horizontalPageController = PageController();
+  final List<GlobalKey> _pageKeys = [];
+  final GlobalKey _listKey = GlobalKey();
 
   @override
   void dispose() {
     _verticalScrollController.dispose();
     _horizontalPageController.dispose();
     super.dispose();
+  }
+
+  void _syncPageKeys(int length) {
+    if (_pageKeys.length == length) {
+      return;
+    }
+    _pageKeys
+      ..clear()
+      ..addAll(List.generate(length, (_) => GlobalKey()));
+  }
+
+  int? _getMostVisibleIndex() {
+    if (_pageKeys.isEmpty) {
+      return null;
+    }
+
+    final viewportBox =
+        _listKey.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null) {
+      return null;
+    }
+
+    final viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    final viewportBottom = viewportTop + viewportBox.size.height;
+
+    double bestFraction = 0;
+    int? bestIndex;
+
+    for (var i = 0; i < _pageKeys.length; i++) {
+      final keyContext = _pageKeys[i].currentContext;
+      if (keyContext == null) {
+        continue;
+      }
+      final box = keyContext.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) {
+        continue;
+      }
+
+      final itemTop = box.localToGlobal(Offset.zero).dy;
+      final itemBottom = itemTop + box.size.height;
+      final visibleHeight =
+          (itemBottom < viewportBottom ? itemBottom : viewportBottom) -
+          (itemTop > viewportTop ? itemTop : viewportTop);
+
+      if (visibleHeight <= 0) {
+        continue;
+      }
+
+      final fraction = visibleHeight / box.size.height;
+      if (fraction > bestFraction) {
+        bestFraction = fraction;
+        bestIndex = i;
+      }
+    }
+
+    return bestIndex;
+  }
+
+  void _reportVerticalHistory(MangaReaderController controller) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || controller.mode != ReaderMode.vertical) {
+        return;
+      }
+      final index = _getMostVisibleIndex();
+      if (index != null) {
+        controller.onVerticalPageSelected(index);
+      }
+    });
   }
 
   @override
@@ -69,7 +141,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
       if (controller.mode == ReaderMode.horizontal &&
           _horizontalPageController.hasClients &&
-          _horizontalPageController.page?.round() != controller.currentImageIndex) {
+          _horizontalPageController.page?.round() !=
+              controller.currentImageIndex) {
         _horizontalPageController.jumpToPage(controller.currentImageIndex);
       }
     });
@@ -104,9 +177,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: _buildContent(controller),
-          ),
+          Positioned.fill(child: _buildContent(controller)),
           Align(
             alignment: Alignment.bottomCenter,
             child: _ReaderTaskbar(
@@ -145,7 +216,11 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: Color(0xFFE8742B), size: 40),
+              const Icon(
+                Icons.error_outline,
+                color: Color(0xFFE8742B),
+                size: 40,
+              ),
               const SizedBox(height: 10),
               Text(
                 controller.errorMessage!,
@@ -219,7 +294,10 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
                       errorWidget: Container(
                         color: const Color(0xFF191B1F),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.broken_image, color: Colors.white70),
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.white70,
+                        ),
                       ),
                     ),
                   ),
@@ -231,31 +309,43 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
       );
     }
 
-    return NotificationListener<UserScrollNotification>(
+    _syncPageKeys(controller.pages.length);
+    return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        controller.updateTaskbarOnScroll(notification.direction);
+        if (notification is UserScrollNotification) {
+          controller.updateTaskbarOnScroll(notification.direction);
+        }
+        if (notification is ScrollEndNotification) {
+          _reportVerticalHistory(controller);
+        }
         return false;
       },
       child: ListView.builder(
+        key: _listKey,
         controller: _verticalScrollController,
         padding: EdgeInsets.only(bottom: controller.showTaskbar ? 90 : 20),
         itemCount: controller.pages.length,
         itemBuilder: (context, index) {
           final page = controller.pages[index];
-          return ProtectedNetworkImage(
-            imageUrl: page.imageUrl,
-            fit: BoxFit.fitWidth,
-            loadingWidget: Container(
-              color: Colors.black,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: const CircularProgressIndicator(color: Color(0xFFE8742B)),
-            ),
-            errorWidget: Container(
-              color: const Color(0xFF191B1F),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 28),
-              child: const Icon(Icons.broken_image, color: Colors.white70),
+          return KeyedSubtree(
+            key: _pageKeys[index],
+            child: ProtectedNetworkImage(
+              imageUrl: page.imageUrl,
+              fit: BoxFit.fitWidth,
+              loadingWidget: Container(
+                color: Colors.black,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: const CircularProgressIndicator(
+                  color: Color(0xFFE8742B),
+                ),
+              ),
+              errorWidget: Container(
+                color: const Color(0xFF191B1F),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: const Icon(Icons.broken_image, color: Colors.white70),
+              ),
             ),
           );
         },
@@ -322,7 +412,9 @@ class _ReaderTaskbar extends StatelessWidget {
                             iconEnabledColor: Colors.white,
                             style: const TextStyle(color: Colors.white),
                             isExpanded: true,
-                            items: List.generate(controller.chapters.length, (index) {
+                            items: List.generate(controller.chapters.length, (
+                              index,
+                            ) {
                               final chapter = controller.chapters[index];
                               final label = chapter.chapterNumber.trim().isEmpty
                                   ? 'Chapter'

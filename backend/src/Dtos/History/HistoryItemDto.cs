@@ -8,9 +8,10 @@ namespace backend.src.Dtos.History
         public int LastChapterId { get; set; }
         public int LastPageId { get; set; }
         public bool IsCompleted { get; set; }
-        public TimeOnly UpdateAt { get; set; }
+        public DateTime UpdateAt { get; set; }
 
         public string? MangaTitle { get; set; }
         public string? MangaThumbnail { get; set; }
+        public string? MangaAuthor { get; set; }
     }
 }
