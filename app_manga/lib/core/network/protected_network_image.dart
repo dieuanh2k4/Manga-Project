@@ -5,6 +5,7 @@ class ProtectedNetworkImage extends StatelessWidget {
   const ProtectedNetworkImage({
     super.key,
     required this.imageUrl,
+    this.cacheKey,
     this.width,
     this.height,
     this.fit = BoxFit.cover,
@@ -13,6 +14,7 @@ class ProtectedNetworkImage extends StatelessWidget {
   });
 
   final String imageUrl;
+  final String? cacheKey;
   final double? width;
   final double? height;
   final BoxFit fit;
@@ -23,6 +25,7 @@ class ProtectedNetworkImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return CachedNetworkImage(
       imageUrl: imageUrl,
+      cacheKey: cacheKey ?? imageUrl,
       width: width,
       height: height,
       fit: fit,

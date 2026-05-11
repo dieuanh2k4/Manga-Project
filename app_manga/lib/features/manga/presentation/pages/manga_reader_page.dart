@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -63,6 +64,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   int _lastSavedIndex = -1;
   bool _positionsListenerAttached = false;
   bool _isSwitchingChapterForRestore = false;
+  int? _lastPrecachedChapterId;
+  int? _lastPrecachedCenterIndex;
 
   @override
   void initState() {
@@ -74,8 +77,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   @override
   void dispose() {
     if (_positionsListenerAttached) {
-      _itemPositionsListener.itemPositions
-          .removeListener(_onItemPositionsChanged);
+      _itemPositionsListener.itemPositions.removeListener(
+        _onItemPositionsChanged,
+      );
     }
     _horizontalPageController.dispose();
     super.dispose();
@@ -158,6 +162,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
       if (!mounted) {
         return;
       }
+
+      _precacheReaderImages(controller);
 
       if (controller.mode == ReaderMode.horizontal &&
           _horizontalPageController.hasClients &&
@@ -313,6 +319,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
                     maxScale: 4,
                     child: ProtectedNetworkImage(
                       imageUrl: page.imageUrl,
+                      cacheKey: _imageCacheKey(page.imageUrl),
                       fit: BoxFit.contain,
                       errorWidget: Container(
                         color: const Color(0xFF191B1F),
@@ -343,9 +350,10 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
         }
         return false;
       },
-      child: ListView.builder(
+      child: ScrollablePositionedList.builder(
         key: _listKey,
-        controller: _verticalScrollController,
+        itemScrollController: _itemScrollController,
+        itemPositionsListener: _itemPositionsListener,
         padding: EdgeInsets.only(bottom: controller.showTaskbar ? 90 : 20),
         itemCount: controller.pages.length,
         itemBuilder: (context, index) {
@@ -354,6 +362,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
             key: _pageKeys[index],
             child: ProtectedNetworkImage(
               imageUrl: page.imageUrl,
+              cacheKey: _imageCacheKey(page.imageUrl),
               fit: BoxFit.fitWidth,
               loadingWidget: Container(
                 color: Colors.black,
@@ -376,7 +385,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
   }
 
-  Future<void> _restoreProgressIfNeeded(MangaReaderController controller) async {
+  Future<void> _restoreProgressIfNeeded(
+    MangaReaderController controller,
+  ) async {
     if (_isRestoring || controller.isLoading) {
       return;
     }
@@ -398,8 +409,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     final targetChapterId = savedChapterId ?? chapterId;
     if (targetChapterId != chapterId && !_isSwitchingChapterForRestore) {
-      final targetIndex = controller.chapters
-          .indexWhere((chapter) => chapter.id == targetChapterId);
+      final targetIndex = controller.chapters.indexWhere(
+        (chapter) => chapter.id == targetChapterId,
+      );
       if (targetIndex != -1) {
         _isSwitchingChapterForRestore = true;
         _isRestoring = false;
@@ -511,6 +523,43 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
 
     _saveProgress(controller, topMost.index);
+    controller.onVerticalPageSelected(topMost.index);
+  }
+
+  String _imageCacheKey(String imageUrl) {
+    return imageUrl;
+  }
+
+  void _precacheReaderImages(MangaReaderController controller) {
+    if (controller.isLoading || controller.pages.isEmpty) {
+      return;
+    }
+
+    final chapterId = controller.currentChapter.id;
+    final centerIndex = controller.currentImageIndex.clamp(
+      0,
+      controller.pages.length - 1,
+    );
+    if (_lastPrecachedChapterId == chapterId &&
+        _lastPrecachedCenterIndex == centerIndex) {
+      return;
+    }
+
+    _lastPrecachedChapterId = chapterId;
+    _lastPrecachedCenterIndex = centerIndex;
+
+    final start = (centerIndex - 2).clamp(0, controller.pages.length - 1);
+    final end = (centerIndex + 4).clamp(0, controller.pages.length - 1);
+    for (var index = start; index <= end; index++) {
+      final imageUrl = controller.pages[index].imageUrl;
+      precacheImage(
+        CachedNetworkImageProvider(
+          imageUrl,
+          cacheKey: _imageCacheKey(imageUrl),
+        ),
+        context,
+      );
+    }
   }
 }
 
