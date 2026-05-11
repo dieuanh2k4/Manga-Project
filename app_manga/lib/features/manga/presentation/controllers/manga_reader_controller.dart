@@ -114,6 +114,15 @@ class MangaReaderController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCurrentImageIndex(int index) {
+    if (index == currentImageIndex) {
+      return;
+    }
+
+    currentImageIndex = index;
+    notifyListeners();
+  }
+
   void previousImage() {
     if (!hasPreviousImage) {
       return;

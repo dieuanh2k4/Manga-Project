@@ -7,6 +7,18 @@ import '../models/auth_session_model.dart';
 import '../models/reader_profile_model.dart';
 
 class AuthRemoteDataSource {
+  Map<String, dynamic>? _tryDecodeJson(String body) {
+    if (body.isEmpty) {
+      return null;
+    }
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<AuthSessionModel> login(String userName, String password) async {
     final response = await http.post(
       Uri.parse('${AppConfig.apiBaseUrl}/Auth/login'),
@@ -14,8 +26,12 @@ class AuthRemoteDataSource {
       body: jsonEncode({'userName': userName, 'password': password}),
     );
 
-    final body = response.body.isEmpty ? '{}' : response.body;
-    final jsonMap = jsonDecode(body) as Map<String, dynamic>;
+    final jsonMap = _tryDecodeJson(response.body);
+    if (jsonMap == null) {
+      throw Exception(
+        'Server tra ve du lieu khong hop le (${response.statusCode}).',
+      );
+    }
 
     if (response.statusCode != 200) {
       final message = (jsonMap['message'] ?? 'Đăng nhập thất bại').toString();
@@ -51,8 +67,12 @@ class AuthRemoteDataSource {
 
     final streamed = await request.send();
     final responseBody = await streamed.stream.bytesToString();
-    final body = responseBody.isEmpty ? '{}' : responseBody;
-    final jsonMap = jsonDecode(body) as Map<String, dynamic>;
+    final jsonMap = _tryDecodeJson(responseBody);
+    if (jsonMap == null) {
+      throw Exception(
+        'Server tra ve du lieu khong hop le (${streamed.statusCode}).',
+      );
+    }
 
     if (streamed.statusCode != 200) {
       final message = (jsonMap['message'] ?? 'Đăng ký thất bại').toString();
@@ -66,8 +86,12 @@ class AuthRemoteDataSource {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    final body = response.body.isEmpty ? '{}' : response.body;
-    final jsonMap = jsonDecode(body) as Map<String, dynamic>;
+    final jsonMap = _tryDecodeJson(response.body);
+    if (jsonMap == null) {
+      throw Exception(
+        'Server tra ve du lieu khong hop le (${response.statusCode}).',
+      );
+    }
 
     if (response.statusCode != 200) {
       final message = (jsonMap['message'] ?? 'Không tải được thông tin user')
