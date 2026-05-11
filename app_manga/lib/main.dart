@@ -34,6 +34,8 @@ import 'features/vip/domain/repositories/vip_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PaintingBinding.instance.imageCache.maximumSize = 300;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20;
   // gọi service chống chụp màn hình trước runApp
   // đảm bảo bật chống chụp màn hình ngay khi khởi động app
   await ScreenSecurityService.instance.initialize();
