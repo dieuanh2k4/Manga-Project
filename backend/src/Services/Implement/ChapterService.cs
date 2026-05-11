@@ -140,22 +140,18 @@ namespace backend.src.Services.Implement
                 throw new Result("Manga không tồn tại");
             }
 
-            var checkManga = await _context.Chapters.FindAsync(idManga);
-            if (checkManga == null) 
+            var chapter = await _context.Chapters
+                .FirstOrDefaultAsync(c => c.Id == idChapter && c.MangaId == idManga);
+            if (chapter == null) 
             {
-                throw new Result("Không tìm thấy Manga");
+                throw new Result("Không tìm thấy Chapter trong manga này");
             }
 
-            var Chapter = await _context.Chapters.FindAsync(idChapter);
-            if (Chapter == null) 
-            {
-                throw new Result("Không tìm thấy Chapter");
-            }
-
-            manga.TotalChapter -= 1;
+            _context.Chapters.Remove(chapter);
+            manga.TotalChapter = Math.Max(0, manga.TotalChapter - 1);
             await _context.SaveChangesAsync();
 
-            return Chapter;
+            return chapter;
         }
     } 
 }

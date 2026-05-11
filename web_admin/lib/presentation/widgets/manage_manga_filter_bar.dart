@@ -66,6 +66,10 @@ class ManageMangaFilterBar extends StatelessWidget {
               value: 'Hoàn thành',
               child: Text('Hoàn thành'),
             ),
+            const DropdownMenuItem(
+              value: 'Tạm dừng',
+              child: Text('Tạm dừng'),
+            ),
           ],
           onChanged: (value) {
             if (value == null) {

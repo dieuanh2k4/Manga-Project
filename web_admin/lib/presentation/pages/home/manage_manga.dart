@@ -233,6 +233,23 @@ class _ManageMangaState extends State<ManageManga> {
     }
   }
 
+  Future<void> _onStatusChange(MangaEntity manga, String newStatus) async {
+    final ManageMangaUpdateResult result = await _manageMangaService
+        .updateMangaStatus(manga: manga, newStatus: newStatus);
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
+
+    if (result.isSuccess) {
+      widget.mangaController.loadManga();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -390,6 +407,7 @@ class _ManageMangaState extends State<ManageManga> {
                               onEditTap: _onEditTap,
                               onViewTap: _onViewTap,
                               onDeleteTap: _onDeleteTap,
+                              onStatusChange: _onStatusChange,
                             ),
                           ),
                         ],

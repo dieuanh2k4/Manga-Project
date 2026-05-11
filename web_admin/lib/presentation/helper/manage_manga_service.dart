@@ -111,7 +111,31 @@ class ManageMangaService {
       ManageMangaHelper.resolveErrorMessage(error),
     );
   }
+
+  /// Cập nhật nhanh trạng thái manga mà không cần mở form.
+  /// Giữ nguyên tất cả thông tin khác của [manga], chỉ thay [newStatus].
+  Future<ManageMangaUpdateResult> updateMangaStatus({
+    required MangaEntity manga,
+    required String newStatus,
+  }) async {
+    final MangaEntity updated = MangaEntity(
+      id: manga.id,
+      title: manga.title,
+      description: manga.description,
+      thumbnail: manga.thumbnail,
+      status: newStatus,
+      totalChapter: manga.totalChapter,
+      rate: manga.rate,
+      authorId: manga.authorId,
+      genreIds: manga.genreIds,
+      releaseDate: manga.releaseDate,
+      endDate: manga.endDate,
+    );
+
+    return updateManga(manga: updated);
+  }
 }
+
 
 class ManageMangaLookupResult {
   final List<AuthorEntity> authors;
