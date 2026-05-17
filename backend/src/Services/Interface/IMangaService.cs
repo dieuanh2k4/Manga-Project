@@ -14,6 +14,7 @@ namespace backend.src.Services.Interface
         Task<string> UploadImage(IFormFile file);
         Task<Manga> CreateManga(CreateMangaDto dto);
         Task<Manga> UpdateManga(UpdateMangaDto dto, int id);
+        Task<Manga> UpdateMangaStatus(int id, string status);
         Task<Manga> DeleteManga(int id);
         Task<List<Manga>> Search(string query);
         Task<List<Manga>> SortByGenre(int genreId);
