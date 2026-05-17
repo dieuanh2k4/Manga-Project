@@ -68,6 +68,29 @@ class _AdminUser {
   });
 }
 
+class _VipPrivilege {
+  final int id;
+  final String content;
+
+  const _VipPrivilege({required this.id, required this.content});
+}
+
+class _VipPackage {
+  final int id;
+  String title;
+  int price;
+  int durationDays;
+  List<_VipPrivilege> privileges;
+
+  _VipPackage({
+    required this.id,
+    required this.title,
+    required this.price,
+    required this.durationDays,
+    required this.privileges,
+  });
+}
+
 class _ManageUsersState extends State<ManageUsers> {
   static const int _pageSize = 8;
   static const double _tableMinWidth = 1400;
@@ -92,6 +115,8 @@ class _ManageUsersState extends State<ManageUsers> {
 
   final List<_AdminUser> _users = <_AdminUser>[];
   final Set<String> _selectedUserIds = <String>{};
+  final List<_VipPackage> _vipPackages = <_VipPackage>[];
+  final List<_VipPrivilege> _vipPrivileges = <_VipPrivilege>[];
 
   String _selectedMembership = 'Tất cả';
   int _currentPage = 0;
@@ -101,6 +126,8 @@ class _ManageUsersState extends State<ManageUsers> {
   String? _errorMessage;
   _SortField? _sortField;
   bool _sortAscending = true;
+  bool _vipLoading = false;
+  String? _vipError;
 
   @override
   void initState() {
@@ -214,6 +241,19 @@ class _ManageUsersState extends State<ManageUsers> {
     return false;
   }
 
+  int _toInt(dynamic value, {int fallback = 0}) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.round();
+    }
+    if (value is String) {
+      return int.tryParse(value.trim()) ?? fallback;
+    }
+    return fallback;
+  }
+
   List<dynamic> _extractList(dynamic data) {
     if (data is List) {
       return data;
@@ -318,6 +358,39 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  _VipPrivilege _fromPrivilegeJson(Map<String, dynamic> data) {
+    return _VipPrivilege(
+      id: _toInt(_readField(data, <String>['id', 'Id'])),
+      content: (_readField(data, <String>['content', 'Content']) ?? '')
+          .toString(),
+    );
+  }
+
+  _VipPackage _fromPackageJson(Map<String, dynamic> data) {
+    final dynamic privilegesRaw = _readField(data, <String>[
+      'previlages',
+      'Previlages',
+      'privileges',
+      'Privileges',
+    ]);
+    final List<_VipPrivilege> privileges = _extractList(privilegesRaw)
+        .whereType<Map<String, dynamic>>()
+        .map(_fromPrivilegeJson)
+        .where((item) => item.id > 0)
+        .toList();
+
+    return _VipPackage(
+      id: _toInt(_readField(data, <String>['id', 'Id'])),
+      title: (_readField(data, <String>['title', 'Title']) ?? '').toString(),
+      price: _toInt(_readField(data, <String>['price', 'Price'])),
+      durationDays: _toInt(
+        _readField(data, <String>['durationDays', 'DurationDays']),
+        fallback: 30,
+      ),
+      privileges: privileges,
+    );
+  }
+
   Future<Options> _authorizedOptions() async {
     final String? token = await _tokenStorage.getAccessToken();
     if (token == null || token.trim().isEmpty) {
@@ -391,6 +464,157 @@ class _ManageUsersState extends State<ManageUsers> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _fetchVipData({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _vipLoading = true;
+        _vipError = null;
+      });
+    }
+
+    try {
+      final Options options = await _authorizedOptions();
+
+      final Response<dynamic> packageResponse = await _dio.get(
+        '${newAPIBaseURL}Package/get-all-package',
+        options: options,
+      );
+      final dynamic packageBody = packageResponse.data;
+      final Map<String, dynamic> packageMap =
+          packageBody is Map<String, dynamic>
+          ? packageBody
+          : <String, dynamic>{};
+      final dynamic packageData =
+          _readField(packageMap, <String>['data', 'Data']) ?? packageBody;
+      final List<_VipPackage> packages = _extractList(packageData)
+          .whereType<Map<String, dynamic>>()
+          .map(_fromPackageJson)
+          .where((item) => item.id > 0 && item.title.trim().isNotEmpty)
+          .toList();
+
+      final Response<dynamic> privilegeResponse = await _dio.get(
+        '${newAPIBaseURL}Previlages/get-all-previlage',
+        options: options,
+      );
+      final dynamic privilegeBody = privilegeResponse.data;
+      final Map<String, dynamic> privilegeMap =
+          privilegeBody is Map<String, dynamic>
+          ? privilegeBody
+          : <String, dynamic>{};
+      final dynamic privilegeData =
+          _readField(privilegeMap, <String>['data', 'Data']) ?? privilegeBody;
+      final List<_VipPrivilege> privileges = _extractList(privilegeData)
+          .whereType<Map<String, dynamic>>()
+          .map(_fromPrivilegeJson)
+          .where((item) => item.id > 0 && item.content.trim().isNotEmpty)
+          .toList();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _vipPackages
+          ..clear()
+          ..addAll(packages);
+        _vipPrivileges
+          ..clear()
+          ..addAll(privileges);
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _vipError = e.toString();
+      });
+    } finally {
+      if (mounted && showLoading) {
+        setState(() {
+          _vipLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<bool> _createPrivilege(String content) async {
+    final String trimmed = content.trim();
+    if (trimmed.isEmpty) {
+      _showMessage('Nội dung đặc quyền không được để trống.');
+      return false;
+    }
+
+    try {
+      final Options options = await _authorizedOptions();
+      await _dio.post(
+        '${newAPIBaseURL}Previlages/create-previlage',
+        options: options,
+        data: <String, dynamic>{'Content': trimmed},
+      );
+      await _fetchVipData();
+      _showMessage('Đã thêm đặc quyền mới.');
+      return true;
+    } catch (e) {
+      _showMessage('Không thể thêm đặc quyền: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _saveVipPackage({
+    _VipPackage? package,
+    required String title,
+    required int price,
+    required int durationDays,
+    required List<int> privilegeIds,
+  }) async {
+    try {
+      final Options options = await _authorizedOptions();
+      final Map<String, dynamic> payload = <String, dynamic>{
+        'Title': title.trim(),
+        'Price': price,
+        'DurationDays': durationDays,
+        'PrevilageIds': privilegeIds,
+      };
+
+      if (package == null) {
+        await _dio.post(
+          '${newAPIBaseURL}Package/create-package',
+          options: options,
+          data: payload,
+        );
+      } else {
+        await _dio.put(
+          '${newAPIBaseURL}Package/update-package/${package.id}',
+          options: options,
+          data: payload,
+        );
+      }
+
+      await _fetchVipData();
+      _showMessage(
+        package == null ? 'Đã tạo gói VIP mới.' : 'Đã cập nhật gói VIP.',
+      );
+      return true;
+    } catch (e) {
+      _showMessage('Không thể lưu gói VIP: $e');
+      return false;
+    }
+  }
+
+  Future<void> _deleteVipPackage(_VipPackage package) async {
+    try {
+      final Options options = await _authorizedOptions();
+      await _dio.put(
+        '${newAPIBaseURL}Package/delete-package/${package.id}',
+        options: options,
+      );
+      await _fetchVipData();
+      _showMessage('Đã xóa gói ${package.title}.');
+    } catch (e) {
+      _showMessage('Không thể xóa gói VIP: $e');
     }
   }
 
@@ -526,6 +750,20 @@ class _ManageUsersState extends State<ManageUsers> {
     final String mm = value.month.toString().padLeft(2, '0');
     final String yyyy = value.year.toString();
     return '$dd/$mm/$yyyy';
+  }
+
+  String _formatCurrency(int value) {
+    final String raw = value.abs().toString();
+    final StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < raw.length; i++) {
+      final int remaining = raw.length - i;
+      buffer.write(raw[i]);
+      if (remaining > 1 && remaining % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    final String formatted = buffer.toString();
+    return value < 0 ? '-$formatted' : formatted;
   }
 
   Future<void> _showValueDialog({
@@ -1023,6 +1261,1140 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  Future<void> _openVipPackageManager() async {
+    await _fetchVipData();
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: const Color(0xAA0B1220),
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            Future<void> refresh() async {
+              await _fetchVipData();
+              if (dialogContext.mounted) {
+                setStateDialog(() {});
+              }
+            }
+
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 20,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 980,
+                  maxHeight: 720,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    _buildVipDialogHeader(
+                      onClose: () => Navigator.of(dialogContext).pop(),
+                      onRefresh: refresh,
+                      onCreate: () async {
+                        await _showVipPackageForm();
+                        if (dialogContext.mounted) {
+                          setStateDialog(() {});
+                        }
+                      },
+                      onCreatePrivilege: () async {
+                        await _showCreatePrivilegeDialog();
+                        if (dialogContext.mounted) {
+                          setStateDialog(() {});
+                        }
+                      },
+                    ),
+                    if (_vipLoading)
+                      const LinearProgressIndicator(minHeight: 3),
+                    if (_vipError != null)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF1F2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFBC8CE)),
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            const Icon(
+                              Icons.error_outline,
+                              color: Color(0xFFB42318),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _vipError!,
+                                style: const TextStyle(
+                                  color: Color(0xFFB42318),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: refresh,
+                              child: const Text('Tải lại'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: _buildVipDialogBody(
+                          onEditPackage: (pkg) async {
+                            await _showVipPackageForm(package: pkg);
+                            if (dialogContext.mounted) {
+                              setStateDialog(() {});
+                            }
+                          },
+                          onDeletePackage: (pkg) async {
+                            await _confirmDeleteVipPackage(pkg);
+                            if (dialogContext.mounted) {
+                              setStateDialog(() {});
+                            }
+                          },
+                          onCreatePrivilege: () async {
+                            await _showCreatePrivilegeDialog();
+                            if (dialogContext.mounted) {
+                              setStateDialog(() {});
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildVipDialogHeader({
+    required VoidCallback onClose,
+    required VoidCallback onRefresh,
+    required VoidCallback onCreate,
+    required VoidCallback onCreatePrivilege,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.stars_rounded,
+              color: Colors.amber,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Quản lý gói VIP',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Thiết lập ưu đãi & thời hạn cho từng gói hội viên',
+                  style: TextStyle(color: Color(0xFFB6C2D6), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: onRefresh,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Color(0xFF334155)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text('Làm mới', style: TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(
+            onPressed: onCreatePrivilege,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Color(0xFF7C3AED)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.add_circle_outline, size: 16),
+            label: const Text('Thêm đặc quyền', style: TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: onCreate,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF59E0B),
+              foregroundColor: Colors.black,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text(
+              'Tạo gói VIP',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(width: 10),
+          IconButton(
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVipDialogBody({
+    required ValueChanged<_VipPackage> onEditPackage,
+    required ValueChanged<_VipPackage> onDeletePackage,
+    required VoidCallback onCreatePrivilege,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool stacked = constraints.maxWidth < 860;
+
+        final Widget packagePanel = _buildVipPackagePanel(
+          onEditPackage: onEditPackage,
+          onDeletePackage: onDeletePackage,
+          shrinkWrap: stacked,
+        );
+        final Widget privilegePanel = _buildVipPrivilegePanel(
+          onCreatePrivilege: onCreatePrivilege,
+          shrinkWrap: stacked,
+        );
+
+        if (stacked) {
+          return ListView(
+            children: <Widget>[
+              packagePanel,
+              const SizedBox(height: 16),
+              privilegePanel,
+            ],
+          );
+        }
+
+        return Row(
+          children: <Widget>[
+            Expanded(flex: 3, child: packagePanel),
+            const SizedBox(width: 16),
+            Expanded(flex: 2, child: privilegePanel),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildVipPackagePanel({
+    required ValueChanged<_VipPackage> onEditPackage,
+    required ValueChanged<_VipPackage> onDeletePackage,
+    bool shrinkWrap = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE4E8F2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4D6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.local_offer_rounded,
+                  color: Color(0xFFB45309),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Gói VIP (${_vipPackages.length})',
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_vipPackages.isEmpty)
+            _buildVipEmptyState(
+              title: 'Chưa có gói VIP',
+              subtitle: 'Thêm gói đầu tiên để áp dụng cho người dùng',
+            )
+          else if (shrinkWrap)
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _vipPackages.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final _VipPackage package = _vipPackages[index];
+                return _buildVipPackageCard(
+                  package,
+                  onEdit: () => onEditPackage(package),
+                  onDelete: () => onDeletePackage(package),
+                );
+              },
+            )
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: _vipPackages.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final _VipPackage package = _vipPackages[index];
+                  return _buildVipPackageCard(
+                    package,
+                    onEdit: () => onEditPackage(package),
+                    onDelete: () => onDeletePackage(package),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVipPrivilegePanel({
+    required VoidCallback onCreatePrivilege,
+    bool shrinkWrap = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE4E8F2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF4FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.verified_rounded,
+                  color: Color(0xFF1F5BFF),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Đặc quyền (${_vipPrivileges.length})',
+                  style: const TextStyle(
+                    color: Color(0xFF1E293B),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onCreatePrivilege,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Thêm', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_vipPrivileges.isEmpty)
+            _buildVipEmptyState(
+              title: 'Chưa có đặc quyền',
+              subtitle: 'Thêm đặc quyền để gán vào gói VIP',
+              icon: Icons.add_moderator_rounded,
+            )
+          else if (shrinkWrap)
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _vipPrivileges.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final _VipPrivilege item = _vipPrivileges[index];
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE0E7FF)),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFF2563EB),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.content,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: _vipPrivileges.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final _VipPrivilege item = _vipPrivileges[index];
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE0E7FF)),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF2563EB),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.content,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVipPackageCard(
+    _VipPackage package, {
+    required VoidCallback onEdit,
+    required VoidCallback onDelete,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE4E8F2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0EA5E9), Color(0xFF1D4ED8)],
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+            ),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        package.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Thời hạn ${package.durationDays} ngày',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.22),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_formatCurrency(package.price)}đ',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'Đặc quyền (${package.privileges.length})',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (package.privileges.isEmpty)
+                  const Text(
+                    'Chưa có đặc quyền được gán',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  )
+                else
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: package.privileges
+                        .map(
+                          (priv) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5FF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFD6E0FF),
+                              ),
+                            ),
+                            child: Text(
+                              priv.content,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF1E3A8A),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: onDelete,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFB42318),
+                        side: const BorderSide(color: Color(0xFFFCA5A5)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: const Text(
+                        'Xóa gói',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: onEdit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF111827),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text(
+                        'Chỉnh sửa',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVipEmptyState({
+    required String title,
+    required String subtitle,
+    IconData icon = Icons.workspace_premium_outlined,
+  }) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Icon(icon, color: const Color(0xFF94A3B8), size: 28),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showVipPackageForm({_VipPackage? package}) async {
+    final TextEditingController titleController = TextEditingController(
+      text: package?.title ?? '',
+    );
+    final TextEditingController priceController = TextEditingController(
+      text: package?.price.toString() ?? '',
+    );
+    final TextEditingController durationController = TextEditingController(
+      text: package?.durationDays.toString() ?? '30',
+    );
+
+    final Set<int> selectedPrivilegeIds = <int>{
+      if (package != null) ...package.privileges.map((p) => p.id),
+    };
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        bool isSaving = false;
+        String? errorMessage;
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            Future<void> submit() async {
+              final String title = titleController.text.trim();
+              final int price = int.tryParse(priceController.text.trim()) ?? 0;
+              final int days =
+                  int.tryParse(durationController.text.trim()) ?? 0;
+
+              if (title.isEmpty) {
+                setStateDialog(() {
+                  errorMessage = 'Vui lòng nhập tên gói.';
+                });
+                return;
+              }
+              if (price <= 0) {
+                setStateDialog(() {
+                  errorMessage = 'Giá gói phải lớn hơn 0.';
+                });
+                return;
+              }
+              if (days <= 0) {
+                setStateDialog(() {
+                  errorMessage = 'Thời hạn phải lớn hơn 0 ngày.';
+                });
+                return;
+              }
+
+              setStateDialog(() {
+                isSaving = true;
+                errorMessage = null;
+              });
+
+              final bool success = await _saveVipPackage(
+                package: package,
+                title: title,
+                price: price,
+                durationDays: days,
+                privilegeIds: selectedPrivilegeIds.toList(),
+              );
+
+              if (!success) {
+                setStateDialog(() {
+                  isSaving = false;
+                  errorMessage =
+                      'Không thể lưu gói VIP. Vui lòng kiểm tra lại.';
+                });
+                return;
+              }
+
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+              }
+            }
+
+            return AlertDialog(
+              title: Text(
+                package == null ? 'Tạo gói VIP mới' : 'Chỉnh sửa gói VIP',
+              ),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      TextField(
+                        controller: titleController,
+                        decoration: InputDecoration(
+                          labelText: 'Tên gói',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: priceController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Giá (VNĐ)',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: durationController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Thời hạn (ngày)',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: <Widget>[
+                          const Text(
+                            'Đặc quyền',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () async {
+                              await _showCreatePrivilegeDialog();
+                              if (dialogContext.mounted) {
+                                setStateDialog(() {});
+                              }
+                            },
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Thêm'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_vipPrivileges.isEmpty)
+                        const Text(
+                          'Chưa có đặc quyền nào. Vui lòng tạo đặc quyền trước.',
+                          style: TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 12,
+                          ),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _vipPrivileges.map((priv) {
+                            final bool selected = selectedPrivilegeIds.contains(
+                              priv.id,
+                            );
+                            return FilterChip(
+                              label: Text(priv.content),
+                              selected: selected,
+                              onSelected: (bool value) {
+                                setStateDialog(() {
+                                  if (value) {
+                                    selectedPrivilegeIds.add(priv.id);
+                                  } else {
+                                    selectedPrivilegeIds.remove(priv.id);
+                                  }
+                                });
+                              },
+                              selectedColor: const Color(0xFFDBEAFE),
+                              checkmarkColor: const Color(0xFF1D4ED8),
+                              labelStyle: TextStyle(
+                                fontSize: 12,
+                                color: selected
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF475569),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      if (errorMessage != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          errorMessage!,
+                          style: const TextStyle(
+                            color: Color(0xFFB42318),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : submit,
+                  child: Text(package == null ? 'Tạo gói' : 'Lưu thay đổi'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    titleController.dispose();
+    priceController.dispose();
+    durationController.dispose();
+  }
+
+  Future<void> _showCreatePrivilegeDialog() async {
+    final TextEditingController contentController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        bool isSaving = false;
+        String? errorMessage;
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            Future<void> submit() async {
+              final String content = contentController.text.trim();
+              if (content.isEmpty) {
+                setStateDialog(() {
+                  errorMessage = 'Nội dung không được để trống.';
+                });
+                return;
+              }
+
+              setStateDialog(() {
+                isSaving = true;
+                errorMessage = null;
+              });
+
+              final bool success = await _createPrivilege(content);
+
+              if (!success) {
+                setStateDialog(() {
+                  isSaving = false;
+                  errorMessage = 'Không thể thêm đặc quyền. Vui lòng thử lại.';
+                });
+                return;
+              }
+
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('Thêm đặc quyền mới'),
+              content: SizedBox(
+                width: 420,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    TextField(
+                      controller: contentController,
+                      decoration: InputDecoration(
+                        labelText: 'Nội dung đặc quyền',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        errorMessage!,
+                        style: const TextStyle(
+                          color: Color(0xFFB42318),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : submit,
+                  child: const Text('Lưu'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    contentController.dispose();
+  }
+
+  Future<void> _confirmDeleteVipPackage(_VipPackage package) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Xóa gói VIP'),
+          content: Text('Bạn chắc chắn muốn xóa gói "${package.title}"?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB42318),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Xóa'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await _deleteVipPackage(package);
+    }
+  }
+
+  Widget _buildUserStatsSection({
+    required int totalUsers,
+    required int totalAdmins,
+    required int totalVip,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool stacked = constraints.maxWidth < 680;
+        final bool twoColumn =
+            constraints.maxWidth >= 680 && constraints.maxWidth < 980;
+
+        final List<Widget> cards = <Widget>[
+          _UserStatCard(
+            label: 'Người dùng',
+            value: totalUsers.toString(),
+            icon: Icons.people_alt_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1F5BFF), Color(0xFF3B82F6)],
+            ),
+          ),
+          _UserStatCard(
+            label: 'Quản trị viên',
+            value: totalAdmins.toString(),
+            icon: Icons.shield_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            ),
+          ),
+          _UserStatCard(
+            label: 'VIP đang hoạt động',
+            value: totalVip.toString(),
+            icon: Icons.stars_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF59E0B), Color(0xFFF97316)],
+            ),
+            actionLabel: 'Quản lý gói VIP',
+            onTap: _openVipPackageManager,
+          ),
+        ];
+
+        if (stacked) {
+          return Column(
+            children: cards
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: card,
+                  ),
+                )
+                .toList(),
+          );
+        }
+
+        if (twoColumn) {
+          final double cardWidth =
+              (constraints.maxWidth - 12).clamp(320.0, 720.0).toDouble() / 2;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: cards
+                .map((card) => SizedBox(width: cardWidth, child: card))
+                .toList(),
+          );
+        }
+
+        return Row(
+          children: <Widget>[
+            Expanded(child: cards[0]),
+            const SizedBox(width: 12),
+            Expanded(child: cards[1]),
+            const SizedBox(width: 12),
+            Expanded(child: cards[2]),
+          ],
+        );
+      },
+    );
+  }
+
   void _openMangaPage() {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
@@ -1105,23 +2477,54 @@ class _ManageUsersState extends State<ManageUsers> {
                                       searchController: _searchController,
                                       onLogout: widget.onLogout,
                                       hintText: 'Tìm kiếm người dùng...',
-                                      customHeaderWidget: const Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                      customHeaderWidget: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: <Widget>[
-                                          Text(
-                                            'Quản lý người dùng',
-                                            style: TextStyle(
-                                              color: Color(0xFF1D2638),
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              height: 1.1,
-                                            ),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFFEFF4FF,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.people_alt_rounded,
+                                                  size: 18,
+                                                  color: Color(0xFF1F5BFF),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              const Text(
+                                                'Quản lý người dùng',
+                                                style: TextStyle(
+                                                  color: Color(0xFF1D2638),
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.w800,
+                                                  letterSpacing: -0.3,
+                                                  height: 1.1,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            'Quản lý tài khoản độc giả theo dữ liệu thực tế',
-                                            style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                                          const SizedBox(height: 2),
+                                          const Padding(
+                                            padding: EdgeInsets.only(left: 2),
+                                            child: Text(
+                                              'Quản lý tài khoản độc giả theo dữ liệu thực tế',
+                                              style: TextStyle(
+                                                color: Color(0xFF7B879B),
+                                                fontSize: 13,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -1162,6 +2565,15 @@ class _ManageUsersState extends State<ManageUsers> {
         ? 1
         : ((filteredUsers.length - 1) ~/ _pageSize) + 1;
     final int safePage = _currentPage.clamp(0, totalPages - 1);
+    final int totalUsers = _users
+        .where((_AdminUser u) => u.role == 'User')
+        .length;
+    final int totalAdmins = _users
+        .where((_AdminUser u) => u.role == 'Admin')
+        .length;
+    final int totalVip = _users
+        .where((_AdminUser u) => u.role == 'User' && u.membershipTier == 'VIP')
+        .length;
 
     final bool allSelectedOnPage =
         pageUsers.isNotEmpty &&
@@ -1230,6 +2642,12 @@ class _ManageUsersState extends State<ManageUsers> {
               ],
             ),
           ),
+          _buildUserStatsSection(
+            totalUsers: totalUsers,
+            totalAdmins: totalAdmins,
+            totalVip: totalVip,
+          ),
+          const SizedBox(height: 16),
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.only(bottom: 12),
@@ -1837,7 +3255,8 @@ class _ManageUsersState extends State<ManageUsers> {
                                                   child: DataTable(
                                                     sortColumnIndex:
                                                         leftSortIndex,
-                                                    sortAscending: _sortAscending,
+                                                    sortAscending:
+                                                        _sortAscending,
                                                     horizontalMargin: 6,
                                                     checkboxHorizontalMargin: 4,
                                                     columnSpacing: 8,
@@ -1880,13 +3299,12 @@ class _ManageUsersState extends State<ManageUsers> {
                                                           'Họ tên',
                                                         ),
                                                         onSort:
-                                                            (
-                                                              int _,
-                                                              bool asc,
-                                                            ) => _setSort(
-                                                              _SortField.fullName,
-                                                              asc,
-                                                            ),
+                                                            (int _, bool asc) =>
+                                                                _setSort(
+                                                                  _SortField
+                                                                      .fullName,
+                                                                  asc,
+                                                                ),
                                                       ),
                                                       DataColumn(
                                                         label: const Text(
@@ -1906,13 +3324,12 @@ class _ManageUsersState extends State<ManageUsers> {
                                                           'Username',
                                                         ),
                                                         onSort:
-                                                            (
-                                                              int _,
-                                                              bool asc,
-                                                            ) => _setSort(
-                                                              _SortField.userName,
-                                                              asc,
-                                                            ),
+                                                            (int _, bool asc) =>
+                                                                _setSort(
+                                                                  _SortField
+                                                                      .userName,
+                                                                  asc,
+                                                                ),
                                                       ),
                                                     ],
                                                     rows: leftRows,
@@ -2079,6 +3496,119 @@ class _ManageUsersState extends State<ManageUsers> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _UserStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Gradient gradient;
+  final VoidCallback? onTap;
+  final String? actionLabel;
+
+  const _UserStatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.gradient,
+    this.onTap,
+    this.actionLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (actionLabel != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    actionLabel!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+
+    final BorderRadius borderRadius = BorderRadius.circular(14);
+
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: borderRadius,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 10,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: borderRadius,
+          child: content,
+        ),
       ),
     );
   }
