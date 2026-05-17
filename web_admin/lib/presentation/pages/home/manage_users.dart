@@ -9,6 +9,7 @@ import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
@@ -2421,6 +2422,17 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  void _openNotificationsPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageNotifications(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   Future<void> _onNestedRouteLogout() async {
     Navigator.of(context).popUntil((route) => route.isFirst);
     await widget.onLogout?.call();
@@ -2460,6 +2472,8 @@ class _ManageUsersState extends State<ManageUsers> {
                                 _openMangaPage();
                               } else if (key == sidebarKeyAuthors) {
                                 _openAuthorsPage();
+                              } else if (key == sidebarKeyNotifications) {
+                                _openNotificationsPage();
                               }
                             },
                           ),
@@ -2476,6 +2490,8 @@ class _ManageUsersState extends State<ManageUsers> {
                                     ManageMangaTopHeader(
                                       searchController: _searchController,
                                       onLogout: widget.onLogout,
+                                      onNotificationTap:
+                                          _openNotificationsPage,
                                       hintText: 'Tìm kiếm người dùng...',
                                       customHeaderWidget: Column(
                                         crossAxisAlignment:

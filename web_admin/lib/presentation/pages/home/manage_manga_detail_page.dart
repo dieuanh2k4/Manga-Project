@@ -132,10 +132,12 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
   }
 
   Future<void> _showChapterEditor({ChapterItem? editing}) async {
-    final TextEditingController chapterNumberController =
-        TextEditingController(text: editing?.chapterNumber ?? '');
-    final TextEditingController titleController =
-        TextEditingController(text: editing?.title ?? '');
+    final TextEditingController chapterNumberController = TextEditingController(
+      text: editing?.chapterNumber ?? '',
+    );
+    final TextEditingController titleController = TextEditingController(
+      text: editing?.title ?? '',
+    );
     bool isPremium = editing?.isPremium ?? false;
 
     final bool? submitted = await showDialog<bool>(
@@ -430,7 +432,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
     if (result == null || result.files.isEmpty) return;
 
     final List<PlatformFile> files = List<PlatformFile>.from(result.files)
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      ..sort((a, b) => _compareFileNamesNaturally(a.name, b.name));
 
     final FormData formData = FormData();
     for (final PlatformFile file in files) {
@@ -539,6 +541,49 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
         margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  int _compareFileNamesNaturally(String left, String right) {
+    final List<String> leftParts = _fileNameSortParts(left);
+    final List<String> rightParts = _fileNameSortParts(right);
+    final int maxLength = leftParts.length > rightParts.length
+        ? leftParts.length
+        : rightParts.length;
+
+    for (int index = 0; index < maxLength; index++) {
+      if (index >= leftParts.length) {
+        return -1;
+      }
+      if (index >= rightParts.length) {
+        return 1;
+      }
+
+      final String leftPart = leftParts[index];
+      final String rightPart = rightParts[index];
+      final int? leftNumber = int.tryParse(leftPart);
+      final int? rightNumber = int.tryParse(rightPart);
+
+      if (leftNumber != null && rightNumber != null) {
+        final int numberCompare = leftNumber.compareTo(rightNumber);
+        if (numberCompare != 0) {
+          return numberCompare;
+        }
+      } else {
+        final int textCompare = leftPart.compareTo(rightPart);
+        if (textCompare != 0) {
+          return textCompare;
+        }
+      }
+    }
+
+    return left.toLowerCase().compareTo(right.toLowerCase());
+  }
+
+  List<String> _fileNameSortParts(String fileName) {
+    final String normalized = fileName.toLowerCase();
+    return RegExp(
+      r'\d+|\D+',
+    ).allMatches(normalized).map((match) => match.group(0)!).toList();
   }
 
   @override

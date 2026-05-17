@@ -17,4 +17,12 @@ abstract class MangaRepository {
     required int chapterId,
     String? token,
   });
+
+  Future<void> upsertHistory({
+    required int mangaId,
+    required int chapterId,
+    required int pageId,
+    required String token,
+    bool? isCompleted,
+  });
 }

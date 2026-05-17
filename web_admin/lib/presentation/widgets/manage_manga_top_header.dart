@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class ManageMangaTopHeader extends StatelessWidget {
   final TextEditingController searchController;
   final Future<void> Function()? onLogout;
+  final VoidCallback? onNotificationTap;
   final String hintText;
 
   final Widget? customHeaderWidget;
@@ -58,7 +59,8 @@ class ManageMangaTopHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            tooltip: 'Notifications',
+            onPressed: onNotificationTap,
             icon: const Icon(
               Icons.notifications_none_rounded,
               color: Color(0xFF68758C),
