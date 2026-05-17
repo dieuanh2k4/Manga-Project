@@ -23,9 +23,13 @@ class ProtectedNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // lần đầu ảnh load từ url, package cached_network_image sẽ lưu ảnh vào cache
+    // lần sau nếu gọi đúng url hoặc cacheKey thì sẽ lấy từ cache thay vì url
     return CachedNetworkImage(
       imageUrl: imageUrl,
-      cacheKey: cacheKey ?? imageUrl,
+      cacheKey:
+          cacheKey ??
+          imageUrl, // đảm bảo mỗi ảnh có 1 key, ảnh page thì ảnh là url
       width: width,
       height: height,
       fit: fit,

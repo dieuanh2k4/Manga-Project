@@ -1,0 +1,33 @@
+ResultDir: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-214708
+StartedAt: 2026-05-17T21:47:08.5598436+07:00
+API_BASE_URL: script default http://192.168.0.195:5001/api/
+Target: web_admin/integration_test/admin_smoke_flow_test.dart
+Flutter version:
+Flutter 3.38.6 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision 8b87286849 (4 months ago) • 2026-01-08 10:49:17 -0800
+Engine • hash 6f3039bf7c3cb5306513c75092822d4d94716003 (revision 78fc3012e4) (4 months ago) • 2026-01-07 18:42:12.000Z
+Tools • Dart 3.10.7 • DevTools 2.51.1
+
+Flutter devices:
+Found 3 connected devices:
+  Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.8457]
+  Chrome (web)      • chrome  • web-javascript • Google Chrome 148.0.7778.168
+  Edge (web)        • edge    • web-javascript • Microsoft Edge 148.0.3967.54
+
+Run "flutter emulators" to list and start any available device emulators.
+
+If you expected another device to be detected, please run "flutter doctor" to diagnose potential issues. You may also try increasing the time to wait for connected devices with the "--device-timeout" flag. Visit https://flutter.dev/setup/ for troubleshooting tips.
+
+API TCP precheck:
+
+
+ComputerName     : 192.168.0.195
+RemoteAddress    : 192.168.0.195
+RemotePort       : 5001
+InterfaceAlias   : Wi-Fi
+SourceAddress    : 192.168.0.195
+TcpTestSucceeded : True
+
+
+
+

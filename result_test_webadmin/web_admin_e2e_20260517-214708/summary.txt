@@ -1,0 +1,16 @@
+Web Admin E2E Result: PASSED
+StartedAt: 2026-05-17T21:47:08.5598436+07:00
+FinishedAt: 2026-05-17T21:48:19.9114651+07:00
+DurationSeconds: 71.4
+ExitCode: 0
+TimedOut: False
+JobState: Completed
+Command: powershell -ExecutionPolicy Bypass -File .\script\e2e\run-web-admin-e2e.ps1 -Target "integration_test/admin_smoke_flow_test.dart" -Device windows -SkipPubGet
+Target: web_admin/integration_test/admin_smoke_flow_test.dart
+Device: windows
+API_BASE_URL: script default http://192.168.0.195:5001/api/ unless API_BASE_URL env overrides it
+DefaultAdminUser: admin unless WEB_ADMIN_E2E_EMAIL is set
+Log: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-214708\e2e.log
+Precheck: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-214708\precheck.txt
+LikelyCategory: Passed
+FirstActionableError: No explicit error line found in log.

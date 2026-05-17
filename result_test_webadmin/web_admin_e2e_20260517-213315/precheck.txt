@@ -1,0 +1,5 @@
+ResultDir: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-213315
+StartedAt: 2026-05-17T21:33:15.0936501+07:00
+API_BASE_URL: script default http://192.168.0.195:5001/api/
+Target: web_admin/integration_test/admin_smoke_flow_test.dart
+Flutter version:

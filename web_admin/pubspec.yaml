@@ -45,6 +45,10 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  integration_test:
+    sdk: flutter
+
   flutter_lints: ^6.0.0
   retrofit_generator: ^4.2.0
   floor_generator: ^1.4.0
