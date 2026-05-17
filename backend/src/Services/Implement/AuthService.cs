@@ -76,6 +76,52 @@ namespace backend.src.Services.Implement
 
             return AuthResultDto.Success(response, "Đăng nhập thành công");
         }
+        
+        public async Task<AuthResultDto> AdminLogin(LoginRequestDto request)
+        {
+            // tìm user theo username và role
+            var user = await _context.Users
+                .Include(u => u.Readers)
+                .FirstOrDefaultAsync(u => u.UserName == request.UserName);
+
+            if (user == null)
+            {
+                return AuthResultDto.Fail("Sai tài khoản hoặc mật khẩu");
+            }
+
+            // Verify password
+            if (!PasswordHelper.VerifyPassword(request.Password, user.Password))
+            {
+                return AuthResultDto.Fail("Sai tài khoản hoặc mật khẩu");
+            }
+
+            if (!string.Equals(user.Role, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return AuthResultDto.Fail("Bạn không có quyền truy cập quản trị");
+            }
+
+            await _context.SaveChangesAsync();
+
+            var isPremium = string.Equals(user.Role, "admin", StringComparison.OrdinalIgnoreCase)
+                && await _entitlementService.HasPrivilege(user.Id, EntitlementFeatureKeys.ReadPremium);
+
+            var token = _jwtHelper.CreateToken(
+                user.UserName ?? string.Empty,
+                user.Role ?? string.Empty,
+                user.Id,
+                isPremium,
+                user.TokenVersion
+            );
+
+            var response = new LoginResponseDto
+            {
+                UserName = user.UserName,
+                Role = user.Role,
+                Token = token
+            };
+
+            return AuthResultDto.Success(response, "Đăng nhập thành công");
+        }
 
         public async Task<string> UploadImage(IFormFile file)
         {

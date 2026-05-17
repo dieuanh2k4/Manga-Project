@@ -12,6 +12,7 @@ import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dar
 import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga_detail_page.dart';
+import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_error_state.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_filter_bar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_page_heading.dart';
@@ -150,6 +151,17 @@ class _ManageMangaState extends State<ManageManga> {
   Future<void> _onNestedRouteLogout() async {
     Navigator.of(context).popUntil((route) => route.isFirst);
     await widget.onLogout?.call();
+  }
+
+  void _openNotificationsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageNotifications(
+          mangaController: widget.mangaController,
+          onLogout: _onNestedRouteLogout,
+        ),
+      ),
+    );
   }
 
   Future<void> _onDeleteTap(MangaEntity manga) async {

@@ -105,7 +105,6 @@ namespace backend.src.Services.Implement
                 TargetRole = "All_readers",
                 MangaId = newManga.Id,
                 CreatedAt = DateTime.UtcNow,
-                IsRead = false
             };
 
             await _context.Set<Notifications>().AddAsync(notification);

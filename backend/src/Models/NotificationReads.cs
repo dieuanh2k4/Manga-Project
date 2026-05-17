@@ -11,6 +11,7 @@ namespace backend.src.Models
         public int ReaderId { get; set; }
         public int NotificationId { get; set; }
         public DateTime ReadAt { get; set; } = DateTime.UtcNow;
+        public bool IsRead { get; set; } = false;
 
         public Readers? Reader { get; set; }
         public Notifications? Notification { get; set; }

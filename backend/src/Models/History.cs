@@ -14,7 +14,7 @@ namespace backend.src.Models
         public int LastChapterId { get; set; }
         public int LastPageId { get; set; }
         public Boolean IsCompleted { get; set; } = false;
-        public TimeOnly UpdateAt { get; set; }
+        public DateTime UpdateAt { get; set; }
 
         public Readers? Readers { get; set; }
         public Manga? Manga { get; set; }
