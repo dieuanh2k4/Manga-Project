@@ -46,6 +46,7 @@ class ManageMangaHelper {
     required String allStatus,
     required Map<int, String> authorNameById,
     required Map<int, String> genreNameById,
+    Set<int> selectedGenreIds = const {},
     String sortOption = 'A-Z',
   }) {
     final String keyword = '$globalSearchText $mangaSearchText'
@@ -71,11 +72,16 @@ class ManageMangaHelper {
       final bool matchesStatus =
           selectedStatus == allStatus || normalizedStatus == selectedStatus;
 
-      return matchesKeyword && matchesStatus;
+      // Lọc theo thể loại — manga phải có TẤT CẢ các thể loại được chọn
+      final bool matchesGenre = selectedGenreIds.isEmpty ||
+          selectedGenreIds.every((id) => manga.genreIds != null && manga.genreIds!.contains(id));
+
+      return matchesKeyword && matchesStatus && matchesGenre;
     }).toList();
 
     return applySort(filtered, sortOption);
   }
+
 
   static List<MangaEntity> applySort(
     List<MangaEntity> items,
@@ -92,6 +98,16 @@ class ManageMangaHelper {
       return sorted;
     }
 
+    if (sortOption == 'Z-A') {
+      sorted.sort((a, b) {
+        final String aTitle = (a.title ?? '').toLowerCase();
+        final String bTitle = (b.title ?? '').toLowerCase();
+        return bTitle.compareTo(aTitle);
+      });
+      return sorted;
+    }
+
+    // Default A-Z
     sorted.sort((a, b) {
       final String aTitle = (a.title ?? '').toLowerCase();
       final String bTitle = (b.title ?? '').toLowerCase();

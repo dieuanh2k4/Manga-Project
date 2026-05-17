@@ -37,6 +37,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
   static const List<String> _statusOptions = <String>[
     'Đang tiến hành',
     'Hoàn thành',
+    'Tạm dừng',
   ];
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();

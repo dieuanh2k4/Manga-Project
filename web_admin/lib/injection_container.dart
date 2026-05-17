@@ -18,6 +18,7 @@ import 'package:web_admin/domain/usecases/get_authors.dart';
 import 'package:web_admin/domain/usecases/get_genres.dart';
 import 'package:web_admin/domain/usecases/get_manga.dart';
 import 'package:web_admin/domain/usecases/login.dart';
+import 'package:web_admin/domain/usecases/patch_manga_status.dart';
 import 'package:web_admin/domain/usecases/update_manga.dart';
 import 'package:web_admin/presentation/controllers/auth_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
@@ -52,6 +53,7 @@ Future<void> initilizeDependencies() async {
   sl.registerSingleton<CreateMangaUseCase>(CreateMangaUseCase(sl()));
   sl.registerSingleton<DeleteMangaUseCase>(DeleteMangaUseCase(sl()));
   sl.registerSingleton<UpdateMangaUseCase>(UpdateMangaUseCase(sl()));
+  sl.registerSingleton<PatchMangaStatusUseCase>(PatchMangaStatusUseCase(sl()));
   sl.registerSingleton<GetAuthorsUseCase>(GetAuthorsUseCase(sl()));
   sl.registerSingleton<GetGenresUseCase>(GetGenresUseCase(sl()));
 
@@ -60,7 +62,7 @@ Future<void> initilizeDependencies() async {
 
   // Presentation services
   sl.registerSingleton<ManageMangaService>(
-    ManageMangaService(sl(), sl(), sl(), sl(), sl()),
+    ManageMangaService(sl(), sl(), sl(), sl(), sl(), sl()),
   );
 
   sl.registerFactory<RemoteMangaController>(() => RemoteMangaController(sl()));

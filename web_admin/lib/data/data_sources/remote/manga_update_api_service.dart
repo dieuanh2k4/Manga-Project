@@ -87,6 +87,18 @@ class MangaUpdateApiService {
     );
   }
 
+  /// Cập nhật trạng thái nhanh — chỉ gửi status, không upload ảnh.
+  Future<Response<dynamic>> patchMangaStatus(int mangaId, String status) async {
+    final Map<String, dynamic> headers = await _buildAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+
+    return _dio.patch<dynamic>(
+      '${newAPIBaseURL}Manga/update-status/$mangaId',
+      data: <String, String>{'status': status},
+      options: Options(headers: headers),
+    );
+  }
+
   String _formatDate(DateTime? value) {
     final DateTime date = value ?? DateTime.now();
     final String year = date.year.toString().padLeft(4, '0');

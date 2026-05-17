@@ -29,7 +29,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddControllers().AddJsonOptions(option =>
 {
-    option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    option.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    option.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
 });
 
 builder.Services.AddSignalR(); // gửi thông báo realtime
