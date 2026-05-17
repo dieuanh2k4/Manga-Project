@@ -1105,6 +1105,26 @@ class _ManageUsersState extends State<ManageUsers> {
                                       searchController: _searchController,
                                       onLogout: widget.onLogout,
                                       hintText: 'Tìm kiếm người dùng...',
+                                      customHeaderWidget: const Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Text(
+                                            'Quản lý người dùng',
+                                            style: TextStyle(
+                                              color: Color(0xFF1D2638),
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                              height: 1.1,
+                                            ),
+                                          ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            'Quản lý tài khoản độc giả theo dữ liệu thực tế',
+                                            style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     Expanded(
                                       child: Padding(
@@ -1156,26 +1176,8 @@ class _ManageUsersState extends State<ManageUsers> {
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Quản lý người dùng',
-                      style: TextStyle(
-                        color: Color(0xFF1D2638),
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Quản lý tài khoản độc giả theo dữ liệu thực tế',
-                      style: TextStyle(color: Color(0xFF7B879B), fontSize: 14),
-                    ),
-                  ],
-                ),
                 Row(
                   children: <Widget>[
                     OutlinedButton.icon(
