@@ -6,12 +6,14 @@ class ManageMangaTopHeader extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final String hintText;
 
+  final Widget? customHeaderWidget;
+
   const ManageMangaTopHeader({
     super.key,
     required this.searchController,
     this.onLogout,
-    this.onNotificationTap,
-    this.hintText = 'Tim kiem manga, nguoi dung...',
+    this.hintText = 'Tìm kiếm manga, người dùng...',
+    this.customHeaderWidget,
   });
 
   @override
@@ -28,7 +30,7 @@ class ManageMangaTopHeader extends StatelessWidget {
           Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: SizedBox(
+              child: customHeaderWidget ?? SizedBox(
                 width: 380,
                 child: TextField(
                   controller: searchController,
