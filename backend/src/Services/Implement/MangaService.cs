@@ -155,11 +155,26 @@ namespace backend.src.Services.Implement
             return manga;
         }
 
-        public async Task<Manga> DeleteManga(int id) 
+        public async Task<Manga> UpdateMangaStatus(int id, string status)
         {
             var manga = await _context.Manga.FindAsync(id);
 
-            if (manga == null) 
+            if (manga == null)
+            {
+                throw new Result($"Không tìm thấy Manga với id={id}");
+            }
+
+            manga.Status = status?.Trim();
+            await _context.SaveChangesAsync();
+
+            return manga;
+        }
+
+        public async Task<Manga> DeleteManga(int id)
+        {
+            var manga = await _context.Manga.FindAsync(id);
+
+            if (manga == null)
             {
                 throw new Result("Manga không tồn tại");
             }

@@ -7,6 +7,7 @@ import 'package:web_admin/domain/usecases/create_manga.dart';
 import 'package:web_admin/domain/usecases/delete_manga.dart';
 import 'package:web_admin/domain/usecases/get_authors.dart';
 import 'package:web_admin/domain/usecases/get_genres.dart';
+import 'package:web_admin/domain/usecases/patch_manga_status.dart';
 import 'package:web_admin/domain/usecases/update_manga.dart';
 import 'package:web_admin/presentation/helper/manage_manga_helper.dart';
 
@@ -16,6 +17,7 @@ class ManageMangaService {
   final GetAuthorsUseCase _getAuthorsUseCase;
   final GetGenresUseCase _getGenresUseCase;
   final UpdateMangaUseCase _updateMangaUseCase;
+  final PatchMangaStatusUseCase _patchMangaStatusUseCase;
 
   const ManageMangaService(
     this._createMangaUseCase,
@@ -23,6 +25,7 @@ class ManageMangaService {
     this._getAuthorsUseCase,
     this._getGenresUseCase,
     this._updateMangaUseCase,
+    this._patchMangaStatusUseCase,
   );
 
   Future<ManageMangaLookupResult> loadLookupData() async {
@@ -112,30 +115,39 @@ class ManageMangaService {
     );
   }
 
-  /// Cập nhật nhanh trạng thái manga mà không cần mở form.
-  /// Giữ nguyên tất cả thông tin khác của [manga], chỉ thay [newStatus].
+  /// Cập nhật trạng thái nhanh qua PATCH endpoint — nhẹ hơn updateManga toàn phần.
   Future<ManageMangaUpdateResult> updateMangaStatus({
     required MangaEntity manga,
     required String newStatus,
   }) async {
-    final MangaEntity updated = MangaEntity(
-      id: manga.id,
-      title: manga.title,
-      description: manga.description,
-      thumbnail: manga.thumbnail,
-      status: newStatus,
-      totalChapter: manga.totalChapter,
-      rate: manga.rate,
-      authorId: manga.authorId,
-      genreIds: manga.genreIds,
-      releaseDate: manga.releaseDate,
-      endDate: manga.endDate,
+    final int? id = manga.id;
+    if (id == null || id <= 0) {
+      return const ManageMangaUpdateResult.failure(
+        'Không xác định được manga',
+      );
+    }
+
+    final DataState<bool> patchState = await _patchMangaStatusUseCase(
+      params: PatchMangaStatusParams(mangaId: id, status: newStatus),
     );
 
-    return updateManga(manga: updated);
+    if (patchState is DataSuccess<bool> && patchState.data == true) {
+      return const ManageMangaUpdateResult.success(
+        'Cập nhật trạng thái thành công',
+      );
+    }
+
+    final error = patchState is DataFailed<bool> ? patchState.error : null;
+
+    return ManageMangaUpdateResult.failure(
+      ManageMangaHelper.resolveErrorMessage(error),
+    );
   }
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Result types
+// ────────────────────────────────────────────────────────────────────────────
 
 class ManageMangaLookupResult {
   final List<AuthorEntity> authors;

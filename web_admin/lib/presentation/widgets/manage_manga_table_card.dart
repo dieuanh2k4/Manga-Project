@@ -60,10 +60,40 @@ class ManageMangaTableCard extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFEEF1F6)),
           Expanded(
             child: mangas.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Không tìm thấy manga phù hợp',
-                      style: TextStyle(color: Color(0xFF8491A7)),
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF5F7FC),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.search_off_rounded,
+                            size: 32,
+                            color: Color(0xFFBBC3D0),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Không tìm thấy manga phù hợp',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF4E5A6F),
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm',
+                          style: TextStyle(
+                            color: Color(0xFF8491A7),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 : SingleChildScrollView(
