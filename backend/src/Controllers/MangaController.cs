@@ -139,6 +139,31 @@ namespace backend.src.Controllers
             }
         }
 
+        [Authorize(Policy = "AdminOnly")]
+        [HttpPatch("update-status/{id}")]
+        public async Task<IActionResult> UpdateMangaStatus(int id, [FromBody] UpdateStatusRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request?.Status))
+                {
+                    return BadRequest(new { message = "Trạng thái không hợp lệ" });
+                }
+
+                var manga = await _mangaservice.UpdateMangaStatus(id, request.Status);
+
+                return Ok(new
+                {
+                    message = "Cập nhật trạng thái thành công",
+                    data = manga
+                });
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
+
         [AllowAnonymous]
         [HttpPost("search")]
         public async Task<IActionResult> Search(string query)
@@ -264,3 +289,5 @@ namespace backend.src.Controllers
         }
     }
 }
+
+public record UpdateStatusRequest(string Status);

@@ -7,19 +7,36 @@ class ManageMangaPageHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget addButton = ElevatedButton.icon(
-      onPressed: onAddTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF040617),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    final Widget addButton = Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1F5BFF), Color(0xFF3B82F6)],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x441F5BFF),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-      icon: const Icon(Icons.add, size: 16),
-      label: const Text(
-        'Thêm Manga mới',
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      child: ElevatedButton.icon(
+        onPressed: onAddTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text(
+          'Thêm Manga mới',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
       ),
     );
 
@@ -31,19 +48,7 @@ class ManageMangaPageHeading extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Quản lý Manga',
-                style: TextStyle(
-                  color: Color(0xFF1D2638),
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Quản lý bộ sưu tập manga của bạn',
-                style: TextStyle(color: Color(0xFF7B879B), fontSize: 14),
-              ),
+              _buildTitle(),
               const SizedBox(height: 12),
               addButton,
             ],
@@ -52,30 +57,55 @@ class ManageMangaPageHeading extends StatelessWidget {
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Quản lý Manga',
-                  style: TextStyle(
-                    color: Color(0xFF1D2638),
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Quản lý bộ sưu tập manga của bạn',
-                  style: TextStyle(color: Color(0xFF7B879B), fontSize: 14),
-                ),
-              ],
-            ),
+            _buildTitle(),
             addButton,
           ],
         );
       },
+    );
+  }
+
+  Widget _buildTitle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF4FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                size: 18,
+                color: Color(0xFF1F5BFF),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Quản lý Manga',
+              style: TextStyle(
+                color: Color(0xFF1D2638),
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Padding(
+          padding: EdgeInsets.only(left: 2),
+          child: Text(
+            'Quản lý toàn bộ bộ sưu tập truyện trong hệ thống',
+            style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+          ),
+        ),
+      ],
     );
   }
 }

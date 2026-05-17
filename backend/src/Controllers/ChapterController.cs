@@ -90,9 +90,6 @@ namespace backend.src.Controllers
             {
                 var chapter = await _chapter.DeleteChapter(idManga, idChapter);
 
-                _context.Chapters.Remove(chapter);
-                await _context.SaveChangesAsync();
-
                 return Ok(new
                 {
                     message = "Xóa chapter thành công",

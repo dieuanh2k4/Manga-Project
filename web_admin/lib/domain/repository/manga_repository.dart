@@ -16,4 +16,7 @@ abstract class MangaRepository {
   });
 
   Future<DataState<bool>> deleteManga(int mangaId);
+
+  /// Cập nhật chỉ mỗi trạng thái — nhẹ hơn updateManga.
+  Future<DataState<bool>> patchMangaStatus(int mangaId, String status);
 }
