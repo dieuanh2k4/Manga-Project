@@ -1,0 +1,9 @@
+Command: powershell -ExecutionPolicy Bypass -File .\script\e2e\run-web-admin-e2e.ps1 -Target "integration_test/admin_smoke_flow_test.dart" -Device windows -SkipPubGet
+Running web_admin E2E with API_BASE_URL=http://192.168.0.195:5001/api/ on device=windows
+00:00 +0: loading D:/4-2/multi-platform-2/ProjectManga/web_admin/integration_test/admin_smoke_flow_test.dart
+Building Windows application...                                    33.6s
+GÍ‹ Built build\windows\x64\runner\Debug\web_admin.exe
+00:00 +0: admin can login and navigate core management flows
+00:18 +1: (tearDownAll)
+00:18 +1: All tests passed!
+

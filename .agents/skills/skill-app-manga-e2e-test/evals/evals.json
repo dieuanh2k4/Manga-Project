@@ -1,0 +1,23 @@
+{
+  "skill_name": "skill-app-manga-e2e-test",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Tao E2E test cho app_manga luong user login -> vao home -> mo manga detail -> doc chapter.",
+      "expected_output": "Creates or updates Flutter integration_test files under app_manga only, uses integration_test, identifies stable keys needed, and explains the command to run with API_BASE_URL.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Chay E2E app manga voi backend local http://localhost:5219/api va bao loi neu fail.",
+      "expected_output": "Runs the root app manga E2E script or the equivalent flutter test integration_test command with --dart-define=API_BASE_URL=http://localhost:5219/api, then classifies failures without touching web_admin or backend tests.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Kiem tra vi sao integration_test cua app_manga fail o man hinh login.",
+      "expected_output": "Inspects app_manga integration tests and login UI/test keys, checks API_BASE_URL and test credentials, classifies the failure, and proposes or applies focused app_manga fixes.",
+      "files": []
+    }
+  ]
+}

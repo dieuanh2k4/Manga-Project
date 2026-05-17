@@ -1,0 +1,3 @@
+Command: powershell -ExecutionPolicy Bypass -File .\script\e2e\run-web-admin-e2e.ps1 -Target "integration_test/admin_smoke_flow_test.dart" -Device windows -SkipPubGet
+Running web_admin E2E with API_BASE_URL=http://192.168.0.195:5001/api/ on device=windows
+

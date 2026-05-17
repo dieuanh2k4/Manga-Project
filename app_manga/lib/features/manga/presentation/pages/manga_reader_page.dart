@@ -317,6 +317,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
                   child: InteractiveViewer(
                     minScale: 1,
                     maxScale: 4,
+                    // đọc ngang: ảnh được render qua CachedNetworkImage, lướt lên hay xuống
+                    // ảnh có thể lấy từ cache thay vì tải lại
                     child: ProtectedNetworkImage(
                       imageUrl: page.imageUrl,
                       cacheKey: _imageCacheKey(page.imageUrl),
@@ -360,6 +362,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
           final page = controller.pages[index];
           return KeyedSubtree(
             key: _pageKeys[index],
+            // đọc dọc: ảnh được render qua CachedNetworkImage, lướt lên hay xuống
+            // ảnh có thể lấy từ cache thay vì tải lại
             child: ProtectedNetworkImage(
               imageUrl: page.imageUrl,
               cacheKey: _imageCacheKey(page.imageUrl),
@@ -530,6 +534,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     return imageUrl;
   }
 
+  // preload ảnh từ (trang hiện tại-2) đến (trang hiện tại+4)
+  // app tải sẵn vài ảnh gần đó vào cache
+  // khi lướt tiếp hoặc lướt ngược lại sẽ nhanh hơn
   void _precacheReaderImages(MangaReaderController controller) {
     if (controller.isLoading || controller.pages.isEmpty) {
       return;
