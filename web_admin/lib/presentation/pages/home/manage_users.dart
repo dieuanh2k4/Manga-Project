@@ -13,6 +13,7 @@ import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
+import 'package:web_admin/presentation/pages/home/manage_genres.dart';
 
 class ManageUsers extends StatefulWidget {
   final RemoteMangaController mangaController;
@@ -2422,6 +2423,17 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  void _openGenresPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageGenres(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   void _openNotificationsPage() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -2470,6 +2482,8 @@ class _ManageUsersState extends State<ManageUsers> {
                             onSelect: (key) {
                               if (key == sidebarKeyManga) {
                                 _openMangaPage();
+                              } else if (key == sidebarKeyGenres) {
+                                _openGenresPage();
                               } else if (key == sidebarKeyAuthors) {
                                 _openAuthorsPage();
                               } else if (key == sidebarKeyNotifications) {

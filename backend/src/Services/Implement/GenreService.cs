@@ -93,6 +93,17 @@ namespace backend.src.Services.Implement
                 throw new Result("Thể loại không tồn tại");
             }
 
+            var isUsed = await _context.Manga.AnyAsync(manga =>
+                manga.GenreIds.Contains(id) || manga.Genres.Any(g => g.Id == id));
+
+            if (isUsed)
+            {
+                throw new Result("Không thể xóa vì thể loại đang được sử dụng");
+            }
+
+            _context.Genres.Remove(genre);
+            await _context.SaveChangesAsync();
+
             return genre;
         }
     }

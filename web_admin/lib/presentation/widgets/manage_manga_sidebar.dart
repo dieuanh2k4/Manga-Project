@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 const String sidebarKeyOverview = 'overview';
 const String sidebarKeyManga = 'manga';
+const String sidebarKeyGenres = 'genres';
 const String sidebarKeyAuthors = 'authors';
 const String sidebarKeyUsers = 'users';
 const String sidebarKeyNotifications = 'notifications';
@@ -63,6 +64,13 @@ class ManageMangaSidebar extends StatelessWidget {
             compact: compact,
             selected: selectedKey == sidebarKeyManga,
             onTap: () => onSelect(sidebarKeyManga),
+          ),
+          _SidebarItem(
+            icon: Icons.category_outlined,
+            label: 'Quản lý Thể loại',
+            compact: compact,
+            selected: selectedKey == sidebarKeyGenres,
+            onTap: () => onSelect(sidebarKeyGenres),
           ),
           _SidebarItem(
             icon: Icons.person_pin_rounded,
