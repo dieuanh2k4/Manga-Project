@@ -25,7 +25,12 @@ class HistoryRemoteDataSource {
       if (rawData is List) {
         data = rawData;
       } else if (rawData is Map<String, dynamic>) {
-        data = [rawData];
+        final rawValues = rawData[r'$values'];
+        if (rawValues is List) {
+          data = rawValues;
+        } else {
+          data = [rawData];
+        }
       } else {
         data = [];
       }
@@ -36,7 +41,7 @@ class HistoryRemoteDataSource {
     return data
         .whereType<Map<String, dynamic>>()
         .map(HistoryItemModel.fromJson)
-        .where((item) => item.mangaId > 0 && item.title.isNotEmpty)
+        .where((item) => item.mangaId > 0)
         .toList();
   }
 }

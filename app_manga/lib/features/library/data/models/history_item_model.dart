@@ -27,13 +27,17 @@ class HistoryItemModel {
     final updatedAt =
         parsedUpdatedAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
+    final rawTitle = (json['mangaTitle'] ?? json['MangaTitle'] ?? '')
+        .toString()
+        .trim();
+
     return HistoryItemModel(
       mangaId: json['mangaId'] ?? json['MangaId'] ?? 0,
       lastChapterId: json['lastChapterId'] ?? json['LastChapterId'] ?? 0,
       lastPageId: json['lastPageId'] ?? json['LastPageId'] ?? 0,
       isCompleted: json['isCompleted'] ?? json['IsCompleted'] ?? false,
       updatedAt: updatedAt,
-      title: (json['mangaTitle'] ?? json['MangaTitle'] ?? '').toString(),
+      title: rawTitle.isEmpty ? 'Unknown title' : rawTitle,
       thumbnail: (json['mangaThumbnail'] ?? json['MangaThumbnail'])?.toString(),
       authorName: (json['mangaAuthor'] ?? json['MangaAuthor'])?.toString(),
     );
