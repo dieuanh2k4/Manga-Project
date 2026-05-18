@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.6.0
   cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
   screen_protector: ^1.5.1

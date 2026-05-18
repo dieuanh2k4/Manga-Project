@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../core/services/reading_progress_service.dart';
+import '../../../../core/network/image_cache_manager.dart';
 import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
@@ -559,10 +562,13 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     final end = (centerIndex + 4).clamp(0, controller.pages.length - 1);
     for (var index = start; index <= end; index++) {
       final imageUrl = controller.pages[index].imageUrl;
+      final cacheKey = _imageCacheKey(imageUrl);
+      unawaited(MangaImageCacheManager.markCached(cacheKey));
       precacheImage(
         CachedNetworkImageProvider(
           imageUrl,
-          cacheKey: _imageCacheKey(imageUrl),
+          cacheKey: cacheKey,
+          cacheManager: MangaImageCacheManager.instance,
         ),
         context,
       );
