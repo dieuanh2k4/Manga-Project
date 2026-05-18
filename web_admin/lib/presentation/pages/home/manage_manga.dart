@@ -13,6 +13,7 @@ import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga_detail_page.dart';
 import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
+import 'package:web_admin/presentation/pages/home/manage_genres.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_error_state.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_filter_bar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_page_heading.dart';
@@ -331,7 +332,16 @@ class _ManageMangaState extends State<ManageManga> {
                               compact: isCompactSidebar,
                               selectedKey: sidebarKeyManga,
                               onSelect: (key) {
-                                if (key == sidebarKeyAuthors) {
+                                if (key == sidebarKeyGenres) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => ManageGenres(
+                                        mangaController: widget.mangaController,
+                                        onLogout: _onNestedRouteLogout,
+                                      ),
+                                    ),
+                                  );
+                                } else if (key == sidebarKeyAuthors) {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(
                                       builder: (_) => ManageAuthors(
