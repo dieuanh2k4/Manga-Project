@@ -17,6 +17,7 @@ class MangaReaderController extends ChangeNotifier {
   final String? token;
   final GetPagesByChapterUseCase getPagesByChapterUseCase;
   final UpsertHistoryUseCase upsertHistoryUseCase;
+  final int? initialPageId;
 
   MangaReaderController({
     required this.mangaId,
@@ -25,7 +26,8 @@ class MangaReaderController extends ChangeNotifier {
     required this.getPagesByChapterUseCase,
     required this.upsertHistoryUseCase,
     this.token,
-  });
+    this.initialPageId,
+  }) : _pendingInitialPageId = initialPageId;
 
   bool isLoading = false;
   String? errorMessage;
@@ -40,6 +42,8 @@ class MangaReaderController extends ChangeNotifier {
   int? _lastHistoryPageId;
   int? _lastHistoryChapterId;
   bool _lastHistoryCompleted = false;
+  int? initialPageIndex;
+  int? _pendingInitialPageId;
 
   List<ChapterPageEntity> pages = const [];
 
@@ -66,8 +70,24 @@ class MangaReaderController extends ChangeNotifier {
       if (pages.isEmpty) {
         errorMessage = 'Chapter nay chua co noi dung';
       } else {
-        lastVerticalIndex = 0;
-        _scheduleHistoryUpdate(pageIndex: 0);
+        initialPageIndex = null;
+        if (_pendingInitialPageId != null) {
+          final index =
+              pages.indexWhere((page) => page.id == _pendingInitialPageId);
+          if (index >= 0) {
+            initialPageIndex = index;
+            currentImageIndex = index;
+            lastVerticalIndex = index;
+          } else {
+            currentImageIndex = 0;
+            lastVerticalIndex = 0;
+          }
+          _pendingInitialPageId = null;
+        } else {
+          currentImageIndex = 0;
+          lastVerticalIndex = 0;
+        }
+        _scheduleHistoryUpdate(pageIndex: currentImageIndex);
       }
     } catch (e) {
       errorMessage = e.toString().replaceFirst('Exception: ', '');
