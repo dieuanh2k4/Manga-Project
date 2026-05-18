@@ -6,6 +6,7 @@ namespace backend.src.Dtos.History
     {
         public int MangaId { get; set; }
         public int LastChapterId { get; set; }
+        public string? LastChapterNumber { get; set; }
         public int LastPageId { get; set; }
         public bool IsCompleted { get; set; }
         public DateTime UpdateAt { get; set; }

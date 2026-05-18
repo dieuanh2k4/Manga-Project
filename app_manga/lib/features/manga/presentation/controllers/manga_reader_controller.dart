@@ -194,14 +194,25 @@ class MangaReaderController extends ChangeNotifier {
 
   void _scheduleHistoryUpdate({required int pageIndex}) {
     if (token == null || token!.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('History update skipped: token missing');
+      }
       return;
     }
     if (pageIndex < 0 || pageIndex >= pages.length) {
+      if (kDebugMode) {
+        debugPrint(
+          'History update skipped: pageIndex out of range ($pageIndex/${pages.length})',
+        );
+      }
       return;
     }
 
     final pageId = pages[pageIndex].id;
     if (pageId <= 0) {
+      if (kDebugMode) {
+        debugPrint('History update skipped: invalid pageId $pageId');
+      }
       return;
     }
 
@@ -210,6 +221,9 @@ class MangaReaderController extends ChangeNotifier {
     if (_lastHistoryPageId == pageId &&
         _lastHistoryChapterId == chapterId &&
         _lastHistoryCompleted == (isCompleted ?? false)) {
+      if (kDebugMode) {
+        debugPrint('History update skipped: same page/chapter state');
+      }
       return;
     }
 
@@ -226,8 +240,12 @@ class MangaReaderController extends ChangeNotifier {
           token: token!,
           isCompleted: isCompleted,
         );
-      } catch (_) {
-        // Ignore history update failures to avoid disrupting reading.
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('History update failed: $e');
+        }
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        notifyListeners();
       }
     });
   }

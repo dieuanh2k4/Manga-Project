@@ -692,9 +692,13 @@ class _HistoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chapterLabel = (item.lastChapterNumber == null ||
+        item.lastChapterNumber!.trim().isEmpty)
+      ? item.lastChapterId.toString()
+      : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+      : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -781,9 +785,13 @@ class _HistoryGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chapterLabel = (item.lastChapterNumber == null ||
+        item.lastChapterNumber!.trim().isEmpty)
+      ? item.lastChapterId.toString()
+      : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+      : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(

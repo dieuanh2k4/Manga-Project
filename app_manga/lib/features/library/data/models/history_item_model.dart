@@ -3,6 +3,7 @@ import '../../domain/entities/history_item_entity.dart';
 class HistoryItemModel {
   final int mangaId;
   final int lastChapterId;
+  final String? lastChapterNumber;
   final int lastPageId;
   final bool isCompleted;
   final DateTime updatedAt;
@@ -13,6 +14,7 @@ class HistoryItemModel {
   const HistoryItemModel({
     required this.mangaId,
     required this.lastChapterId,
+    this.lastChapterNumber,
     required this.lastPageId,
     required this.isCompleted,
     required this.updatedAt,
@@ -34,6 +36,8 @@ class HistoryItemModel {
     return HistoryItemModel(
       mangaId: json['mangaId'] ?? json['MangaId'] ?? 0,
       lastChapterId: json['lastChapterId'] ?? json['LastChapterId'] ?? 0,
+        lastChapterNumber:
+          (json['lastChapterNumber'] ?? json['LastChapterNumber'])?.toString(),
       lastPageId: json['lastPageId'] ?? json['LastPageId'] ?? 0,
       isCompleted: json['isCompleted'] ?? json['IsCompleted'] ?? false,
       updatedAt: updatedAt,
@@ -46,6 +50,7 @@ class HistoryItemModel {
   HistoryItemEntity toEntity() => HistoryItemEntity(
     mangaId: mangaId,
     lastChapterId: lastChapterId,
+    lastChapterNumber: lastChapterNumber,
     lastPageId: lastPageId,
     isCompleted: isCompleted,
     updatedAt: updatedAt,
