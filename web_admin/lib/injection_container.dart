@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/data/data_sources/remote/auth_login_api_service.dart';
 import 'package:web_admin/data/data_sources/remote/lookup_api_service.dart';
@@ -43,7 +44,9 @@ Future<void> initilizeDependencies() async {
 
   // Dependencies
   sl.registerSingleton<AuthLoginApiService>(AuthLoginApiService(sl()));
-  sl.registerSingleton<NewApiService>(NewApiService(sl()));
+  sl.registerSingleton<NewApiService>(
+    NewApiService(sl(), baseUrl: newAPIBaseURL),
+  );
   sl.registerSingleton<LookupApiService>(LookupApiService(sl()));
   sl.registerSingleton<NotificationApiService>(
     NotificationApiService(sl(), sl()),

@@ -12,6 +12,7 @@ class ManageMangaTopHeader extends StatelessWidget {
     super.key,
     required this.searchController,
     this.onLogout,
+    this.onNotificationTap,
     this.hintText = 'Tìm kiếm manga, người dùng...',
     this.customHeaderWidget,
   });
