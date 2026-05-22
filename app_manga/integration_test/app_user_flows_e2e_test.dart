@@ -1,4 +1,3 @@
-import 'package:app_manga/features/manga/presentation/widgets/manga_card.dart';
 import 'package:app_manga/main.dart' as app;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,13 +6,24 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 const _username = String.fromEnvironment(
   'APP_MANGA_E2E_USERNAME',
-  defaultValue: 'reader01',
+  defaultValue: 'e2e_reader',
 );
 const _password = String.fromEnvironment(
   'APP_MANGA_E2E_PASSWORD',
-  defaultValue: 'reader123',
+  defaultValue: 'E2e@123456',
 );
-const _searchQuery = String.fromEnvironment('APP_MANGA_E2E_SEARCH_QUERY');
+const _mangaTitle = String.fromEnvironment(
+  'APP_MANGA_E2E_MANGA_TITLE',
+  defaultValue: 'E2E Readable Manga',
+);
+const _chapterTitle = String.fromEnvironment(
+  'APP_MANGA_E2E_CHAPTER_TITLE',
+  defaultValue: 'E2E Chapter 1',
+);
+const _searchQuery = String.fromEnvironment(
+  'APP_MANGA_E2E_SEARCH_QUERY',
+  defaultValue: 'E2E Readable Manga',
+);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -23,20 +33,16 @@ void main() {
     await _loginIfNeeded(tester);
 
     await _expectHome(tester);
-    await _openFirstMangaFromHome(tester);
+    await _openSearch(tester);
+    await _expectSearch(tester);
+    await _openSeededSearchResult(tester);
     await _expectMangaDetail(tester);
-    await _openFirstChapter(tester);
+    await _openSeededChapter(tester);
     await _expectReader(tester);
 
     await _goBackToMangaDetail(tester);
-    await _goBackToHome(tester);
-
-    await _openSearch(tester);
-    await _expectSearch(tester);
-    await _openFirstSearchResult(tester);
-    await _expectMangaDetail(tester);
-
     await _goBackToSearch(tester);
+    await _openHome(tester);
     await _openLibrary(tester);
     await _expectLibrary(tester);
 
@@ -82,16 +88,6 @@ Future<void> _expectHome(WidgetTester tester) async {
   expect(find.byType(BottomNavigationBar), findsOneWidget);
 }
 
-Future<void> _openFirstMangaFromHome(WidgetTester tester) async {
-  await _waitUntil(
-    tester,
-    () => find.byType(MangaCard).evaluate().isNotEmpty,
-    reason: 'Home page should contain at least one manga card.',
-  );
-  await tester.tap(find.byType(MangaCard).first);
-  await tester.pumpAndSettle();
-}
-
 Future<void> _expectMangaDetail(WidgetTester tester) async {
   await _waitUntil(
     tester,
@@ -100,18 +96,25 @@ Future<void> _expectMangaDetail(WidgetTester tester) async {
         find.text('Chapters').evaluate().isNotEmpty,
     reason: 'Manga detail should show introduction and chapters.',
   );
+  expect(find.text(_mangaTitle), findsWidgets);
 }
 
-Future<void> _openFirstChapter(WidgetTester tester) async {
+Future<void> _openSeededChapter(WidgetTester tester) async {
   await _scrollUntilVisible(tester, find.text('Chapters'));
 
   await _waitUntil(
     tester,
-    () => find.byType(ListTile).evaluate().isNotEmpty,
-    reason: 'Manga detail should contain at least one chapter.',
+    () => find.text(_chapterTitle).evaluate().isNotEmpty,
+    reason: 'Seeded manga detail should contain $_chapterTitle.',
   );
 
-  await tester.tap(find.byType(ListTile).first);
+  final chapterTile = find.ancestor(
+    of: find.text(_chapterTitle),
+    matching: find.byType(ListTile),
+  );
+  expect(chapterTile, findsOneWidget);
+
+  await tester.tap(chapterTile);
   await tester.pumpAndSettle();
 }
 
@@ -120,9 +123,8 @@ Future<void> _expectReader(WidgetTester tester) async {
     tester,
     () =>
         find.byType(PageView).evaluate().isNotEmpty ||
-        find.byType(ScrollablePositionedList).evaluate().isNotEmpty ||
-        find.text('Chuong nay chua co noi dung').evaluate().isNotEmpty,
-    reason: 'Reader should show pages or an empty chapter message.',
+        find.byType(ScrollablePositionedList).evaluate().isNotEmpty,
+    reason: 'Reader should show seeded chapter pages.',
   );
 }
 
@@ -154,7 +156,7 @@ Future<void> _expectSearch(WidgetTester tester) async {
   );
 }
 
-Future<void> _openFirstSearchResult(WidgetTester tester) async {
+Future<void> _openSeededSearchResult(WidgetTester tester) async {
   if (_searchQuery.trim().isNotEmpty) {
     await tester.enterText(find.byType(TextField).first, _searchQuery);
     await tester.pumpAndSettle(const Duration(seconds: 1));
@@ -162,18 +164,15 @@ Future<void> _openFirstSearchResult(WidgetTester tester) async {
 
   await _waitUntil(
     tester,
-    () => find.byType(InkWell).evaluate().isNotEmpty,
-    reason: 'Search page should contain at least one result item.',
+    () => find.text(_mangaTitle).evaluate().isNotEmpty,
+    reason: 'Search page should contain seeded manga $_mangaTitle.',
   );
 
-  final result = find
-      .byWidgetPredicate(
-        (widget) =>
-            widget is InkWell &&
-            widget.onTap != null &&
-            widget.child is Container,
-      )
-      .first;
+  final result = find.ancestor(
+    of: find.text(_mangaTitle),
+    matching: find.byType(InkWell),
+  );
+  expect(result, findsOneWidget);
 
   await tester.tap(result);
   await tester.pumpAndSettle();
@@ -183,6 +182,12 @@ Future<void> _goBackToSearch(WidgetTester tester) async {
   await tester.pageBack();
   await tester.pumpAndSettle();
   await _expectSearch(tester);
+}
+
+Future<void> _openHome(WidgetTester tester) async {
+  await tester.tap(find.text('Home').last);
+  await tester.pumpAndSettle();
+  await _expectHome(tester);
 }
 
 Future<void> _openLibrary(WidgetTester tester) async {

@@ -12,7 +12,7 @@ class ManageAuthorsBody extends StatelessWidget {
   final ValueChanged<String> onSortChanged;
   final ValueChanged<bool> onOnlyNoMangaChanged;
   final void Function(AuthorEntity author, List<MangaEntity> mangaList)
-      onAuthorTap;
+  onAuthorTap;
 
   const ManageAuthorsBody({
     super.key,
@@ -84,6 +84,7 @@ class _AuthorsHeading extends StatelessWidget {
           ],
         ),
         ElevatedButton.icon(
+          key: const Key('manage_authors_create_button'),
           onPressed: onAddAuthor,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF040617),
@@ -170,10 +171,7 @@ class _AuthorFilterCard extends StatelessWidget {
               child: DropdownButton<String>(
                 value: selectedSort,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-                style: const TextStyle(
-                  color: Color(0xFF4D5B72),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xFF4D5B72), fontSize: 13),
                 items: const [
                   DropdownMenuItem(value: 'A-Z', child: Text('Sắp xếp A-Z')),
                   DropdownMenuItem(
@@ -205,7 +203,7 @@ class _AuthorListCard extends StatelessWidget {
   final List<AuthorEntity> visibleAuthors;
   final Map<int, List<MangaEntity>> mangaByAuthor;
   final void Function(AuthorEntity author, List<MangaEntity> mangaList)
-      onAuthorTap;
+  onAuthorTap;
 
   const _AuthorListCard({
     required this.visibleAuthors,

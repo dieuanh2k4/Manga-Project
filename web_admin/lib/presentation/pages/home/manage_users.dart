@@ -933,10 +933,12 @@ class _ManageUsersState extends State<ManageUsers> {
               ),
               actions: <Widget>[
                 TextButton(
+                  key: const Key('manage_user_dialog_cancel_button'),
                   onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Hủy'),
                 ),
                 ElevatedButton(
+                  key: const Key('manage_user_dialog_save_button'),
                   onPressed: () async {
                     try {
                       final Options options = await _authorizedOptions();
@@ -2504,8 +2506,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                     ManageMangaTopHeader(
                                       searchController: _searchController,
                                       onLogout: widget.onLogout,
-                                      onNotificationTap:
-                                          _openNotificationsPage,
+                                      onNotificationTap: _openNotificationsPage,
                                       hintText: 'Tìm kiếm người dùng...',
                                       customHeaderWidget: Column(
                                         crossAxisAlignment:
@@ -2645,6 +2646,7 @@ class _ManageUsersState extends State<ManageUsers> {
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton.icon(
+                      key: const Key('manage_users_create_button'),
                       onPressed: () => _showUserDialog(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF040617),

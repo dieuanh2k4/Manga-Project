@@ -392,6 +392,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
   }
 
+  //
   Future<void> _restoreProgressIfNeeded(
     MangaReaderController controller,
   ) async {
@@ -467,6 +468,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
   }
 
+  // lưu lại pageIndex hiện tại
   void _saveProgress(MangaReaderController controller, int index) {
     if (_lastSavedIndex == index) {
       return;
@@ -498,6 +500,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
   }
 
+  // lưu index ảnh khi đọc dọc
   void _onItemPositionsChanged() {
     if (!mounted) {
       return;

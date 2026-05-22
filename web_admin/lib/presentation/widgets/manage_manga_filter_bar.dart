@@ -119,6 +119,7 @@ class ManageMangaFilterBar extends StatelessWidget {
 
   Widget _buildSearchField() {
     return TextField(
+      key: const Key('manage_manga_search_field'),
       controller: searchController,
       decoration: InputDecoration(
         hintText: 'Tìm tên truyện, tác giả...',
@@ -163,7 +164,9 @@ class ManageMangaFilterBar extends StatelessWidget {
   }
 
   Widget _buildGenreDropdown() {
-    final int selectedValue = selectedGenreIds.isNotEmpty ? selectedGenreIds.first : 0;
+    final int selectedValue = selectedGenreIds.isNotEmpty
+        ? selectedGenreIds.first
+        : 0;
 
     return _DropdownFilter<int>(
       value: selectedValue,
@@ -199,9 +202,15 @@ class ManageMangaFilterBar extends StatelessWidget {
       icon: Icons.circle_outlined,
       items: [
         DropdownMenuItem(value: allStatus, child: Text(allStatus)),
-        const DropdownMenuItem(value: 'Đang tiến hành', child: Text('Đang tiến hành')),
+        const DropdownMenuItem(
+          value: 'Đang tiến hành',
+          child: Text('Đang tiến hành'),
+        ),
         const DropdownMenuItem(value: 'Tạm ngưng', child: Text('Tạm ngưng')),
-        const DropdownMenuItem(value: 'Đã hoàn thành', child: Text('Đã hoàn thành')),
+        const DropdownMenuItem(
+          value: 'Đã hoàn thành',
+          child: Text('Đã hoàn thành'),
+        ),
       ],
       onChanged: (value) {
         if (value != null) {
@@ -262,22 +271,20 @@ class _ActiveFilterChips extends StatelessWidget {
     final List<Widget> chips = [];
 
     if (searchText.isNotEmpty) {
-      chips.add(
-        _Chip(label: '"$searchText"', onRemove: onClearSearch),
-      );
+      chips.add(_Chip(label: '"$searchText"', onRemove: onClearSearch));
     }
 
     if (selectedStatus != allStatus) {
-      chips.add(
-        _Chip(label: selectedStatus, onRemove: onClearStatus),
-      );
+      chips.add(_Chip(label: selectedStatus, onRemove: onClearStatus));
     }
 
     for (final genreId in selectedGenreIds) {
-      final String genreName = genres
-          .where((g) => g.id == genreId)
-          .map((g) => g.name ?? 'Thể loại')
-          .firstOrNull ?? 'Thể loại';
+      final String genreName =
+          genres
+              .where((g) => g.id == genreId)
+              .map((g) => g.name ?? 'Thể loại')
+              .firstOrNull ??
+          'Thể loại';
       chips.add(
         _Chip(label: genreName, onRemove: () => onRemoveGenre(genreId)),
       );
@@ -407,8 +414,7 @@ class _DropdownFilter<T> extends StatelessWidget {
             color: active ? const Color(0xFF1F5BFF) : const Color(0xFF8491A7),
           ),
           style: TextStyle(
-            color:
-                active ? const Color(0xFF1F5BFF) : const Color(0xFF4D5B72),
+            color: active ? const Color(0xFF1F5BFF) : const Color(0xFF4D5B72),
             fontSize: 13,
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
           ),

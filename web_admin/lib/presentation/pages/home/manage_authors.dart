@@ -123,11 +123,13 @@ class _ManageAuthorsState extends State<ManageAuthors> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                key: const Key('manage_author_dialog_name_field'),
                 controller: nameController,
                 decoration: const InputDecoration(labelText: 'Tên tác giả'),
               ),
               const SizedBox(height: 12),
               TextField(
+                key: const Key('manage_author_dialog_description_field'),
                 controller: descriptionController,
                 minLines: 2,
                 maxLines: 4,
@@ -138,10 +140,12 @@ class _ManageAuthorsState extends State<ManageAuthors> {
         ),
         actions: [
           TextButton(
+            key: const Key('manage_author_dialog_cancel_button'),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Hủy'),
           ),
           ElevatedButton(
+            key: const Key('manage_author_dialog_save_button'),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Lưu'),
           ),
