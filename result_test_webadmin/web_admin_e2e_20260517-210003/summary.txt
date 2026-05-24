@@ -1,0 +1,16 @@
+Web Admin E2E Result: TIMEOUT
+StartedAt: 2026-05-17T21:00:03.5681290+07:00
+FinishedAt: 2026-05-17T21:10:59.4523688+07:00
+DurationSeconds: 655.9
+ExitCode: 124
+TimedOut: True
+JobState: Stopped
+Command: powershell -ExecutionPolicy Bypass -File .\script\e2e\run-web-admin-e2e.ps1 -ApiBaseUrl "http://192.168.0.114:5001/api/" -Target "integration_test/admin_smoke_flow_test.dart" -Device windows -SkipPubGet
+Target: web_admin/integration_test/admin_smoke_flow_test.dart
+Device: windows
+API_BASE_URL: http://192.168.0.114:5001/api/
+DefaultAdminUser: admin unless WEB_ADMIN_E2E_EMAIL is set
+Log: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-210003\e2e.log
+Precheck: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-210003\precheck.txt
+LikelyCategory: Environment/Flutter Windows runner timeout
+FirstActionableError: Flutter E2E command did not finish within 600 seconds.

@@ -11,6 +11,7 @@ import '../../../manga/presentation/pages/manga_detail_page.dart';
 import '../../../manga/presentation/pages/search_page.dart';
 import '../../../manga/presentation/pages/home_page.dart';
 import '../../domain/entities/library_manga_entity.dart';
+import '../../domain/entities/history_item_entity.dart';
 import '../controllers/library_controller.dart';
 
 class LibraryPage extends StatefulWidget {
@@ -29,6 +30,8 @@ class _LibraryPageState extends State<LibraryPage>
 
   late final TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  final Set<String> _expandedHistoryGroups = {'Hôm nay', 'Hôm qua'};
+  bool _groupHistoryByTime = true;
 
   @override
   void initState() {
@@ -51,11 +54,15 @@ class _LibraryPageState extends State<LibraryPage>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LibraryController(
-        getLibraryMangaUseCase: context.read(),
-        addMangaToLibraryUseCase: context.read(),
-        deleteMangaFromLibraryUseCase: context.read(),
-      )..fetchLibraryManga(widget.token),
+      create: (_) =>
+          LibraryController(
+              getLibraryMangaUseCase: context.read(),
+              getHistoryUseCase: context.read(),
+              addMangaToLibraryUseCase: context.read(),
+              deleteMangaFromLibraryUseCase: context.read(),
+            )
+            ..fetchLibraryManga(widget.token)
+            ..fetchHistory(widget.token),
       child: Consumer<LibraryController>(
         builder: (context, controller, _) {
           return Scaffold(
@@ -141,9 +148,33 @@ class _LibraryPageState extends State<LibraryPage>
                       Tab(text: 'Downloads'),
                     ],
                   ),
-                  Expanded(
-                    child: _buildBody(controller),
-                  ),
+                  if (_tabController.index == 1)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Row(
+                        children: [
+                          const Spacer(),
+                          const Text(
+                            'Nhóm theo thời gian',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Switch(
+                            value: _groupHistoryByTime,
+                            activeColor: _primaryColor,
+                            onChanged: (value) {
+                              setState(() {
+                                _groupHistoryByTime = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(child: _buildBody(controller)),
                 ],
               ),
             ),
@@ -165,13 +196,19 @@ class _LibraryPageState extends State<LibraryPage>
       return Center(child: Text('Lỗi: ${controller.error}'));
     }
 
+    if (_tabController.index == 1) {
+      final filteredHistory = _filterHistory(controller.historyItems);
+      if (filteredHistory.isEmpty) {
+        return const Center(child: Text('Lịch sử đọc của bạn trống.'));
+      }
+      return _groupHistoryByTime
+          ? _buildHistoryGroupedList(filteredHistory)
+          : _buildHistoryGrid(filteredHistory);
+    }
+
     final filtered = _filterManga(controller.libraryManga);
     if (filtered.isEmpty) {
       return const Center(child: Text('Thư viện của bạn trống.'));
-    }
-
-    if (_tabController.index == 1) {
-      return _buildHistoryList(filtered);
     }
 
     if (_tabController.index == 2) {
@@ -223,6 +260,18 @@ class _LibraryPageState extends State<LibraryPage>
         .toList();
   }
 
+  List<HistoryItemEntity> _filterHistory(List<HistoryItemEntity> input) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return input;
+    }
+    return input.where((item) {
+      final titleMatch = item.title.toLowerCase().contains(query);
+      final authorMatch = (item.authorName ?? '').toLowerCase().contains(query);
+      return titleMatch || authorMatch;
+    }).toList();
+  }
+
   Widget _buildLibraryList(List<LibraryMangaEntity> items) {
     final sections = _groupByLetter(items);
     return ListView(
@@ -244,23 +293,36 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
-  Widget _buildHistoryList(List<LibraryMangaEntity> items) {
-    final sections = _groupByLetter(items);
+  Widget _buildHistoryGroupedList(List<HistoryItemEntity> items) {
+    final grouped = _groupHistoryByRange(items);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        for (final entry in sections.entries) ...[
-          _buildSectionHeader(entry.key),
-          for (final manga in entry.value) ...[
-            _LibraryListItem(
-              manga: manga,
-              primaryText: 'Cap ${manga.totalChapter}',
-              secondaryText: _historyStatus(manga),
-            ),
-            const Divider(height: 1, color: _dividerColor),
-          ],
-        ],
+        for (final entry in grouped.entries)
+          if (entry.value.isNotEmpty)
+            _buildHistoryRangeSection(entry.key, entry.value),
       ],
+    );
+  }
+
+  Widget _buildHistoryGrid(List<HistoryItemEntity> items) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth < 380 ? 2 : 3;
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.58,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return _HistoryGridItem(item: items[index]);
+          },
+        );
+      },
     );
   }
 
@@ -268,7 +330,8 @@ class _LibraryPageState extends State<LibraryPage>
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, color: _dividerColor),
+      separatorBuilder: (_, _) =>
+          const Divider(height: 1, color: _dividerColor),
       itemBuilder: (context, index) {
         final manga = items[index];
         return _LibraryListItem(
@@ -294,6 +357,150 @@ class _LibraryPageState extends State<LibraryPage>
     return {for (final entry in entries) entry.key: entry.value};
   }
 
+  Map<String, List<HistoryItemEntity>> _groupHistoryByRange(
+    List<HistoryItemEntity> items,
+  ) {
+    const rangeOrder = [
+      'Hôm nay',
+      'Hôm qua',
+      'Tuần này',
+      'Tháng này',
+      'Cũ hơn',
+    ];
+    final sorted = [...items]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final Map<String, List<HistoryItemEntity>> grouped = {
+      for (final range in rangeOrder) range: [],
+    };
+    for (final item in sorted) {
+      final range = _historyRangeLabel(item.updatedAt);
+      grouped.putIfAbsent(range, () => []).add(item);
+    }
+    return grouped;
+  }
+
+  String _historyRangeLabel(DateTime updatedAt) {
+    final now = DateTime.now();
+    final local = updatedAt.toLocal();
+    final today = DateTime(now.year, now.month, now.day);
+    final itemDay = DateTime(local.year, local.month, local.day);
+    final diff = today.difference(itemDay).inDays;
+
+    if (diff == 0) {
+      return 'Hôm nay';
+    }
+    if (diff == 1) {
+      return 'Hôm qua';
+    }
+
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final isSameWeek =
+        itemDay.isAtSameMomentAs(weekStart) || itemDay.isAfter(weekStart);
+    if (isSameWeek) {
+      return 'Tuần này';
+    }
+
+    final isSameMonth =
+        itemDay.year == today.year && itemDay.month == today.month;
+    if (isSameMonth) {
+      return 'Tháng này';
+    }
+    return 'Cũ hơn';
+  }
+
+  List<MapEntry<DateTime, List<HistoryItemEntity>>> _groupHistoryByDay(
+    List<HistoryItemEntity> items,
+  ) {
+    final Map<DateTime, List<HistoryItemEntity>> grouped = {};
+    for (final item in items) {
+      final local = item.updatedAt.toLocal();
+      final dayKey = DateTime(local.year, local.month, local.day);
+      grouped.putIfAbsent(dayKey, () => []).add(item);
+    }
+    final entries = grouped.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+    return entries;
+  }
+
+  String _formatDayLabel(DateTime day) {
+    final dayStr = day.day.toString().padLeft(2, '0');
+    final monthStr = day.month.toString().padLeft(2, '0');
+    return '$dayStr/$monthStr/${day.year}';
+  }
+
+  Widget _buildHistoryRangeSection(
+    String range,
+    List<HistoryItemEntity> items,
+  ) {
+    final isExpanded = _expandedHistoryGroups.contains(range);
+    final dayGroups = _groupHistoryByDay(items);
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      initiallyExpanded: isExpanded,
+      onExpansionChanged: (expanded) {
+        setState(() {
+          if (expanded) {
+            _expandedHistoryGroups.add(range);
+          } else {
+            _expandedHistoryGroups.remove(range);
+          }
+        });
+      },
+      title: Text(
+        range,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: _primaryDark,
+        ),
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 6, right: 6, bottom: 8),
+          child: Column(
+            children: [
+              if (range == 'Cũ hơn')
+                ..._buildHistoryItems(items)
+              else
+                for (final entry in dayGroups) ...[
+                  _buildHistoryDayHeader(_formatDayLabel(entry.key)),
+                  ..._buildHistoryItems(entry.value),
+                ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryDayHeader(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black54,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildHistoryItems(List<HistoryItemEntity> items) {
+    final sorted = [...items]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final widgets = <Widget>[];
+    for (final item in sorted) {
+      widgets.add(_HistoryListItem(item: item));
+      widgets.add(const Divider(height: 1, color: _dividerColor));
+    }
+    return widgets;
+  }
+
   Widget _buildSectionHeader(String letter) {
     return Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 8),
@@ -314,14 +521,6 @@ class _LibraryPageState extends State<LibraryPage>
       return 'New!';
     }
     return '';
-  }
-
-  String _historyStatus(LibraryMangaEntity manga) {
-    final status = (manga.status ?? '').toLowerCase();
-    if (status.contains('complete') || status.contains('finished')) {
-      return 'Finished';
-    }
-    return 'Reading';
   }
 
   int _lastReadChapter(LibraryMangaEntity manga) {
@@ -642,9 +841,7 @@ class _LibraryListItem extends StatelessWidget {
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => MangaDetailPage(mangaId: manga.id),
-          ),
+          MaterialPageRoute(builder: (_) => MangaDetailPage(mangaId: manga.id)),
         );
       },
       child: Padding(
@@ -707,16 +904,167 @@ class _LibraryListItem extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     secondaryText,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black45,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.black45),
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HistoryListItem extends StatelessWidget {
+  final HistoryItemEntity item;
+
+  const _HistoryListItem({required this.item});
+
+  String _getImageUrl(String? thumbnail) {
+    if (thumbnail == null || thumbnail.isEmpty) {
+      return 'https://via.placeholder.com/150x200?text=No+Image';
+    }
+    if (thumbnail.startsWith('http')) {
+      return thumbnail;
+    }
+    return '${AppConfig.apiOrigin}/${thumbnail.replaceFirst(RegExp(r'^/+'), '')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = item.isCompleted
+        ? 'Đã hoàn thành'
+        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MangaDetailPage(mangaId: item.mangaId),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ProtectedNetworkImage(
+                imageUrl: _getImageUrl(item.thumbnail),
+                width: 56,
+                height: 78,
+                fit: BoxFit.cover,
+                errorWidget: Container(
+                  width: 56,
+                  height: 78,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.image_not_supported_outlined),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                  if ((item.authorName ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      item.authorName!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.black45,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryGridItem extends StatelessWidget {
+  final HistoryItemEntity item;
+
+  const _HistoryGridItem({required this.item});
+
+  String _getImageUrl(String? thumbnail) {
+    if (thumbnail == null || thumbnail.isEmpty) {
+      return 'https://via.placeholder.com/150x200?text=No+Image';
+    }
+    if (thumbnail.startsWith('http')) {
+      return thumbnail;
+    }
+    return '${AppConfig.apiOrigin}/${thumbnail.replaceFirst(RegExp(r'^/+'), '')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = item.isCompleted
+        ? 'Đã hoàn thành'
+        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MangaDetailPage(mangaId: item.mangaId),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: ProtectedNetworkImage(
+              imageUrl: _getImageUrl(item.thumbnail),
+              width: double.infinity,
+              height: 150,
+              fit: BoxFit.cover,
+              errorWidget: Container(
+                height: 150,
+                color: Colors.grey[200],
+                child: const Icon(Icons.image_not_supported_outlined),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            item.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+          ),
+        ],
       ),
     );
   }

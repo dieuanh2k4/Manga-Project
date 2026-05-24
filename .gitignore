@@ -4,3 +4,7 @@ backend.Tests/obj/
 
 # Ignore local VS Code user settings for this workspace
 .vscode/settings.json
+
+# Ignore sensitive files
+.env
+manga-project-firebase-admin-key.json

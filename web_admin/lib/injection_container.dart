@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/data/data_sources/remote/auth_login_api_service.dart';
 import 'package:web_admin/data/data_sources/remote/lookup_api_service.dart';
@@ -23,6 +24,7 @@ import 'package:web_admin/domain/usecases/get_genres.dart';
 import 'package:web_admin/domain/usecases/get_manga.dart';
 import 'package:web_admin/domain/usecases/get_notification.dart';
 import 'package:web_admin/domain/usecases/login.dart';
+import 'package:web_admin/domain/usecases/patch_manga_status.dart';
 import 'package:web_admin/domain/usecases/update_manga.dart';
 import 'package:web_admin/presentation/controllers/auth_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_notification_controller.dart';
@@ -42,7 +44,9 @@ Future<void> initilizeDependencies() async {
 
   // Dependencies
   sl.registerSingleton<AuthLoginApiService>(AuthLoginApiService(sl()));
-  sl.registerSingleton<NewApiService>(NewApiService(sl()));
+  sl.registerSingleton<NewApiService>(
+    NewApiService(sl(), baseUrl: newAPIBaseURL),
+  );
   sl.registerSingleton<LookupApiService>(LookupApiService(sl()));
   sl.registerSingleton<NotificationApiService>(
     NotificationApiService(sl(), sl()),
@@ -62,6 +66,7 @@ Future<void> initilizeDependencies() async {
   sl.registerSingleton<CreateMangaUseCase>(CreateMangaUseCase(sl()));
   sl.registerSingleton<DeleteMangaUseCase>(DeleteMangaUseCase(sl()));
   sl.registerSingleton<UpdateMangaUseCase>(UpdateMangaUseCase(sl()));
+  sl.registerSingleton<PatchMangaStatusUseCase>(PatchMangaStatusUseCase(sl()));
   sl.registerSingleton<GetAuthorsUseCase>(GetAuthorsUseCase(sl()));
   sl.registerSingleton<GetGenresUseCase>(GetGenresUseCase(sl()));
   sl.registerSingleton<GetNotificationUseCase>(GetNotificationUseCase(sl()));
@@ -77,7 +82,7 @@ Future<void> initilizeDependencies() async {
 
   // Presentation services
   sl.registerSingleton<ManageMangaService>(
-    ManageMangaService(sl(), sl(), sl(), sl(), sl()),
+    ManageMangaService(sl(), sl(), sl(), sl(), sl(), sl()),
   );
 
   sl.registerFactory<RemoteMangaController>(() => RemoteMangaController(sl()));

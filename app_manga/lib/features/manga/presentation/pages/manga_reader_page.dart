@@ -1,13 +1,18 @@
+import 'dart:async';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../core/services/reading_progress_service.dart';
+import '../../../../core/network/image_cache_manager.dart';
 import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
 import '../../domain/repositories/manga_repository.dart';
 import '../../domain/usecases/get_pages_by_chapter_usecase.dart';
+import '../../domain/usecases/upsert_history_usecase.dart';
 import '../controllers/manga_reader_controller.dart';
 
 class MangaReaderPage extends StatelessWidget {
@@ -36,6 +41,7 @@ class MangaReaderPage extends StatelessWidget {
         chapters: chapters,
         token: auth.session?.token,
         getPagesByChapterUseCase: GetPagesByChapterUseCase(mangaRepository),
+        upsertHistoryUseCase: UpsertHistoryUseCase(mangaRepository),
       )..initialize(initialChapterId),
       child: const _MangaReaderView(),
     );
@@ -51,6 +57,8 @@ class _MangaReaderView extends StatefulWidget {
 
 class _MangaReaderViewState extends State<_MangaReaderView> {
   final PageController _horizontalPageController = PageController();
+  final List<GlobalKey> _pageKeys = [];
+  final GlobalKey _listKey = GlobalKey();
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
@@ -59,6 +67,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   int _lastSavedIndex = -1;
   bool _positionsListenerAttached = false;
   bool _isSwitchingChapterForRestore = false;
+  int? _lastPrecachedChapterId;
+  int? _lastPrecachedCenterIndex;
 
   @override
   void initState() {
@@ -70,11 +80,80 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   @override
   void dispose() {
     if (_positionsListenerAttached) {
-      _itemPositionsListener.itemPositions
-          .removeListener(_onItemPositionsChanged);
+      _itemPositionsListener.itemPositions.removeListener(
+        _onItemPositionsChanged,
+      );
     }
     _horizontalPageController.dispose();
     super.dispose();
+  }
+
+  void _syncPageKeys(int length) {
+    if (_pageKeys.length == length) {
+      return;
+    }
+    _pageKeys
+      ..clear()
+      ..addAll(List.generate(length, (_) => GlobalKey()));
+  }
+
+  int? _getMostVisibleIndex() {
+    if (_pageKeys.isEmpty) {
+      return null;
+    }
+
+    final viewportBox =
+        _listKey.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null) {
+      return null;
+    }
+
+    final viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    final viewportBottom = viewportTop + viewportBox.size.height;
+
+    double bestFraction = 0;
+    int? bestIndex;
+
+    for (var i = 0; i < _pageKeys.length; i++) {
+      final keyContext = _pageKeys[i].currentContext;
+      if (keyContext == null) {
+        continue;
+      }
+      final box = keyContext.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) {
+        continue;
+      }
+
+      final itemTop = box.localToGlobal(Offset.zero).dy;
+      final itemBottom = itemTop + box.size.height;
+      final visibleHeight =
+          (itemBottom < viewportBottom ? itemBottom : viewportBottom) -
+          (itemTop > viewportTop ? itemTop : viewportTop);
+
+      if (visibleHeight <= 0) {
+        continue;
+      }
+
+      final fraction = visibleHeight / box.size.height;
+      if (fraction > bestFraction) {
+        bestFraction = fraction;
+        bestIndex = i;
+      }
+    }
+
+    return bestIndex;
+  }
+
+  void _reportVerticalHistory(MangaReaderController controller) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || controller.mode != ReaderMode.vertical) {
+        return;
+      }
+      final index = _getMostVisibleIndex();
+      if (index != null) {
+        controller.onVerticalPageSelected(index);
+      }
+    });
   }
 
   @override
@@ -87,9 +166,12 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
         return;
       }
 
+      _precacheReaderImages(controller);
+
       if (controller.mode == ReaderMode.horizontal &&
           _horizontalPageController.hasClients &&
-          _horizontalPageController.page?.round() != controller.currentImageIndex) {
+          _horizontalPageController.page?.round() !=
+              controller.currentImageIndex) {
         _horizontalPageController.jumpToPage(controller.currentImageIndex);
       }
     });
@@ -124,9 +206,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: _buildContent(controller),
-          ),
+          Positioned.fill(child: _buildContent(controller)),
           Align(
             alignment: Alignment.bottomCenter,
             child: _ReaderTaskbar(
@@ -165,7 +245,11 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: Color(0xFFE8742B), size: 40),
+              const Icon(
+                Icons.error_outline,
+                color: Color(0xFFE8742B),
+                size: 40,
+              ),
               const SizedBox(height: 10),
               Text(
                 controller.errorMessage!,
@@ -236,13 +320,19 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
                   child: InteractiveViewer(
                     minScale: 1,
                     maxScale: 4,
+                    // đọc ngang: ảnh được render qua CachedNetworkImage, lướt lên hay xuống
+                    // ảnh có thể lấy từ cache thay vì tải lại
                     child: ProtectedNetworkImage(
                       imageUrl: page.imageUrl,
+                      cacheKey: _imageCacheKey(page.imageUrl),
                       fit: BoxFit.contain,
                       errorWidget: Container(
                         color: const Color(0xFF191B1F),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.broken_image, color: Colors.white70),
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.white70,
+                        ),
                       ),
                     ),
                   ),
@@ -254,32 +344,47 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
       );
     }
 
-    return NotificationListener<UserScrollNotification>(
+    _syncPageKeys(controller.pages.length);
+    return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        controller.updateTaskbarOnScroll(notification.direction);
+        if (notification is UserScrollNotification) {
+          controller.updateTaskbarOnScroll(notification.direction);
+        }
+        if (notification is ScrollEndNotification) {
+          _reportVerticalHistory(controller);
+        }
         return false;
       },
       child: ScrollablePositionedList.builder(
+        key: _listKey,
         itemScrollController: _itemScrollController,
         itemPositionsListener: _itemPositionsListener,
         padding: EdgeInsets.only(bottom: controller.showTaskbar ? 90 : 20),
         itemCount: controller.pages.length,
         itemBuilder: (context, index) {
           final page = controller.pages[index];
-          return ProtectedNetworkImage(
-            imageUrl: page.imageUrl,
-            fit: BoxFit.fitWidth,
-            loadingWidget: Container(
-              color: Colors.black,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: const CircularProgressIndicator(color: Color(0xFFE8742B)),
-            ),
-            errorWidget: Container(
-              color: const Color(0xFF191B1F),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 28),
-              child: const Icon(Icons.broken_image, color: Colors.white70),
+          return KeyedSubtree(
+            key: _pageKeys[index],
+            // đọc dọc: ảnh được render qua CachedNetworkImage, lướt lên hay xuống
+            // ảnh có thể lấy từ cache thay vì tải lại
+            child: ProtectedNetworkImage(
+              imageUrl: page.imageUrl,
+              cacheKey: _imageCacheKey(page.imageUrl),
+              fit: BoxFit.fitWidth,
+              loadingWidget: Container(
+                color: Colors.black,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: const CircularProgressIndicator(
+                  color: Color(0xFFE8742B),
+                ),
+              ),
+              errorWidget: Container(
+                color: const Color(0xFF191B1F),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: const Icon(Icons.broken_image, color: Colors.white70),
+              ),
             ),
           );
         },
@@ -287,7 +392,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
   }
 
-  Future<void> _restoreProgressIfNeeded(MangaReaderController controller) async {
+  Future<void> _restoreProgressIfNeeded(
+    MangaReaderController controller,
+  ) async {
     if (_isRestoring || controller.isLoading) {
       return;
     }
@@ -309,8 +416,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     final targetChapterId = savedChapterId ?? chapterId;
     if (targetChapterId != chapterId && !_isSwitchingChapterForRestore) {
-      final targetIndex = controller.chapters
-          .indexWhere((chapter) => chapter.id == targetChapterId);
+      final targetIndex = controller.chapters.indexWhere(
+        (chapter) => chapter.id == targetChapterId,
+      );
       if (targetIndex != -1) {
         _isSwitchingChapterForRestore = true;
         _isRestoring = false;
@@ -422,6 +530,49 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
 
     _saveProgress(controller, topMost.index);
+    controller.onVerticalPageSelected(topMost.index);
+  }
+
+  String _imageCacheKey(String imageUrl) {
+    return imageUrl;
+  }
+
+  // preload ảnh từ (trang hiện tại-2) đến (trang hiện tại+4)
+  // app tải sẵn vài ảnh gần đó vào cache
+  // khi lướt tiếp hoặc lướt ngược lại sẽ nhanh hơn
+  void _precacheReaderImages(MangaReaderController controller) {
+    if (controller.isLoading || controller.pages.isEmpty) {
+      return;
+    }
+
+    final chapterId = controller.currentChapter.id;
+    final centerIndex = controller.currentImageIndex.clamp(
+      0,
+      controller.pages.length - 1,
+    );
+    if (_lastPrecachedChapterId == chapterId &&
+        _lastPrecachedCenterIndex == centerIndex) {
+      return;
+    }
+
+    _lastPrecachedChapterId = chapterId;
+    _lastPrecachedCenterIndex = centerIndex;
+
+    final start = (centerIndex - 2).clamp(0, controller.pages.length - 1);
+    final end = (centerIndex + 4).clamp(0, controller.pages.length - 1);
+    for (var index = start; index <= end; index++) {
+      final imageUrl = controller.pages[index].imageUrl;
+      final cacheKey = _imageCacheKey(imageUrl);
+      unawaited(MangaImageCacheManager.markCached(cacheKey));
+      precacheImage(
+        CachedNetworkImageProvider(
+          imageUrl,
+          cacheKey: cacheKey,
+          cacheManager: MangaImageCacheManager.instance,
+        ),
+        context,
+      );
+    }
   }
 }
 
@@ -483,7 +634,9 @@ class _ReaderTaskbar extends StatelessWidget {
                             iconEnabledColor: Colors.white,
                             style: const TextStyle(color: Colors.white),
                             isExpanded: true,
-                            items: List.generate(controller.chapters.length, (index) {
+                            items: List.generate(controller.chapters.length, (
+                              index,
+                            ) {
                               final chapter = controller.chapters[index];
                               final label = chapter.chapterNumber.trim().isEmpty
                                   ? 'Chapter'

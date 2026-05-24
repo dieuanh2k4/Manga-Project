@@ -133,4 +133,37 @@ class MangaRepoImplement implements MangaRepository {
       return DataFailed(e);
     }
   }
+
+  @override
+  Future<DataState<bool>> patchMangaStatus(int mangaId, String status) async {
+    if (mangaId <= 0) {
+      return DataFailed(
+        DioError(
+          error: 'ID manga không hợp lệ',
+          requestOptions: RequestOptions(path: 'Manga/update-status'),
+          type: DioErrorType.other,
+        ),
+      );
+    }
+
+    try {
+      final Response<dynamic> response = await _mangaUpdateApiService
+          .patchMangaStatus(mangaId, status);
+
+      if (response.statusCode == HttpStatus.ok) {
+        return const DataSuccess(true);
+      }
+
+      return DataFailed(
+        DioError(
+          error: response.statusMessage,
+          response: response,
+          requestOptions: response.requestOptions,
+          type: DioErrorType.response,
+        ),
+      );
+    } on DioError catch (e) {
+      return DataFailed(e);
+    }
+  }
 }

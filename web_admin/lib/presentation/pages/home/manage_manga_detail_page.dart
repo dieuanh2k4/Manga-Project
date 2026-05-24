@@ -19,7 +19,8 @@ class ManageMangaDetailPage extends StatefulWidget {
   State<ManageMangaDetailPage> createState() => _ManageMangaDetailPageState();
 }
 
-class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
+class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
+    with SingleTickerProviderStateMixin {
   final Dio _dio = sl<Dio>();
   final AuthTokenStorage _tokenStorage = sl<AuthTokenStorage>();
 
@@ -32,18 +33,25 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
   String? _errorMessage;
   ChapterItem? _selectedChapter;
 
+  late final TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadChapters();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadChapters() async {
     final int mangaId = widget.manga.id ?? 0;
     if (mangaId <= 0) {
-      setState(() {
-        _errorMessage = 'Manga không hợp lệ';
-      });
+      setState(() => _errorMessage = 'Manga không hợp lệ');
       return;
     }
 
@@ -74,25 +82,16 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
         await _loadPages();
       }
     } catch (_) {
-      setState(() {
-        _errorMessage = 'Không thể tải danh sách chapter';
-      });
+      setState(() => _errorMessage = 'Không thể tải danh sách chapter');
     } finally {
-      if (mounted) {
-        setState(() {
-          _loadingChapters = false;
-        });
-      }
+      if (mounted) setState(() => _loadingChapters = false);
     }
   }
 
   Future<void> _loadPages() async {
     final int mangaId = widget.manga.id ?? 0;
     final int chapterId = _selectedChapter?.id ?? 0;
-
-    if (mangaId <= 0 || chapterId <= 0) {
-      return;
-    }
+    if (mangaId <= 0 || chapterId <= 0) return;
 
     setState(() {
       _loadingPages = true;
@@ -118,97 +117,186 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
           ..addAll(pages);
       });
     } catch (_) {
-      setState(() {
-        _pages.clear();
-      });
+      setState(() => _pages.clear());
     } finally {
-      if (mounted) {
-        setState(() {
-          _loadingPages = false;
-        });
-      }
+      if (mounted) setState(() => _loadingPages = false);
     }
   }
 
   Future<Map<String, dynamic>> _buildAuthHeaders() async {
     final String? token = await _tokenStorage.getAccessToken();
-    if (token == null || token.trim().isEmpty) {
-      return <String, dynamic>{};
-    }
-
+    if (token == null || token.trim().isEmpty) return <String, dynamic>{};
     return <String, dynamic>{
       'Authorization': _tokenStorage.formatBearerValue(token),
     };
   }
 
   Future<void> _showChapterEditor({ChapterItem? editing}) async {
-    final TextEditingController chapterNumberController =
-        TextEditingController(text: editing?.chapterNumber ?? '');
-    final TextEditingController titleController =
-        TextEditingController(text: editing?.title ?? '');
+    final TextEditingController chapterNumberController = TextEditingController(
+      text: editing?.chapterNumber ?? '',
+    );
+    final TextEditingController titleController = TextEditingController(
+      text: editing?.title ?? '',
+    );
     bool isPremium = editing?.isPremium ?? false;
 
     final bool? submitted = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(editing == null ? 'Thêm Chapter' : 'Sửa Chapter'),
-          content: SizedBox(
-            width: 420,
+        builder: (context, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: 460,
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF4FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        editing == null
+                            ? Icons.add_circle_outline
+                            : Icons.edit_outlined,
+                        color: const Color(0xFF1F5BFF),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      editing == null ? 'Thêm Chapter mới' : 'Chỉnh sửa Chapter',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1D2638),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 TextField(
                   controller: chapterNumberController,
-                  decoration: const InputDecoration(labelText: 'Số chapter'),
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Số chapter',
+                    hintText: 'VD: 1, 2, 3...',
+                    prefixIcon: const Icon(Icons.format_list_numbered),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFF),
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Tiêu đề'),
+                  decoration: InputDecoration(
+                    labelText: 'Tiêu đề chapter',
+                    hintText: 'VD: Khởi đầu mới...',
+                    prefixIcon: const Icon(Icons.title_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFF),
+                  ),
                 ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: isPremium,
-                  title: const Text('Chapter premium'),
-                  onChanged: (value) {
-                    setDialogState(() {
-                      isPremium = value;
-                    });
-                  },
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: isPremium
+                        ? const Color(0xFFFFF7ED)
+                        : const Color(0xFFF8FAFF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isPremium
+                          ? const Color(0xFFD97706)
+                          : const Color(0xFFE4E8F2),
+                    ),
+                  ),
+                  child: SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 2,
+                    ),
+                    value: isPremium,
+                    title: Row(
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 16,
+                          color: isPremium
+                              ? const Color(0xFFD97706)
+                              : const Color(0xFF8491A7),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Chapter Premium',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: isPremium
+                                ? const Color(0xFFD97706)
+                                : const Color(0xFF4E5A6F),
+                          ),
+                        ),
+                      ],
+                    ),
+                    onChanged: (value) =>
+                        setDialogState(() => isPremium = value),
+                    activeColor: const Color(0xFFD97706),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Hủy'),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      icon: Icon(
+                        editing == null ? Icons.add : Icons.save_outlined,
+                        size: 16,
+                      ),
+                      label: Text(editing == null ? 'Thêm' : 'Lưu'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1F5BFF),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Lưu'),
-            ),
-          ],
         ),
       ),
     );
 
-    if (submitted != true) {
-      return;
-    }
+    if (submitted != true) return;
 
     final String chapterNumber = chapterNumberController.text.trim();
     final String title = titleController.text.trim();
 
     if (chapterNumber.isEmpty || title.isEmpty) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đủ thông tin chapter')),
-      );
+      if (!mounted) return;
+      _showMessage('Vui lòng nhập đủ thông tin chapter', isError: true);
       return;
     }
 
@@ -225,9 +313,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
     bool isPremium,
   ) async {
     final int mangaId = widget.manga.id ?? 0;
-    if (mangaId <= 0) {
-      return;
-    }
+    if (mangaId <= 0) return;
 
     try {
       final Map<String, dynamic> headers = await _buildAuthHeaders();
@@ -244,9 +330,10 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
         options: Options(headers: headers),
       );
 
+      _showMessage('Thêm chapter thành công');
       await _loadChapters();
     } catch (_) {
-      _showMessage('Không thể tạo chapter');
+      _showMessage('Không thể tạo chapter', isError: true);
     }
   }
 
@@ -257,9 +344,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
     bool isPremium,
   ) async {
     final int mangaId = widget.manga.id ?? 0;
-    if (mangaId <= 0 || chapterId <= 0) {
-      return;
-    }
+    if (mangaId <= 0 || chapterId <= 0) return;
 
     try {
       final Map<String, dynamic> headers = await _buildAuthHeaders();
@@ -276,39 +361,48 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
         options: Options(headers: headers),
       );
 
+      _showMessage('Cập nhật chapter thành công');
       await _loadChapters();
     } catch (_) {
-      _showMessage('Không thể cập nhật chapter');
+      _showMessage('Không thể cập nhật chapter', isError: true);
     }
   }
 
   Future<void> _deleteChapter(ChapterItem chapter) async {
     final int mangaId = widget.manga.id ?? 0;
-    if (mangaId <= 0 || chapter.id <= 0) {
-      return;
-    }
+    if (mangaId <= 0 || chapter.id <= 0) return;
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa Chapter'),
-        content: Text('Xóa chapter ${chapter.chapterNumber} không?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Xóa Chapter',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Xóa chapter ${chapter.chapterNumber}: "${chapter.title}"?\nTất cả trang trong chapter này cũng sẽ bị xóa.',
+          style: const TextStyle(height: 1.5, color: Color(0xFF4E5A6F)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Hủy'),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xóa'),
+            icon: const Icon(Icons.delete_outline, size: 16),
+            label: const Text('Xóa'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD93025),
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
     );
 
-    if (confirmed != true) {
-      return;
-    }
+    if (confirmed != true) return;
 
     try {
       final Map<String, dynamic> headers = await _buildAuthHeaders();
@@ -317,20 +411,17 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
         queryParameters: <String, dynamic>{'idChapter': chapter.id},
         options: Options(headers: headers),
       );
-
+      _showMessage('Xóa chapter thành công');
       await _loadChapters();
     } catch (_) {
-      _showMessage('Không thể xóa chapter');
+      _showMessage('Không thể xóa chapter', isError: true);
     }
   }
 
   Future<void> _uploadPages() async {
     final int mangaId = widget.manga.id ?? 0;
     final int chapterId = _selectedChapter?.id ?? 0;
-
-    if (mangaId <= 0 || chapterId <= 0) {
-      return;
-    }
+    if (mangaId <= 0 || chapterId <= 0) return;
 
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
@@ -338,28 +429,22 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
       withData: true,
     );
 
-    if (result == null || result.files.isEmpty) {
-      return;
-    }
+    if (result == null || result.files.isEmpty) return;
 
     final List<PlatformFile> files = List<PlatformFile>.from(result.files)
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      ..sort((a, b) => _compareFileNamesNaturally(a.name, b.name));
 
     final FormData formData = FormData();
     for (final PlatformFile file in files) {
-      if (file.bytes == null && file.path == null) {
-        continue;
-      }
-
+      if (file.bytes == null && file.path == null) continue;
       final MultipartFile multipartFile = file.bytes != null
           ? MultipartFile.fromBytes(file.bytes!, filename: file.name)
           : await MultipartFile.fromFile(file.path!, filename: file.name);
-
       formData.files.add(MapEntry('files', multipartFile));
     }
 
     if (formData.files.isEmpty) {
-      _showMessage('Không có file ảnh hợp lệ');
+      _showMessage('Không có file ảnh hợp lệ', isError: true);
       return;
     }
 
@@ -370,47 +455,53 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
         data: formData,
         options: Options(headers: headers),
       );
-
+      _showMessage('Upload ${formData.files.length} ảnh thành công');
       await _loadPages();
     } catch (_) {
-      _showMessage('Không thể upload page');
+      _showMessage('Không thể upload page', isError: true);
     }
   }
 
   Future<void> _deleteSelectedPages() async {
     final int mangaId = widget.manga.id ?? 0;
     final int chapterId = _selectedChapter?.id ?? 0;
-
-    if (mangaId <= 0 || chapterId <= 0 || _selectedPageIds.isEmpty) {
-      return;
-    }
+    if (mangaId <= 0 || chapterId <= 0 || _selectedPageIds.isEmpty) return;
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa page'),
-        content: Text('Xóa ${_selectedPageIds.length} trang đã chọn?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Xóa trang',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Xóa ${_selectedPageIds.length} trang đã chọn?',
+          style: const TextStyle(color: Color(0xFF4E5A6F)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Hủy'),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xóa'),
+            icon: const Icon(Icons.delete_outline, size: 16),
+            label: const Text('Xóa'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD93025),
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
     );
 
-    if (confirmed != true) {
-      return;
-    }
+    if (confirmed != true) return;
 
     try {
       final Map<String, dynamic> headers = await _buildAuthHeaders();
       final FormData formData = FormData();
-
       for (final int id in _selectedPageIds) {
         formData.fields.add(MapEntry('pageIds', '$id'));
       }
@@ -420,34 +511,115 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
         data: formData,
         options: Options(headers: headers),
       );
-
+      _showMessage('Xóa trang thành công');
       await _loadPages();
     } catch (_) {
-      _showMessage('Không thể xóa page');
+      _showMessage('Không thể xóa page', isError: true);
     }
   }
 
-  void _showMessage(String message) {
-    if (!mounted) {
-      return;
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError
+            ? const Color(0xFFD93025)
+            : const Color(0xFF1A7C40),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  int _compareFileNamesNaturally(String left, String right) {
+    final List<String> leftParts = _fileNameSortParts(left);
+    final List<String> rightParts = _fileNameSortParts(right);
+    final int maxLength = leftParts.length > rightParts.length
+        ? leftParts.length
+        : rightParts.length;
+
+    for (int index = 0; index < maxLength; index++) {
+      if (index >= leftParts.length) {
+        return -1;
+      }
+      if (index >= rightParts.length) {
+        return 1;
+      }
+
+      final String leftPart = leftParts[index];
+      final String rightPart = rightParts[index];
+      final int? leftNumber = int.tryParse(leftPart);
+      final int? rightNumber = int.tryParse(rightPart);
+
+      if (leftNumber != null && rightNumber != null) {
+        final int numberCompare = leftNumber.compareTo(rightNumber);
+        if (numberCompare != 0) {
+          return numberCompare;
+        }
+      } else {
+        final int textCompare = leftPart.compareTo(rightPart);
+        if (textCompare != 0) {
+          return textCompare;
+        }
+      }
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+
+    return left.toLowerCase().compareTo(right.toLowerCase());
+  }
+
+  List<String> _fileNameSortParts(String fileName) {
+    final String normalized = fileName.toLowerCase();
+    return RegExp(
+      r'\d+|\D+',
+    ).allMatches(normalized).map((match) => match.group(0)!).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final String title = widget.manga.title ?? 'Manga';
+    final String? thumbnail = widget.manga.thumbnail;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      appBar: AppBar(title: Text('Quản lý Chapter: $title')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _errorMessage != null
-            ? Center(child: Text(_errorMessage!))
-            : LayoutBuilder(
+      backgroundColor: const Color(0xFF1A1D2E),
+      appBar: _buildAppBar(title, thumbnail),
+      body: _errorMessage != null
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Color(0xFFD93025),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Color(0xFF8491A7)),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadChapters,
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: LayoutBuilder(
                 builder: (context, constraints) {
                   final bool isNarrow = constraints.maxWidth < 980;
 
@@ -463,14 +635,88 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
 
                   return Row(
                     children: [
-                      Expanded(child: _buildChapterPanel()),
+                      SizedBox(
+                        width: 360,
+                        child: _buildChapterPanel(),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(child: _buildPagePanel()),
                     ],
                   );
                 },
               ),
+            ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(String title, String? thumbnail) {
+    return AppBar(
+      backgroundColor: const Color(0xFF081C3A),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      titleSpacing: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+        onPressed: () => Navigator.of(context).pop(),
       ),
+      title: Row(
+        children: [
+          if (thumbnail != null && thumbnail.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                thumbnail,
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    color: Colors.white54,
+                    size: 20,
+                  ),
+                ),
+              ),
+            )
+          else
+            const Icon(Icons.menu_book_rounded, color: Colors.white54, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${_chapters.length} chapter · ${_pages.length} trang',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9BB2D4),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded),
+          tooltip: 'Tải lại',
+          onPressed: _loadChapters,
+        ),
+        const SizedBox(width: 8),
+      ],
     );
   }
 
@@ -483,9 +729,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage> {
       onEdit: (chapter) => _showChapterEditor(editing: chapter),
       onDelete: _deleteChapter,
       onSelect: (chapter) {
-        setState(() {
-          _selectedChapter = chapter;
-        });
+        setState(() => _selectedChapter = chapter);
         _loadPages();
       },
     );
