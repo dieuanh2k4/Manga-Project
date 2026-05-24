@@ -13,14 +13,20 @@ class LibraryMangaModel extends MangaModel {
   });
 
   factory LibraryMangaModel.fromJson(Map<String, dynamic> json) {
+    final rawManga = json['manga'] ?? json['Manga'];
+    final source = rawManga is Map<String, dynamic> ? rawManga : json;
+
+    final rawTitle = source['title'] ?? source['Title'] ?? 'Unknown Title';
+    final title = rawTitle is String ? rawTitle.replaceAll('\n', ' ').trim() : 'Unknown Title';
+
     return LibraryMangaModel(
-      id: json['id'] ?? json['Id'] ?? 0,
-      title: json['title'] ?? json['Title'] ?? 'Unknown Title',
-      description: json['description'] ?? json['Description'],
-      thumbnail: json['thumbnail'] ?? json['Thumbnail'],
-      totalChapter: json['totalChapter'] ?? json['TotalChapter'] ?? 0,
-      rate: json['rate'] ?? json['Rate'] ?? 0,
-      status: json['status'] ?? json['Status'],
+      id: source['id'] ?? source['Id'] ?? json['mangaId'] ?? json['MangaId'] ?? 0,
+      title: title,
+      description: source['description'] ?? source['Description'],
+      thumbnail: source['thumbnail'] ?? source['Thumbnail'],
+      totalChapter: source['totalChapter'] ?? source['TotalChapter'] ?? 0,
+      rate: source['rate'] ?? source['Rate'] ?? 0,
+      status: source['status'] ?? source['Status'],
       genres: [], // genres có thể bổ sung nếu backend trả về
     );
   }
