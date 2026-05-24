@@ -36,15 +36,17 @@ class LibraryController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addManga(int mangaId, String token) async {
+  Future<bool> addManga(int mangaId, String token) async {
     try {
       await addMangaToLibraryUseCase(mangaId, token);
       // app subcribe topic khi user add manga vào library
       await FcmNotificationService.instance.subscribeToManga(mangaId);
       await fetchLibraryManga(token);
+      return true;
     } catch (e) {
       error = e.toString();
       notifyListeners();
+      return false;
     }
   }
 
