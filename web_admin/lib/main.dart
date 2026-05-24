@@ -48,7 +48,6 @@ class _AuthGateState extends State<AuthGate> {
   void dispose() {
     _authController.removeListener(_onAuthChanged);
     _mangaController?.dispose();
-    _authController.dispose();
     super.dispose();
   }
 

@@ -38,14 +38,15 @@ class _ManageNotificationsState extends State<ManageNotifications> {
   void initState() {
     super.initState();
     _searchController.addListener(_onFilterChanged);
-    _notificationController.loadNotifications();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notificationController.loadNotifications();
+    });
   }
 
   @override
   void dispose() {
     _searchController.removeListener(_onFilterChanged);
     _searchController.dispose();
-    _notificationController.dispose();
     super.dispose();
   }
 
@@ -388,7 +389,49 @@ class _ManageNotificationsState extends State<ManageNotifications> {
             ManageMangaTopHeader(
               searchController: _searchController,
               onLogout: widget.onLogout,
+              onNotificationTap: () {},
               hintText: 'Tìm kiếm thông báo...',
+              customHeaderWidget: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF4FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_active_rounded,
+                          size: 18,
+                          color: Color(0xFF1F5BFF),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Quản lý thông báo',
+                        style: TextStyle(
+                          color: Color(0xFF1D2638),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 2),
+                    child: Text(
+                      'Quản lý thông báo hệ thống và gửi thông báo tới độc giả',
+                      style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: Padding(
@@ -418,13 +461,6 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _NotificationHeading(
-                            totalCount: state.notifications?.length ?? 0,
-                            onRefresh:
-                                _notificationController.loadNotifications,
-                            onCreate: _showCreateNotificationDialog,
-                          ),
-                          const SizedBox(height: 18),
                           _NotificationFilterBar(
                             selectedSort: _selectedSort,
                             onSortChanged: (value) {
@@ -432,6 +468,8 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                                 _selectedSort = value;
                               });
                             },
+                            onRefresh: _notificationController.loadNotifications,
+                            onCreate: _showCreateNotificationDialog,
                           ),
                           const SizedBox(height: 14),
                           Expanded(
@@ -455,64 +493,17 @@ class _ManageNotificationsState extends State<ManageNotifications> {
   }
 }
 
-class _NotificationHeading extends StatelessWidget {
-  final int totalCount;
-  final VoidCallback onRefresh;
-  final VoidCallback onCreate;
-
-  const _NotificationHeading({
-    required this.totalCount,
-    required this.onRefresh,
-    required this.onCreate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Quản lý thông báo',
-                style: TextStyle(
-                  color: Color(0xFF1D2638),
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '$totalCount thông báo',
-                style: const TextStyle(color: Color(0xFF6C7B92), fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-        ElevatedButton.icon(
-          onPressed: onRefresh,
-          icon: const Icon(Icons.refresh_rounded, size: 18),
-          label: const Text('Refresh'),
-        ),
-        const SizedBox(width: 10),
-        ElevatedButton.icon(
-          onPressed: onCreate,
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Tạo thông báo'),
-        ),
-      ],
-    );
-  }
-}
-
 class _NotificationFilterBar extends StatelessWidget {
   final String selectedSort;
   final ValueChanged<String> onSortChanged;
+  final VoidCallback onRefresh;
+  final VoidCallback onCreate;
 
   const _NotificationFilterBar({
     required this.selectedSort,
     required this.onSortChanged,
+    required this.onRefresh,
+    required this.onCreate,
   });
 
   @override
@@ -550,6 +541,40 @@ class _NotificationFilterBar extends StatelessWidget {
                   onSortChanged(value);
                 }
               },
+            ),
+          ),
+          const Spacer(),
+          OutlinedButton.icon(
+            onPressed: onRefresh,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              side: const BorderSide(color: Color(0xFFCCD6EA)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF1F5BFF)),
+            label: const Text(
+              'Làm mới',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1F5BFF)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton.icon(
+            onPressed: onCreate,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF040617),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 16),
+            label: const Text(
+              'Tạo thông báo',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],

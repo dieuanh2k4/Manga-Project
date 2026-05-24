@@ -537,6 +537,47 @@ class _ManageAuthorsState extends State<ManageAuthors> {
               onLogout: widget.onLogout,
               onNotificationTap: _openNotificationsPage,
               hintText: 'Tìm kiếm tác giả...',
+              customHeaderWidget: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF4FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.person_pin_rounded,
+                          size: 18,
+                          color: Color(0xFF1F5BFF),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Quản lý Tác giả',
+                        style: TextStyle(
+                          color: Color(0xFF1D2638),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 2),
+                    child: Text(
+                      'Quản lý danh sách tác giả của hệ thống',
+                      style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: Padding(

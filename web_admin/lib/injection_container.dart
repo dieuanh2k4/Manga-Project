@@ -72,8 +72,8 @@ Future<void> initilizeDependencies() async {
   );
 
   // Controllers
-  sl.registerFactory<AuthController>(() => AuthController(sl(), sl()));
-  sl.registerFactory<RemoteNotificationController>(
+  sl.registerLazySingleton<AuthController>(() => AuthController(sl(), sl()));
+  sl.registerLazySingleton<RemoteNotificationController>(
     () => RemoteNotificationController(sl(), sl()),
   );
 

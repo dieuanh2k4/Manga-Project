@@ -292,6 +292,41 @@ class _ManageMangaState extends State<ManageManga> {
     );
   }
 
+  Widget _buildAddMangaButton() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1F5BFF), Color(0xFF3B82F6)],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x441F5BFF),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _onAddTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text(
+          'Thêm Manga mới',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -375,6 +410,47 @@ class _ManageMangaState extends State<ManageManga> {
           ManageMangaTopHeader(
             searchController: _globalSearchController,
             onLogout: widget.onLogout,
+            customHeaderWidget: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF4FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.menu_book_rounded,
+                        size: 18,
+                        color: Color(0xFF1F5BFF),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Quản lý Manga',
+                      style: TextStyle(
+                        color: Color(0xFF1D2638),
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                const Padding(
+                  padding: EdgeInsets.only(left: 2),
+                  child: Text(
+                    'Quản lý toàn bộ bộ sưu tập truyện trong hệ thống',
+                    style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: Padding(
@@ -428,7 +504,12 @@ class _ManageMangaState extends State<ManageManga> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ManageMangaPageHeading(onAddTap: _onAddTap),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _buildAddMangaButton(),
+                          ],
+                        ),
                         const SizedBox(height: 14),
                         _MangaStatsRow(mangas: allMangas),
                         const SizedBox(height: 16),
@@ -515,10 +596,14 @@ class _MangaStatsRow extends StatelessWidget {
         )
         .length;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool stacked = constraints.maxWidth < 600;
+        final bool twoColumn =
+            constraints.maxWidth >= 600 && constraints.maxWidth < 1000;
+
+        final List<Widget> cards = <Widget>[
+          _MangaStatCard(
             label: 'Tổng bộ truyện',
             value: '$total',
             icon: Icons.menu_book_rounded,
@@ -526,21 +611,15 @@ class _MangaStatsRow extends StatelessWidget {
               colors: [Color(0xFF1F5BFF), Color(0xFF3B82F6)],
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
+          _MangaStatCard(
             label: 'Đang tiến hành',
             value: '$ongoing',
             icon: Icons.play_circle_outline_rounded,
             gradient: const LinearGradient(
-              colors: [Color(0xFF0D1F3C), Color(0xFF1A3A6B)],
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
+          _MangaStatCard(
             label: 'Hoàn thành',
             value: '$completed',
             icon: Icons.check_circle_outline_rounded,
@@ -548,10 +627,7 @@ class _MangaStatsRow extends StatelessWidget {
               colors: [Color(0xFF059669), Color(0xFF34D399)],
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
+          _MangaStatCard(
             label: 'Tạm dừng',
             value: '$paused',
             icon: Icons.pause_circle_outline_rounded,
@@ -559,38 +635,72 @@ class _MangaStatsRow extends StatelessWidget {
               colors: [Color(0xFFD97706), Color(0xFFFBBF24)],
             ),
           ),
-        ),
-      ],
+        ];
+
+        if (stacked) {
+          return Column(
+            children: cards
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: card,
+                  ),
+                )
+                .toList(),
+          );
+        }
+
+        if (twoColumn) {
+          final double cardWidth =
+              (constraints.maxWidth - 12).clamp(320.0, 1000.0).toDouble() / 2;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: cards
+                .map((card) => SizedBox(width: cardWidth, child: card))
+                .toList(),
+          );
+        }
+
+        return Row(
+          children: <Widget>[
+            Expanded(child: cards[0]),
+            const SizedBox(width: 12),
+            Expanded(child: cards[1]),
+            const SizedBox(width: 12),
+            Expanded(child: cards[2]),
+            const SizedBox(width: 12),
+            Expanded(child: cards[3]),
+          ],
+        );
+      },
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _MangaStatCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
   final Gradient gradient;
+  final VoidCallback? onTap;
+  final String? actionLabel;
 
-  const _StatCard({
+  const _MangaStatCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.gradient,
+    this.onTap,
+    this.actionLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final Widget content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Color(0x1A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
       child: Row(
-        children: [
+        children: <Widget>[
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -603,7 +713,7 @@ class _StatCard extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <Widget>[
                 Text(
                   value,
                   style: const TextStyle(
@@ -617,15 +727,65 @@ class _StatCard extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withOpacity(0.85),
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
+          if (actionLabel != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    actionLabel!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ],
+              ),
+            ),
         ],
+      ),
+    );
+
+    final BorderRadius borderRadius = BorderRadius.circular(14);
+
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: borderRadius,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 10,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: borderRadius,
+          child: content,
+        ),
       ),
     );
   }
