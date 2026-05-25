@@ -29,6 +29,8 @@ import 'package:web_admin/presentation/controllers/auth_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_notification_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
+import 'package:web_admin/data/data_sources/remote/dashboard_api_service.dart';
+import 'package:web_admin/presentation/controllers/dashboard_controller.dart';
 
 final sl = GetIt.instance;
 
@@ -50,6 +52,9 @@ Future<void> initilizeDependencies() async {
   );
   sl.registerSingleton<MangaUpdateApiService>(
     MangaUpdateApiService(sl(), sl()),
+  );
+  sl.registerSingleton<DashboardApiService>(
+    DashboardApiService(sl(), sl()),
   );
 
   sl.registerSingleton<AuthRepository>(AuthRepositoryImpl(sl()));
@@ -75,6 +80,9 @@ Future<void> initilizeDependencies() async {
   sl.registerLazySingleton<AuthController>(() => AuthController(sl(), sl()));
   sl.registerLazySingleton<RemoteNotificationController>(
     () => RemoteNotificationController(sl(), sl()),
+  );
+  sl.registerLazySingleton<DashboardController>(
+    () => DashboardController(sl()),
   );
 
   // Presentation services

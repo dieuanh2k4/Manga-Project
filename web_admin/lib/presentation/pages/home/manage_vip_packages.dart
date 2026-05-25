@@ -9,6 +9,7 @@ import 'package:web_admin/presentation/controllers/remote_manga_controller.dart'
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
+import 'manage_overview.dart';
 import 'manage_manga.dart';
 import 'manage_notifications.dart';
 import 'manage_users.dart';
@@ -778,7 +779,16 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                             compact: isCompactSidebar,
                             selectedKey: sidebarKeyVip,
                             onSelect: (key) {
-                              if (key == sidebarKeyManga) {
+                              if (key == sidebarKeyOverview) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageOverview(
+                                      mangaController: widget.mangaController,
+                                      onLogout: widget.onLogout,
+                                    ),
+                                  ),
+                                );
+                              } else if (key == sidebarKeyManga) {
                                 _openMangaPage();
                               } else if (key == sidebarKeyAuthors) {
                                 _openAuthorsPage();

@@ -11,6 +11,7 @@ import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/pages/home/manage_overview.dart';
 import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
 import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
@@ -493,7 +494,16 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                             compact: isCompactSidebar,
                             selectedKey: sidebarKeyAuthors,
                             onSelect: (key) {
-                              if (key == sidebarKeyManga) {
+                              if (key == sidebarKeyOverview) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageOverview(
+                                      mangaController: widget.mangaController,
+                                      onLogout: widget.onLogout,
+                                    ),
+                                  ),
+                                );
+                              } else if (key == sidebarKeyManga) {
                                 _openMangaPage();
                               } else if (key == sidebarKeyUsers) {
                                 Navigator.of(context).pushReplacement(

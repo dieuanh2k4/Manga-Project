@@ -22,6 +22,7 @@ import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
 import 'manage_users.dart';
 import 'manage_vip_packages.dart';
+import 'manage_overview.dart';
 
 class ManageManga extends StatefulWidget {
   final RemoteMangaController mangaController;
@@ -367,7 +368,16 @@ class _ManageMangaState extends State<ManageManga> {
                               compact: isCompactSidebar,
                               selectedKey: sidebarKeyManga,
                               onSelect: (key) {
-                                if (key == sidebarKeyAuthors) {
+                                if (key == sidebarKeyOverview) {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => ManageOverview(
+                                        mangaController: widget.mangaController,
+                                        onLogout: widget.onLogout,
+                                      ),
+                                    ),
+                                  );
+                                } else if (key == sidebarKeyAuthors) {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(
                                       builder: (_) => ManageAuthors(

@@ -4,6 +4,7 @@ import 'package:web_admin/presentation/controllers/auth_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/auth/login_page.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/pages/home/manage_overview.dart';
 import 'package:web_admin/injection_container.dart';
 
 Future<void> main() async {
@@ -88,7 +89,7 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    return ManageManga(
+    return ManageOverview(
       mangaController: _ensureMangaController(),
       onLogout: () async {
         await _authController.logout();
