@@ -7,4 +7,6 @@ backend.Tests/obj/
 
 # Ignore sensitive files
 .env
+.env.e2e
+
 manga-project-firebase-admin-key.json

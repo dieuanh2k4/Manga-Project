@@ -31,35 +31,41 @@ class ManageMangaTopHeader extends StatelessWidget {
           Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: customHeaderWidget ?? SizedBox(
-                width: 380,
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    hintStyle: const TextStyle(
-                      color: Color(0xFFA6ADBB),
-                      fontSize: 13,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFFA6ADBB),
-                      size: 18,
-                    ),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
-                    fillColor: const Color(0xFFF4F6FA),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
+              child:
+                  customHeaderWidget ??
+                  SizedBox(
+                    width: 380,
+                    child: TextField(
+                      key: const Key('admin_top_search_field'),
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        hintStyle: const TextStyle(
+                          color: Color(0xFFA6ADBB),
+                          fontSize: 13,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFFA6ADBB),
+                          size: 18,
+                        ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 11,
+                        ),
+                        fillColor: const Color(0xFFF4F6FA),
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
             ),
           ),
           IconButton(
+            key: const Key('admin_notifications_header_button'),
             tooltip: 'Notifications',
             onPressed: onNotificationTap,
             icon: const Icon(
@@ -68,6 +74,7 @@ class ManageMangaTopHeader extends StatelessWidget {
             ),
           ),
           IconButton(
+            key: const Key('admin_settings_button'),
             onPressed: () {},
             icon: const Icon(
               Icons.settings_outlined,
@@ -76,6 +83,7 @@ class ManageMangaTopHeader extends StatelessWidget {
             ),
           ),
           IconButton(
+            key: const Key('admin_logout_button'),
             tooltip: 'Logout',
             onPressed: onLogout == null ? null : () => onLogout!(),
             icon: const Icon(

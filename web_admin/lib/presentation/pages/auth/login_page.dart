@@ -195,6 +195,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 32),
                 _buildTextField(
+                  key: const Key('admin_login_username_field'),
                   controller: _loginUserName,
                   label: 'UserName',
                   icon: Icons.person_outline_rounded,
@@ -208,6 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 18),
                 _buildTextField(
+                  key: const Key('admin_login_password_field'),
                   controller: _loginPassword,
                   label: 'Password',
                   icon: Icons.lock_outline_rounded,
@@ -242,6 +244,7 @@ class _LoginPageState extends State<LoginPage> {
                 if (widget.authController.errorMessage != null) ...[
                   const SizedBox(height: 16),
                   Container(
+                    key: const Key('admin_login_error_message'),
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -264,6 +267,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
+                    key: const Key('admin_login_submit_button'),
                     onPressed: isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1F5BFF),
@@ -302,6 +306,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildTextField({
+    Key? key,
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -312,6 +317,7 @@ class _LoginPageState extends State<LoginPage> {
     ValueChanged<String>? onSubmitted,
   }) {
     return TextFormField(
+      key: key,
       controller: controller,
       obscureText: obscureText,
       validator: validator,

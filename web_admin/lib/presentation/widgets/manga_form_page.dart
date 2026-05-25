@@ -216,9 +216,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
         currentThumbnail,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) {
-          return const _ThumbnailPlaceholder(
-            icon: Icons.broken_image_outlined,
-          );
+          return const _ThumbnailPlaceholder(icon: Icons.broken_image_outlined);
         },
       );
     }
@@ -388,7 +386,8 @@ class _MangaFormPageState extends State<MangaFormPage> {
   }
 
   Widget _buildThumbnailPicker() {
-    final String thumbnailText = _thumbnailFile?.fileName ??
+    final String thumbnailText =
+        _thumbnailFile?.fileName ??
         (_isEditing && _thumbnailController.text.trim().isNotEmpty
             ? 'Đang dùng thumbnail hiện tại'
             : 'Chưa có thumbnail');
@@ -567,11 +566,13 @@ class _MangaFormPageState extends State<MangaFormPage> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         TextButton(
+          key: const Key('manga_form_cancel_button'),
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Hủy'),
         ),
         const SizedBox(width: 10),
         ElevatedButton.icon(
+          key: const Key('manga_form_submit_button'),
           onPressed: _submit,
           icon: const Icon(Icons.save_outlined),
           label: Text(widget.submitLabel),
