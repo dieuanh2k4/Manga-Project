@@ -268,13 +268,30 @@ Future<void> _expectLibrary(WidgetTester tester) async {
         find.textContaining('Library -').evaluate().isNotEmpty &&
         find.text('Your Library').evaluate().isNotEmpty &&
         find.text('History').evaluate().isNotEmpty &&
-        find.text('Downloads').evaluate().isNotEmpty &&
-        find
-            .byKey(Key('library_manga_${_e2eKeyPart(_mangaTitle)}'))
-            .evaluate()
-            .isNotEmpty,
+        find.text('Downloads').evaluate().isNotEmpty,
     reason: 'Library page should show all library tabs.',
+    failureDetails: _libraryStateForFailure,
   );
+
+  await _waitUntil(
+    tester,
+    () => find
+        .byKey(Key('library_manga_${_e2eKeyPart(_mangaTitle)}'))
+        .evaluate()
+        .isNotEmpty,
+    reason: 'Library should contain seeded manga $_mangaTitle.',
+    failureDetails: _libraryStateForFailure,
+  );
+}
+
+String _libraryStateForFailure() {
+  if (find.byKey(const Key('library_loading')).evaluate().isNotEmpty) {
+    return 'Library is still loading.';
+  }
+  if (find.byKey(const Key('library_page')).evaluate().isEmpty) {
+    return 'App is not on Library page. ${_visibleStateForFailure()}';
+  }
+  return 'Library visible text: ${_visibleText()}';
 }
 
 Future<void> _openMe(WidgetTester tester) async {
