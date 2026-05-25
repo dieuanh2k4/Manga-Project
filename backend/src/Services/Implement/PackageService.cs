@@ -64,7 +64,9 @@ namespace backend.src.Services.Implement
 
         public async Task<Packages> UpdatePackage(UpdatePackageDto dto, int id)
         {
-            var package = await _context.Packages.FindAsync(id);
+            var package = await _context.Packages
+                .Include(p => p.Previlages)
+                .FirstOrDefaultAsync(p => p.Id == id);
             if (package == null)
             {
                 throw new Result("Package không tồn tại");
@@ -90,7 +92,13 @@ namespace backend.src.Services.Implement
             package.Title = dto.Title;
             package.Price = dto.Price;
             package.DurationDays = dto.DurationDays;
-            package.Previlages = previlages;
+            
+            // Clear existing privileges and add the new ones to correctly update many-to-many join table in EF Core
+            package.Previlages.Clear();
+            foreach (var previlage in previlages)
+            {
+                package.Previlages.Add(previlage);
+            }
 
             await _context.SaveChangesAsync();
 

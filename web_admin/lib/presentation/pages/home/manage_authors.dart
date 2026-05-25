@@ -13,6 +13,7 @@ import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
+import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
 import 'package:web_admin/presentation/widgets/manage_authors_body.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
@@ -498,6 +499,15 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute<void>(
                                     builder: (_) => ManageUsers(
+                                      mangaController: widget.mangaController,
+                                      onLogout: widget.onLogout,
+                                    ),
+                                  ),
+                                );
+                              } else if (key == sidebarKeyVip) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageVipPackages(
                                       mangaController: widget.mangaController,
                                       onLogout: widget.onLogout,
                                     ),

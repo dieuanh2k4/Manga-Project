@@ -13,6 +13,7 @@ import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
+import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
 
 class ManageUsers extends StatefulWidget {
   final RemoteMangaController mangaController;
@@ -1262,127 +1263,14 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
-  Future<void> _openVipPackageManager() async {
-    await _fetchVipData();
-    if (!mounted) {
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      barrierColor: const Color(0xAA0B1220),
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            Future<void> refresh() async {
-              await _fetchVipData();
-              if (dialogContext.mounted) {
-                setStateDialog(() {});
-              }
-            }
-
-            return Dialog(
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 20,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 980,
-                  maxHeight: 720,
-                ),
-                child: Column(
-                  children: <Widget>[
-                    _buildVipDialogHeader(
-                      onClose: () => Navigator.of(dialogContext).pop(),
-                      onRefresh: refresh,
-                      onCreate: () async {
-                        await _showVipPackageForm();
-                        if (dialogContext.mounted) {
-                          setStateDialog(() {});
-                        }
-                      },
-                      onCreatePrivilege: () async {
-                        await _showCreatePrivilegeDialog();
-                        if (dialogContext.mounted) {
-                          setStateDialog(() {});
-                        }
-                      },
-                    ),
-                    if (_vipLoading)
-                      const LinearProgressIndicator(minHeight: 3),
-                    if (_vipError != null)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF1F2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFBC8CE)),
-                        ),
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(
-                              Icons.error_outline,
-                              color: Color(0xFFB42318),
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _vipError!,
-                                style: const TextStyle(
-                                  color: Color(0xFFB42318),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: refresh,
-                              child: const Text('Tải lại'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: _buildVipDialogBody(
-                          onEditPackage: (pkg) async {
-                            await _showVipPackageForm(package: pkg);
-                            if (dialogContext.mounted) {
-                              setStateDialog(() {});
-                            }
-                          },
-                          onDeletePackage: (pkg) async {
-                            await _confirmDeleteVipPackage(pkg);
-                            if (dialogContext.mounted) {
-                              setStateDialog(() {});
-                            }
-                          },
-                          onCreatePrivilege: () async {
-                            await _showCreatePrivilegeDialog();
-                            if (dialogContext.mounted) {
-                              setStateDialog(() {});
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+  void _openVipPackageManager() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageVipPackages(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
     );
   }
 
@@ -2474,6 +2362,15 @@ class _ManageUsersState extends State<ManageUsers> {
                                 _openAuthorsPage();
                               } else if (key == sidebarKeyNotifications) {
                                 _openNotificationsPage();
+                              } else if (key == sidebarKeyVip) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageVipPackages(
+                                      mangaController: widget.mangaController,
+                                      onLogout: widget.onLogout,
+                                    ),
+                                  ),
+                                );
                               }
                             },
                           ),

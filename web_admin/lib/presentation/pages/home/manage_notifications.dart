@@ -10,6 +10,7 @@ import 'package:web_admin/presentation/controllers/remote_notification_controlle
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
+import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 
@@ -359,6 +360,15 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                                 _openAuthorsPage();
                               } else if (key == sidebarKeyUsers) {
                                 _openUsersPage();
+                              } else if (key == sidebarKeyVip) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ManageVipPackages(
+                                      mangaController: widget.mangaController,
+                                      onLogout: widget.onLogout,
+                                    ),
+                                  ),
+                                );
                               }
                             },
                           ),

@@ -21,6 +21,7 @@ import 'package:web_admin/presentation/widgets/manage_manga_table_card.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
 import 'manage_users.dart';
+import 'manage_vip_packages.dart';
 
 class ManageManga extends StatefulWidget {
   final RemoteMangaController mangaController;
@@ -379,6 +380,15 @@ class _ManageMangaState extends State<ManageManga> {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(
                                       builder: (_) => ManageUsers(
+                                        mangaController: widget.mangaController,
+                                        onLogout: _onNestedRouteLogout,
+                                      ),
+                                    ),
+                                  );
+                                } else if (key == sidebarKeyVip) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => ManageVipPackages(
                                         mangaController: widget.mangaController,
                                         onLogout: _onNestedRouteLogout,
                                       ),
