@@ -124,11 +124,13 @@ namespace backend.src.Controllers
                     .Where(h => h.ReaderId == reader.Id)
                     .Include(h => h.Manga)
                     .ThenInclude(manga => manga.Authors)
+                    .Include(h => h.Chapter)
                     .OrderByDescending(h => h.UpdateAt)
                     .Select(h => new HistoryItemDto
                     {
                         MangaId = h.MangaId,
                         LastChapterId = h.LastChapterId,
+                        LastChapterNumber = h.Chapter != null ? h.Chapter.ChapterNumber : null,
                         LastPageId = h.LastPageId,
                         IsCompleted = h.IsCompleted,
                         UpdateAt = h.UpdateAt,
@@ -166,8 +168,7 @@ namespace backend.src.Controllers
 
         private static DateTime GetVietnamNow()
         {
-            var localTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
-            return DateTime.SpecifyKind(localTime, DateTimeKind.Unspecified);
+            return DateTime.UtcNow;
         }
 
         [HttpDelete("delete-history")]
