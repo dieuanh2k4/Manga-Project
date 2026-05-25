@@ -32,9 +32,10 @@ class ManageAuthorsBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AuthorsHeading(onAddAuthor: onAddAuthor),
-        const SizedBox(height: 18),
-        _AuthorSearchCard(searchController: searchController),
+        _AuthorSearchCard(
+          searchController: searchController,
+          onAddAuthor: onAddAuthor,
+        ),
         const SizedBox(height: 18),
         _AuthorFilterCard(
           selectedSort: selectedSort,
@@ -55,86 +56,63 @@ class ManageAuthorsBody extends StatelessWidget {
   }
 }
 
-class _AuthorsHeading extends StatelessWidget {
-  final VoidCallback onAddAuthor;
-
-  const _AuthorsHeading({required this.onAddAuthor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quản lý tác giả',
-              style: TextStyle(
-                color: Color(0xFF1D2638),
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Danh sách tác giả và tác phẩm liên quan',
-              style: TextStyle(color: Color(0xFF7B879B), fontSize: 14),
-            ),
-          ],
-        ),
-        ElevatedButton.icon(
-          key: const Key('manage_authors_create_button'),
-          onPressed: onAddAuthor,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF040617),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          icon: const Icon(Icons.add, size: 16),
-          label: const Text(
-            'Thêm tác giả',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _AuthorSearchCard extends StatelessWidget {
   final TextEditingController searchController;
+  final VoidCallback onAddAuthor;
 
-  const _AuthorSearchCard({required this.searchController});
+  const _AuthorSearchCard({
+    required this.searchController,
+    required this.onAddAuthor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: _cardDecoration,
-      child: TextField(
-        controller: searchController,
-        decoration: InputDecoration(
-          hintText: 'Nhập tên tác giả...',
-          hintStyle: const TextStyle(color: Color(0xFFABB3C2), fontSize: 13),
-          prefixIcon: const Icon(
-            Icons.search,
-            color: Color(0xFFABB3C2),
-            size: 18,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Nhập tên tác giả...',
+                hintStyle: const TextStyle(color: Color(0xFFABB3C2), fontSize: 13),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: Color(0xFFABB3C2),
+                  size: 18,
+                ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                filled: true,
+                fillColor: const Color(0xFFF7F8FC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
           ),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 11),
-          filled: true,
-          fillColor: const Color(0xFFF7F8FC),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: onAddAuthor,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF040617),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text(
+              'Thêm tác giả',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

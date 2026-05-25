@@ -175,6 +175,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
+// Dashboard Service
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
 // Manga Service
 builder.Services.AddScoped<IMangaService, MangaService>();
 

@@ -4,7 +4,9 @@ import 'package:web_admin/presentation/controllers/auth_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/auth/login_page.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
+import 'package:web_admin/presentation/pages/home/manage_overview.dart';
 import 'package:web_admin/injection_container.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,10 +19,18 @@ class WebAdmin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme(),
-      home: const AuthGate(),
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: theme(),
+          darkTheme: darkTheme(),
+          themeMode: themeController.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: const AuthGate(),
+        );
+      },
     );
   }
 }
@@ -47,8 +57,8 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void dispose() {
     _authController.removeListener(_onAuthChanged);
-    _mangaController?.dispose();
-    _authController.dispose();
+    // Do not dispose _mangaController here, as it is passed to navigated sub-pages
+    // when AuthGate is replaced. It is correctly disposed when logging out.
     super.dispose();
   }
 
@@ -89,7 +99,7 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    return ManageManga(
+    return ManageOverview(
       mangaController: _ensureMangaController(),
       onLogout: () async {
         await _authController.logout();

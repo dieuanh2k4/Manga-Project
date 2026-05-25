@@ -5,6 +5,7 @@ const String sidebarKeyManga = 'manga';
 const String sidebarKeyGenres = 'genres';
 const String sidebarKeyAuthors = 'authors';
 const String sidebarKeyUsers = 'users';
+const String sidebarKeyVip = 'vip';
 const String sidebarKeyNotifications = 'notifications';
 const String sidebarKeyAnalytics = 'analytics';
 
@@ -92,7 +93,13 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyUsers),
           ),
           _SidebarItem(
-            itemKey: const Key('admin_sidebar_notifications'),
+            icon: Icons.stars_rounded,
+            label: 'Quản lý gói VIP',
+            compact: compact,
+            selected: selectedKey == sidebarKeyVip,
+            onTap: () => onSelect(sidebarKeyVip),
+          ),
+          _SidebarItem(
             icon: Icons.notifications_none_rounded,
             label: 'Quản lý Thông báo',
             compact: compact,
@@ -107,64 +114,7 @@ class ManageMangaSidebar extends StatelessWidget {
             selected: selectedKey == sidebarKeyAnalytics,
             onTap: () => onSelect(sidebarKeyAnalytics),
           ),
-          const Spacer(),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 12 : 16,
-              0,
-              compact ? 12 : 16,
-              16,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F2D5A),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF1C3E71)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: compact ? 8 : 12,
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Color(0xFF2563EB),
-                      child: Icon(Icons.person, color: Colors.white, size: 16),
-                    ),
-                    if (!compact) ...[
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Quản trị viên',
-                              style: TextStyle(
-                                color: Color(0xFFE6EDFF),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'admin@manga.vn',
-                              style: TextStyle(
-                                color: Color(0xFF9DB3D9),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
