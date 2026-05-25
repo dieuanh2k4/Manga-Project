@@ -18,6 +18,8 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    volumes:
+      - ./manga-project-firebase-admin-key.json:/app/manga-project-firebase-admin-key.json:ro
     networks:
       - Mangazone-networks
     restart: unless-stopped
@@ -33,7 +35,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U Cinebook -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres.mruxtgnyueiermswvmzn -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
