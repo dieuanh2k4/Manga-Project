@@ -17,6 +17,7 @@ class MangaReaderController extends ChangeNotifier {
   final String? token;
   final GetPagesByChapterUseCase getPagesByChapterUseCase;
   final UpsertHistoryUseCase upsertHistoryUseCase;
+  final int? initialPageId;
 
   MangaReaderController({
     required this.mangaId,
@@ -25,7 +26,8 @@ class MangaReaderController extends ChangeNotifier {
     required this.getPagesByChapterUseCase,
     required this.upsertHistoryUseCase,
     this.token,
-  });
+    this.initialPageId,
+  }) : _pendingInitialPageId = initialPageId;
 
   bool isLoading = false;
   String? errorMessage;
@@ -40,6 +42,8 @@ class MangaReaderController extends ChangeNotifier {
   int? _lastHistoryPageId;
   int? _lastHistoryChapterId;
   bool _lastHistoryCompleted = false;
+  int? initialPageIndex;
+  int? _pendingInitialPageId;
 
   List<ChapterPageEntity> pages = const [];
 
@@ -66,8 +70,24 @@ class MangaReaderController extends ChangeNotifier {
       if (pages.isEmpty) {
         errorMessage = 'Chapter nay chua co noi dung';
       } else {
-        lastVerticalIndex = 0;
-        _scheduleHistoryUpdate(pageIndex: 0);
+        initialPageIndex = null;
+        if (_pendingInitialPageId != null) {
+          final index =
+              pages.indexWhere((page) => page.id == _pendingInitialPageId);
+          if (index >= 0) {
+            initialPageIndex = index;
+            currentImageIndex = index;
+            lastVerticalIndex = index;
+          } else {
+            currentImageIndex = 0;
+            lastVerticalIndex = 0;
+          }
+          _pendingInitialPageId = null;
+        } else {
+          currentImageIndex = 0;
+          lastVerticalIndex = 0;
+        }
+        _scheduleHistoryUpdate(pageIndex: currentImageIndex);
       }
     } catch (e) {
       errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -194,14 +214,25 @@ class MangaReaderController extends ChangeNotifier {
 
   void _scheduleHistoryUpdate({required int pageIndex}) {
     if (token == null || token!.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('History update skipped: token missing');
+      }
       return;
     }
     if (pageIndex < 0 || pageIndex >= pages.length) {
+      if (kDebugMode) {
+        debugPrint(
+          'History update skipped: pageIndex out of range ($pageIndex/${pages.length})',
+        );
+      }
       return;
     }
 
     final pageId = pages[pageIndex].id;
     if (pageId <= 0) {
+      if (kDebugMode) {
+        debugPrint('History update skipped: invalid pageId $pageId');
+      }
       return;
     }
 
@@ -210,6 +241,9 @@ class MangaReaderController extends ChangeNotifier {
     if (_lastHistoryPageId == pageId &&
         _lastHistoryChapterId == chapterId &&
         _lastHistoryCompleted == (isCompleted ?? false)) {
+      if (kDebugMode) {
+        debugPrint('History update skipped: same page/chapter state');
+      }
       return;
     }
 
@@ -226,8 +260,12 @@ class MangaReaderController extends ChangeNotifier {
           token: token!,
           isCompleted: isCompleted,
         );
-      } catch (_) {
-        // Ignore history update failures to avoid disrupting reading.
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('History update failed: $e');
+        }
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        notifyListeners();
       }
     });
   }

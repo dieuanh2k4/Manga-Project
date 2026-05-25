@@ -49,6 +49,11 @@ class _LibraryPageState extends State<LibraryPage>
         setState(() {});
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = context.read<LibraryController>();
+      controller.fetchLibraryManga(widget.token);
+      controller.fetchHistory(widget.token);
+    });
   }
 
   @override
@@ -60,24 +65,13 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) =>
-          LibraryController(
-              getLibraryMangaUseCase: context.read(),
-              getHistoryUseCase: context.read(),
-              addMangaToLibraryUseCase: context.read(),
-              deleteMangaFromLibraryUseCase: context.read(),
-            )
-            ..fetchLibraryManga(widget.token)
-            ..fetchHistory(widget.token),
-      child: Consumer<LibraryController>(
-        builder: (context, controller, _) {
-          return Scaffold(
-            key: const Key('library_page'),
-            backgroundColor: Colors.white,
-            body: SafeArea(
-              child: Column(
-                children: [
+    return Consumer<LibraryController>(
+      builder: (context, controller, _) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
                     child: Align(
@@ -183,14 +177,13 @@ class _LibraryPageState extends State<LibraryPage>
                         ],
                       ),
                     ),
-                  Expanded(child: _buildBody(controller)),
-                ],
-              ),
+                Expanded(child: _buildBody(controller)),
+              ],
             ),
-            bottomNavigationBar: _buildBottomNav(context),
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: _buildBottomNav(context),
+        );
+      },
     );
   }
 
@@ -949,9 +942,13 @@ class _HistoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chapterLabel = (item.lastChapterNumber == null ||
+        item.lastChapterNumber!.trim().isEmpty)
+      ? item.lastChapterId.toString()
+      : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+      : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -1038,9 +1035,13 @@ class _HistoryGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chapterLabel = (item.lastChapterNumber == null ||
+        item.lastChapterNumber!.trim().isEmpty)
+      ? item.lastChapterId.toString()
+      : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+      : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
