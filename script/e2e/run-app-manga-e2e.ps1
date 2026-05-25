@@ -95,6 +95,10 @@ if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
     # $ApiBaseUrl = "http://10.76.200.178:5001/api"
 }
 
+while ($ApiBaseUrl.EndsWith("/")) {
+    $ApiBaseUrl = $ApiBaseUrl.Substring(0, $ApiBaseUrl.Length - 1)
+}
+
 if (-not (Test-Path $IntegrationTestDir)) {
     throw "Cannot find app_manga/integration_test. Create integration tests before running E2E."
 }

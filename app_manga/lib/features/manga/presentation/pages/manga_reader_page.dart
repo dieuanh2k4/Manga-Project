@@ -177,6 +177,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
 
     return Scaffold(
+      key: const Key('manga_reader_page'),
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F1116),
@@ -308,6 +309,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
               controller.toggleTaskbar();
             },
             child: PageView.builder(
+              key: const Key('manga_reader_horizontal_pages'),
               controller: _horizontalPageController,
               itemCount: controller.pages.length,
               onPageChanged: (index) {
@@ -346,6 +348,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     _syncPageKeys(controller.pages.length);
     return NotificationListener<ScrollNotification>(
+      key: const Key('manga_reader_vertical_pages'),
       onNotification: (notification) {
         if (notification is UserScrollNotification) {
           controller.updateTaskbarOnScroll(notification.direction);
@@ -574,6 +577,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
           cacheManager: MangaImageCacheManager.instance,
         ),
         context,
+        onError: (_, _) {},
       );
     }
   }

@@ -2,7 +2,7 @@ import 'package:app_manga/main.dart' as app;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _username = String.fromEnvironment(
   'APP_MANGA_E2E_USERNAME',
@@ -24,6 +24,13 @@ const _searchQuery = String.fromEnvironment(
   'APP_MANGA_E2E_SEARCH_QUERY',
   defaultValue: 'E2E Readable Manga',
 );
+
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -52,28 +59,45 @@ void main() {
 }
 
 Future<void> _launchApp(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('auth_session');
+
   app.main();
   await tester.pumpAndSettle(const Duration(seconds: 2));
   await _waitForAppSettled(tester);
 }
 
 Future<void> _loginIfNeeded(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  await _waitUntil(
+    tester,
+    () =>
+        find.byKey(const Key('home_page')).evaluate().isNotEmpty ||
+        find.byKey(const Key('login_submit_button')).evaluate().isNotEmpty,
+    reason: 'App should show either the seeded home session or login form.',
+    failureDetails: _visibleStateForFailure,
+  );
+
+  if (find.byKey(const Key('home_page')).evaluate().isNotEmpty) {
     return;
   }
 
-  final textFields = find.byType(TextField);
-  expect(textFields, findsAtLeastNWidgets(2));
-
-  await tester.enterText(textFields.at(0), _username);
-  await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
-  await tester.pumpAndSettle();
+  await tester.enterText(
+    find.byKey(const Key('login_username_field')),
+    _username,
+  );
+  await tester.enterText(
+    find.byKey(const Key('login_password_field')),
+    _password,
+  );
+  await tester.tap(find.byKey(const Key('login_submit_button')));
+  await tester.pump();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should be visible after login.',
+    failureDetails: _visibleStateForFailure,
   );
 }
 
@@ -81,17 +105,54 @@ Future<void> _expectHome(WidgetTester tester) async {
   await _waitUntil(
     tester,
     () =>
-        find.text('Last Updates').evaluate().isNotEmpty ||
-        find.text('Most Viewed').evaluate().isNotEmpty,
+        find.byKey(const Key('home_page')).evaluate().isNotEmpty &&
+        (find.text('Last Updates').evaluate().isNotEmpty ||
+            find.text('Most Viewed').evaluate().isNotEmpty),
     reason: 'Home page should show manga sections.',
+    failureDetails: _homeStateForFailure,
   );
   expect(find.byType(BottomNavigationBar), findsOneWidget);
+}
+
+String _homeStateForFailure() {
+  if (find.byKey(const Key('home_loading')).evaluate().isNotEmpty) {
+    return 'Home is still loading manga.';
+  }
+  if (find.byKey(const Key('home_error')).evaluate().isNotEmpty) {
+    return 'Home API error: ${_visibleText()}';
+  }
+  if (find.byKey(const Key('home_empty')).evaluate().isNotEmpty) {
+    return 'Home loaded but returned an empty manga list.';
+  }
+  if (find.byKey(const Key('login_submit_button')).evaluate().isNotEmpty) {
+    return 'App is still on the login page.';
+  }
+  return _visibleStateForFailure();
+}
+
+String _visibleStateForFailure() {
+  return 'Current visible text: ${_visibleText()}';
+}
+
+String _visibleText() {
+  final values = find
+      .byType(Text)
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Text>()
+      .map((text) => text.data ?? text.textSpan?.toPlainText() ?? '')
+      .where((text) => text.trim().isNotEmpty)
+      .take(12)
+      .join(' | ');
+
+  return values.isEmpty ? '<none>' : values;
 }
 
 Future<void> _expectMangaDetail(WidgetTester tester) async {
   await _waitUntil(
     tester,
     () =>
+        find.byKey(const Key('manga_detail_page')).evaluate().isNotEmpty &&
         find.text('Introduction').evaluate().isNotEmpty &&
         find.text('Chapters').evaluate().isNotEmpty,
     reason: 'Manga detail should show introduction and chapters.',
@@ -104,13 +165,15 @@ Future<void> _openSeededChapter(WidgetTester tester) async {
 
   await _waitUntil(
     tester,
-    () => find.text(_chapterTitle).evaluate().isNotEmpty,
+    () => find
+        .byKey(Key('manga_chapter_${_e2eKeyPart(_chapterTitle)}'))
+        .evaluate()
+        .isNotEmpty,
     reason: 'Seeded manga detail should contain $_chapterTitle.',
   );
 
-  final chapterTile = find.ancestor(
-    of: find.text(_chapterTitle),
-    matching: find.byType(ListTile),
+  final chapterTile = find.byKey(
+    Key('manga_chapter_${_e2eKeyPart(_chapterTitle)}'),
   );
   expect(chapterTile, findsOneWidget);
 
@@ -122,8 +185,15 @@ Future<void> _expectReader(WidgetTester tester) async {
   await _waitUntil(
     tester,
     () =>
-        find.byType(PageView).evaluate().isNotEmpty ||
-        find.byType(ScrollablePositionedList).evaluate().isNotEmpty,
+        find.byKey(const Key('manga_reader_page')).evaluate().isNotEmpty &&
+        (find
+                .byKey(const Key('manga_reader_horizontal_pages'))
+                .evaluate()
+                .isNotEmpty ||
+            find
+                .byKey(const Key('manga_reader_vertical_pages'))
+                .evaluate()
+                .isNotEmpty),
     reason: 'Reader should show seeded chapter pages.',
   );
 }
@@ -134,14 +204,8 @@ Future<void> _goBackToMangaDetail(WidgetTester tester) async {
   await _expectMangaDetail(tester);
 }
 
-Future<void> _goBackToHome(WidgetTester tester) async {
-  await tester.pageBack();
-  await tester.pumpAndSettle();
-  await _expectHome(tester);
-}
-
 Future<void> _openSearch(WidgetTester tester) async {
-  await tester.tap(find.text('Search').last);
+  await tester.tap(find.byKey(const Key('home_nav_search')));
   await tester.pumpAndSettle();
 }
 
@@ -149,6 +213,7 @@ Future<void> _expectSearch(WidgetTester tester) async {
   await _waitUntil(
     tester,
     () =>
+        find.byKey(const Key('search_page')).evaluate().isNotEmpty &&
         find.text('POPULAR').evaluate().isNotEmpty &&
         find.text('LAST UPDATES').evaluate().isNotEmpty &&
         find.text('DIRECTORY').evaluate().isNotEmpty,
@@ -158,20 +223,20 @@ Future<void> _expectSearch(WidgetTester tester) async {
 
 Future<void> _openSeededSearchResult(WidgetTester tester) async {
   if (_searchQuery.trim().isNotEmpty) {
-    await tester.enterText(find.byType(TextField).first, _searchQuery);
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await tester.enterText(
+      find.byKey(const Key('manga_search_field')),
+      _searchQuery,
+    );
   }
 
+  final resultKey = Key('manga_search_result_${_e2eKeyPart(_mangaTitle)}');
   await _waitUntil(
     tester,
-    () => find.text(_mangaTitle).evaluate().isNotEmpty,
+    () => find.byKey(resultKey).evaluate().isNotEmpty,
     reason: 'Search page should contain seeded manga $_mangaTitle.',
   );
 
-  final result = find.ancestor(
-    of: find.text(_mangaTitle),
-    matching: find.byType(InkWell),
-  );
+  final result = find.byKey(resultKey);
   expect(result, findsOneWidget);
 
   await tester.tap(result);
@@ -185,13 +250,13 @@ Future<void> _goBackToSearch(WidgetTester tester) async {
 }
 
 Future<void> _openHome(WidgetTester tester) async {
-  await tester.tap(find.text('Home').last);
+  await tester.tap(find.byKey(const Key('search_nav_home')));
   await tester.pumpAndSettle();
   await _expectHome(tester);
 }
 
 Future<void> _openLibrary(WidgetTester tester) async {
-  await tester.tap(find.text('Library').last);
+  await tester.tap(find.byKey(const Key('home_nav_library')));
   await tester.pumpAndSettle();
 }
 
@@ -199,16 +264,21 @@ Future<void> _expectLibrary(WidgetTester tester) async {
   await _waitUntil(
     tester,
     () =>
+        find.byKey(const Key('library_page')).evaluate().isNotEmpty &&
         find.textContaining('Library -').evaluate().isNotEmpty &&
         find.text('Your Library').evaluate().isNotEmpty &&
         find.text('History').evaluate().isNotEmpty &&
-        find.text('Downloads').evaluate().isNotEmpty,
+        find.text('Downloads').evaluate().isNotEmpty &&
+        find
+            .byKey(Key('library_manga_${_e2eKeyPart(_mangaTitle)}'))
+            .evaluate()
+            .isNotEmpty,
     reason: 'Library page should show all library tabs.',
   );
 }
 
 Future<void> _openMe(WidgetTester tester) async {
-  await tester.tap(find.text('Me').last);
+  await tester.tap(find.byKey(const Key('library_nav_me')));
   await tester.pumpAndSettle();
 }
 
@@ -216,10 +286,13 @@ Future<void> _expectMe(WidgetTester tester) async {
   await _waitUntil(
     tester,
     () =>
-        find.text('Me').evaluate().isNotEmpty &&
+        find.byKey(const Key('me_page')).evaluate().isNotEmpty &&
+        find.text('E2E Reader').evaluate().isNotEmpty &&
+        find.text(_username).evaluate().isNotEmpty &&
+        find.text('Premium').evaluate().isNotEmpty &&
         find.text('Username').evaluate().isNotEmpty &&
-        find.text('Dang xuat').evaluate().isNotEmpty,
-    reason: 'Me page should show the logged-in user profile.',
+        find.byKey(const Key('me_logout_button')).evaluate().isNotEmpty,
+    reason: 'Me page should show the seeded reader profile.',
   );
 }
 
@@ -252,6 +325,7 @@ Future<void> _waitUntil(
   WidgetTester tester,
   bool Function() condition, {
   required String reason,
+  String Function()? failureDetails,
   Duration timeout = const Duration(seconds: 30),
 }) async {
   final end = DateTime.now().add(timeout);
@@ -262,5 +336,6 @@ Future<void> _waitUntil(
     }
   }
 
-  fail(reason);
+  final details = failureDetails?.call();
+  fail(details == null || details.isEmpty ? reason : '$reason $details');
 }

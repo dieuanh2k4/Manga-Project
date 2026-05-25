@@ -9,6 +9,13 @@ import '../controllers/search_controller.dart';
 import 'home_page.dart';
 import 'manga_detail_page.dart';
 
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -42,6 +49,7 @@ class _SearchPageState extends State<SearchPage>
     final controller = context.watch<MangaSearchController>();
 
     return Scaffold(
+      key: const Key('search_page'),
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
         child: controller.isLoading
@@ -125,6 +133,7 @@ class _SearchPageState extends State<SearchPage>
         children: [
           Expanded(
             child: TextField(
+              key: const Key('manga_search_field'),
               controller: _searchController,
               onChanged: controller.onSearchChanged,
               decoration: InputDecoration(
@@ -198,6 +207,7 @@ class _SearchPageState extends State<SearchPage>
             : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
 
         return InkWell(
+          key: Key('manga_search_result_${_e2eKeyPart(manga.title)}'),
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -387,16 +397,22 @@ class _SearchPageState extends State<SearchPage>
       },
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
+          icon: Icon(Icons.home_outlined, key: Key('search_nav_home')),
+          activeIcon: Icon(Icons.home, key: Key('search_nav_home')),
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.menu_book_outlined),
+          icon: Icon(Icons.menu_book_outlined, key: Key('search_nav_library')),
           label: 'Library',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Me'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search, key: Key('search_nav_search')),
+          label: 'Search',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline, key: Key('search_nav_me')),
+          label: 'Me',
+        ),
       ],
     );
   }

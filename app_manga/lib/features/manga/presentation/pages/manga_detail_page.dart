@@ -10,6 +10,13 @@ import '../../domain/usecases/get_manga_detail_usecase.dart';
 import '../controllers/manga_detail_controller.dart';
 import 'manga_reader_page.dart';
 
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
 class MangaDetailPage extends StatelessWidget {
   final int mangaId;
 
@@ -79,6 +86,7 @@ class _MangaDetailView extends StatelessWidget {
     final manga = controller.manga!;
 
     return Scaffold(
+      key: const Key('manga_detail_page'),
       backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
         title: const Text('Manga'),
@@ -357,6 +365,7 @@ class _ChapterTile extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE1E4EA)),
       ),
       child: ListTile(
+        key: Key('manga_chapter_${_e2eKeyPart(chapter.title)}'),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         title: Text(
           chapterLabel,
