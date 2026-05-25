@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/notifications/fcm_notification_service.dart';
+import 'core/network/image_cache_manager.dart';
 import 'core/security/screen_security_service.dart';
 import 'features/auth/data/datasources/auth_local_data_source.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
@@ -34,13 +37,53 @@ import 'features/vip/domain/repositories/vip_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // flutter giữ tối đa 300 ảnh trong ram
   PaintingBinding.instance.imageCache.maximumSize = 300;
+  // tổng dung lương memory cache là 300
   PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20;
+
   // gọi service chống chụp màn hình trước runApp
   // đảm bảo bật chống chụp màn hình ngay khi khởi động app
   await ScreenSecurityService.instance.initialize();
   await FcmNotificationService.instance.initialize();
-  runApp(const MangaApp());
+  await MangaImageCacheManager.removeExpiredImages();
+  runApp(const MangaCacheLifecycle(child: MangaApp()));
+}
+
+class MangaCacheLifecycle extends StatefulWidget {
+  const MangaCacheLifecycle({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<MangaCacheLifecycle> createState() => _MangaCacheLifecycleState();
+}
+
+class _MangaCacheLifecycleState extends State<MangaCacheLifecycle>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(MangaImageCacheManager.removeExpiredImages());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
 }
 
 class MangaApp extends StatelessWidget {

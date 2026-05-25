@@ -236,8 +236,8 @@ namespace backend.Migrations
                     b.Property<int>("ReaderId")
                         .HasColumnType("integer");
 
-                    b.Property<TimeOnly>("UpdateAt")
-                        .HasColumnType("time without time zone");
+                    b.Property<DateTime>("UpdateAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

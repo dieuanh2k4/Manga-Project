@@ -13,6 +13,7 @@ import 'package:web_admin/presentation/pages/home/manage_overview.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
 import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
+import 'package:web_admin/presentation/pages/home/manage_genres.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 
@@ -92,6 +93,17 @@ class _ManageNotificationsState extends State<ManageNotifications> {
     );
   }
 
+  void _openGenresPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageGenres(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   Future<void> _showCreateNotificationDialog() async {
     final TextEditingController titleController = TextEditingController();
     final TextEditingController contentController = TextEditingController();
@@ -107,142 +119,148 @@ class _ManageNotificationsState extends State<ManageNotifications> {
         ? (mangaState.manga ?? const <MangaEntity>[])
         : const <MangaEntity>[];
 
-    final domain.NotificationEntity? notification =
-        await showDialog<domain.NotificationEntity>(
-          context: context,
-          builder: (dialogContext) {
-            return StatefulBuilder(
-              builder: (context, setDialogState) {
-                return AlertDialog(
-                  title: const Text('Tạo thông báo'),
-                  content: SizedBox(
-                    width: 520,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          controller: titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'Tiêu đề',
-                            border: OutlineInputBorder(),
-                          ),
+    final domain.NotificationEntity?
+    notification = await showDialog<domain.NotificationEntity>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Tạo thông báo'),
+              content: SizedBox(
+                width: 520,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      key: const Key('manage_notification_dialog_title_field'),
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tiêu đề',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key(
+                        'manage_notification_dialog_content_field',
+                      ),
+                      controller: contentController,
+                      minLines: 3,
+                      maxLines: 5,
+                      decoration: const InputDecoration(
+                        labelText: 'Nội dung',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: targetRole,
+                      decoration: const InputDecoration(
+                        labelText: 'Đối tượng nhận',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem<String>(
+                          value: 'All',
+                          child: Text('Tất cả người đọc'),
                         ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: contentController,
-                          minLines: 3,
-                          maxLines: 5,
-                          decoration: const InputDecoration(
-                            labelText: 'Nội dung',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          value: targetRole,
-                          decoration: const InputDecoration(
-                            labelText: 'Đối tượng nhận',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: const [
-                            DropdownMenuItem<String>(
-                              value: 'All',
-                              child: Text('Tất cả người đọc'),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: 'LikedManga',
-                              child: Text('Người đọc theo manga'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-                            setDialogState(() {
-                              targetRole = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<int>(
-                          value: selectedMangaId,
-                          decoration: InputDecoration(
-                            labelText: targetRole == 'LikedManga'
-                                ? 'Chọn Manga'
-                                : 'Manga (optional)',
-                            border: const OutlineInputBorder(),
-                          ),
-                          items: [
-                            const DropdownMenuItem<int>(
-                              value: 0,
-                              child: Text('Không manga'),
-                            ),
-                            ...mangas.where((manga) => (manga.id ?? 0) > 0).map(
-                              (manga) {
-                                final int mangaId = manga.id!;
-                                return DropdownMenuItem<int>(
-                                  value: mangaId,
-                                  child: Text(
-                                    '${manga.title ?? 'Manga'} (#$mangaId)',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                          onChanged: (value) {
-                            setDialogState(() {
-                              selectedMangaId = value ?? 0;
-                            });
-                          },
+                        DropdownMenuItem<String>(
+                          value: 'LikedManga',
+                          child: Text('Người đọc theo manga'),
                         ),
                       ],
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        setDialogState(() {
+                          targetRole = value;
+                        });
+                      },
                     ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('Hủy'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        final String title = titleController.text.trim();
-                        final String content = contentController.text.trim();
-                        final int mangaId = selectedMangaId;
-
-                        if (title.isEmpty || content.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Tiêu đề và nội dung là bắt buộc'),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: selectedMangaId,
+                      decoration: InputDecoration(
+                        labelText: targetRole == 'LikedManga'
+                            ? 'Chọn Manga'
+                            : 'Manga (optional)',
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: 0,
+                          child: Text('Không manga'),
+                        ),
+                        ...mangas.where((manga) => (manga.id ?? 0) > 0).map((
+                          manga,
+                        ) {
+                          final int mangaId = manga.id!;
+                          return DropdownMenuItem<int>(
+                            value: mangaId,
+                            child: Text(
+                              '${manga.title ?? 'Manga'} (#$mangaId)',
+                              overflow: TextOverflow.ellipsis,
                             ),
                           );
-                          return;
-                        }
-
-                        if (targetRole == 'LikedManga' && mangaId <= 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Manga là bắt buộc')),
-                          );
-                          return;
-                        }
-
-                        Navigator.of(dialogContext).pop(
-                          domain.NotificationEntity(
-                            title: title,
-                            content: content,
-                            targetRole: targetRole,
-                            mangaId: mangaId,
-                          ),
-                        );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedMangaId = value ?? 0;
+                        });
                       },
-                      child: const Text('Tạo'),
                     ),
                   ],
-                );
-              },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  key: const Key('manage_notification_dialog_cancel_button'),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  key: const Key('manage_notification_dialog_submit_button'),
+                  onPressed: () {
+                    final String title = titleController.text.trim();
+                    final String content = contentController.text.trim();
+                    final int mangaId = selectedMangaId;
+
+                    if (title.isEmpty || content.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tiêu đề và nội dung là bắt buộc'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (targetRole == 'LikedManga' && mangaId <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Manga là bắt buộc')),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(
+                      domain.NotificationEntity(
+                        title: title,
+                        content: content,
+                        targetRole: targetRole,
+                        mangaId: mangaId,
+                      ),
+                    );
+                  },
+                  child: const Text('Tạo'),
+                ),
+              ],
             );
           },
         );
+      },
+    );
 
     titleController.dispose();
     contentController.dispose();

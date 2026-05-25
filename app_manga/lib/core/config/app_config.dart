@@ -5,6 +5,7 @@ class AppConfig {
     'API_BASE_URL',
     defaultValue: 'http://192.168.8.159:5001/api',
     // defaultValue: 'http://10.76.200.178:5001/api',
+    // defaultValue: 'http://192.168.0.114:5001/api',
   );
 
   static String get apiOrigin {

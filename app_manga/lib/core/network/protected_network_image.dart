@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
+import 'image_cache_manager.dart';
 
 class ProtectedNetworkImage extends StatelessWidget {
   const ProtectedNetworkImage({
@@ -23,12 +27,24 @@ class ProtectedNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedCacheKey = cacheKey ?? imageUrl;
+
     return CachedNetworkImage(
       imageUrl: imageUrl,
-      cacheKey: cacheKey ?? imageUrl,
+      cacheKey: resolvedCacheKey,
+      cacheManager: MangaImageCacheManager.instance,
       width: width,
       height: height,
       fit: fit,
+      imageBuilder: (context, imageProvider) {
+        unawaited(MangaImageCacheManager.markCached(resolvedCacheKey));
+        return Image(
+          image: imageProvider,
+          width: width,
+          height: height,
+          fit: fit,
+        );
+      },
       placeholder: (context, url) =>
           loadingWidget ??
           const Center(

@@ -1,0 +1,31 @@
+ResultDir: D:\4-2\multi-platform-2\ProjectManga\result_test_webadmin\web_admin_e2e_20260517-210003
+StartedAt: 2026-05-17T21:00:03.5681290+07:00
+API_BASE_URL: http://192.168.0.114:5001/api/
+Target: web_admin/integration_test/admin_smoke_flow_test.dart
+Existing Dart/Flutter processes:
+
+ProcessName    Id      CPU StartTime           
+-----------    --      --- ---------           
+dart        11744       44 5/17/2026 8:33:45 PM
+dart        16760 0.265625 5/17/2026 8:33:45 PM
+dart        17872 0.046875 5/17/2026 8:33:46 PM
+dart        29636 0.203125 5/17/2026 8:33:45 PM
+dartvm      24728  5.28125 5/17/2026 8:33:46 PM
+
+
+
+API TCP precheck:
+
+
+ComputerName           : 192.168.0.114
+RemoteAddress          : 192.168.0.114
+RemotePort             : 5001
+InterfaceAlias         : 
+SourceAddress          : 
+PingSucceeded          : False
+PingReplyDetails (RTT) : 0 ms
+TcpTestSucceeded       : False
+
+
+
+

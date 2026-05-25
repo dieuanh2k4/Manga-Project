@@ -17,6 +17,7 @@ namespace backend.src.Controllers
     public class HistoryController : ApiControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();
 
         public HistoryController(ApplicationDbContext context, ILogger<HistoryController> logger) : base(logger)
         {
@@ -75,7 +76,7 @@ namespace backend.src.Controllers
                         LastChapterId = dto.ChapterId,
                         LastPageId = dto.PageNumber,
                         IsCompleted = dto.IsCompleted ?? false,
-                        UpdateAt = DateTime.UtcNow
+                        UpdateAt = GetVietnamNow()
                     };
 
                     _context.History.Add(history);
@@ -85,7 +86,7 @@ namespace backend.src.Controllers
                     history.LastChapterId = dto.ChapterId;
                     history.LastPageId = dto.PageNumber;
                     history.IsCompleted = dto.IsCompleted ?? history.IsCompleted;
-                    history.UpdateAt = DateTime.UtcNow;
+                    history.UpdateAt = GetVietnamNow();
                 }
 
                 await _context.SaveChangesAsync();
@@ -123,11 +124,13 @@ namespace backend.src.Controllers
                     .Where(h => h.ReaderId == reader.Id)
                     .Include(h => h.Manga)
                     .ThenInclude(manga => manga.Authors)
+                    .Include(h => h.Chapter)
                     .OrderByDescending(h => h.UpdateAt)
                     .Select(h => new HistoryItemDto
                     {
                         MangaId = h.MangaId,
                         LastChapterId = h.LastChapterId,
+                        LastChapterNumber = h.Chapter != null ? h.Chapter.ChapterNumber : null,
                         LastPageId = h.LastPageId,
                         IsCompleted = h.IsCompleted,
                         UpdateAt = h.UpdateAt,
@@ -149,6 +152,23 @@ namespace backend.src.Controllers
             {
                 return ReturnException(ex);
             }
+        }
+
+        private static TimeZoneInfo ResolveVietnamTimeZone()
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            }
+        }
+
+        private static DateTime GetVietnamNow()
+        {
+            return DateTime.UtcNow;
         }
 
         [HttpDelete("delete-history")]

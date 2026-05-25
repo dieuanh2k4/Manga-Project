@@ -1,9 +1,9 @@
 services:
-  backend:
+  mangazone:
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    container_name: Mangazone
+    container_name: Mangazone_backend
     env_file:
       - .env
     ports:
@@ -17,6 +17,34 @@ services:
       - Minio__UseSSL=false
     depends_on:
       database:
+        condition: service_healthy
+    volumes:
+      - ./manga-project-firebase-admin-key.json:/app/manga-project-firebase-admin-key.json:ro
+    networks:
+      - Mangazone-networks
+    restart: unless-stopped
+
+  mangazone_e2e:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: Mangazone_backend_e2e
+    env_file:
+      - .env
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=E2E
+      - ConnectionStrings__DefaultConnection=Host=database_e2e;Port=5432;Database=postgres;Username=postgres.mruxtgnyueiermswvmzne2e;Password=${DB_PASSWORD_E2E}
+      - ASPNETCORE_URLS=http://+:8080
+      - Minio__Endpoint=minio:9000
+      - Minio__PublicEndpoint=${IP_LAN}:9004
+      - Minio__UseSSL=false
+      - Minio__Bucket=manga-e2e
+    depends_on:
+      database_e2e:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - Mangazone-networks
@@ -33,7 +61,30 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U Cinebook -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres.mruxtgnyueiermswvmzn -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - Mangazone-networks
+
+  database_e2e:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres.mruxtgnyueiermswvmzne2e
+      POSTGRES_PASSWORD: ${DB_PASSWORD_E2E}
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-e2e-data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres.mruxtgnyueiermswvmzne2e -d postgres",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -66,6 +117,7 @@ services:
 
 volumes:
   postgres-data:
+  postgres-e2e-data:
   minio-data:
 
 networks:

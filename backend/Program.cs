@@ -19,6 +19,11 @@ using Google.Apis.Auth.OAuth2;
 
 DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
+var seedE2E = args.Any(arg => string.Equals(arg, "--seed-e2e", StringComparison.OrdinalIgnoreCase));
+var seedE2EMinioOnly = args.Any(arg => string.Equals(arg, "--seed-e2e-minio", StringComparison.OrdinalIgnoreCase));
+var skipE2EReset = args.Any(arg => string.Equals(arg, "--no-reset", StringComparison.OrdinalIgnoreCase));
+var isSeedCommand = seedE2E || seedE2EMinioOnly;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -36,11 +41,14 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 builder.Services.AddSignalR(); // gửi thông báo realtime
 
 // sử dụng FCM để push noti
-var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "manga-project-firebase-admin-key.json");
-FirebaseApp.Create(new AppOptions()
+if (!isSeedCommand)
 {
-    Credential = GoogleCredential.FromFile(firebaseKeyPath)
-});
+    var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "manga-project-firebase-admin-key.json");
+    FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile(firebaseKeyPath)
+    });
+}
 
 builder.Services.AddHttpContextAccessor();
 
@@ -220,14 +228,39 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
+        if (seedE2EMinioOnly)
+        {
+            var minioClient = services.GetRequiredService<IMinioClient>();
+            await E2ESeedData.UploadMinioFixturesAsync(minioClient, builder.Configuration);
+            return;
+        }
+
         var context = services.GetRequiredService<ApplicationDbContext>();
         context.Database.Migrate();
+
+        if (seedE2E)
+        {
+            var minioClient = services.GetRequiredService<IMinioClient>();
+            if (!skipE2EReset)
+            {
+                await E2ESeedData.ResetAsync(context, minioClient, builder.Configuration);
+            }
+
+            await E2ESeedData.InitializeAsync(context, minioClient, builder.Configuration);
+            return;
+        }
+
         await SeedData.InitializeAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Lỗi khi chạy migrations");
+
+        if (isSeedCommand)
+        {
+            throw;
+        }
     }
 }
 

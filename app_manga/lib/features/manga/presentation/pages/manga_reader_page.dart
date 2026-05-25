@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../core/services/reading_progress_service.dart';
+import '../../../../core/network/image_cache_manager.dart';
 import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
@@ -17,6 +20,7 @@ class MangaReaderPage extends StatelessWidget {
   final String mangaTitle;
   final List<ChapterEntity> chapters;
   final int initialChapterId;
+  final int? initialPageId;
 
   const MangaReaderPage({
     super.key,
@@ -24,6 +28,7 @@ class MangaReaderPage extends StatelessWidget {
     required this.mangaTitle,
     required this.chapters,
     required this.initialChapterId,
+    this.initialPageId,
   });
 
   @override
@@ -39,6 +44,7 @@ class MangaReaderPage extends StatelessWidget {
         token: auth.session?.token,
         getPagesByChapterUseCase: GetPagesByChapterUseCase(mangaRepository),
         upsertHistoryUseCase: UpsertHistoryUseCase(mangaRepository),
+        initialPageId: initialPageId,
       )..initialize(initialChapterId),
       child: const _MangaReaderView(),
     );
@@ -66,6 +72,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   bool _isSwitchingChapterForRestore = false;
   int? _lastPrecachedChapterId;
   int? _lastPrecachedCenterIndex;
+  bool _didApplyInitialHistory = false;
 
   @override
   void initState() {
@@ -174,6 +181,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
 
     return Scaffold(
+      key: const Key('manga_reader_page'),
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F1116),
@@ -305,6 +313,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
               controller.toggleTaskbar();
             },
             child: PageView.builder(
+              key: const Key('manga_reader_horizontal_pages'),
               controller: _horizontalPageController,
               itemCount: controller.pages.length,
               onPageChanged: (index) {
@@ -317,6 +326,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
                   child: InteractiveViewer(
                     minScale: 1,
                     maxScale: 4,
+                    // đọc ngang: ảnh được render qua CachedNetworkImage, lướt lên hay xuống
+                    // ảnh có thể lấy từ cache thay vì tải lại
                     child: ProtectedNetworkImage(
                       imageUrl: page.imageUrl,
                       cacheKey: _imageCacheKey(page.imageUrl),
@@ -341,6 +352,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     _syncPageKeys(controller.pages.length);
     return NotificationListener<ScrollNotification>(
+      key: const Key('manga_reader_vertical_pages'),
       onNotification: (notification) {
         if (notification is UserScrollNotification) {
           controller.updateTaskbarOnScroll(notification.direction);
@@ -360,6 +372,8 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
           final page = controller.pages[index];
           return KeyedSubtree(
             key: _pageKeys[index],
+            // đọc dọc: ảnh được render qua CachedNetworkImage, lướt lên hay xuống
+            // ảnh có thể lấy từ cache thay vì tải lại
             child: ProtectedNetworkImage(
               imageUrl: page.imageUrl,
               cacheKey: _imageCacheKey(page.imageUrl),
@@ -385,6 +399,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
   }
 
+  //
   Future<void> _restoreProgressIfNeeded(
     MangaReaderController controller,
   ) async {
@@ -394,6 +409,34 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     final chapterId = controller.currentChapter.id;
     if (_restoredChapterId == chapterId) {
+      return;
+    }
+
+    if (!_didApplyInitialHistory &&
+        controller.initialPageIndex != null &&
+        controller.pages.isNotEmpty) {
+      final targetIndex = controller.initialPageIndex!
+          .clamp(0, controller.pages.length - 1);
+      controller.setCurrentImageIndex(targetIndex);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+
+        if (controller.mode == ReaderMode.horizontal &&
+            _horizontalPageController.hasClients) {
+          _horizontalPageController.jumpToPage(targetIndex);
+        }
+
+        if (controller.mode == ReaderMode.vertical &&
+            _itemScrollController.isAttached) {
+          _itemScrollController.jumpTo(index: targetIndex, alignment: 0);
+        }
+
+        _restoredChapterId = chapterId;
+        _didApplyInitialHistory = true;
+        _lastSavedIndex = targetIndex;
+      });
       return;
     }
 
@@ -460,6 +503,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
   }
 
+  // lưu lại pageIndex hiện tại
   void _saveProgress(MangaReaderController controller, int index) {
     if (_lastSavedIndex == index) {
       return;
@@ -491,6 +535,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
   }
 
+  // lưu index ảnh khi đọc dọc
   void _onItemPositionsChanged() {
     if (!mounted) {
       return;
@@ -530,6 +575,9 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     return imageUrl;
   }
 
+  // preload ảnh từ (trang hiện tại-2) đến (trang hiện tại+4)
+  // app tải sẵn vài ảnh gần đó vào cache
+  // khi lướt tiếp hoặc lướt ngược lại sẽ nhanh hơn
   void _precacheReaderImages(MangaReaderController controller) {
     if (controller.isLoading || controller.pages.isEmpty) {
       return;
@@ -552,12 +600,16 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     final end = (centerIndex + 4).clamp(0, controller.pages.length - 1);
     for (var index = start; index <= end; index++) {
       final imageUrl = controller.pages[index].imageUrl;
+      final cacheKey = _imageCacheKey(imageUrl);
+      unawaited(MangaImageCacheManager.markCached(cacheKey));
       precacheImage(
         CachedNetworkImageProvider(
           imageUrl,
-          cacheKey: _imageCacheKey(imageUrl),
+          cacheKey: cacheKey,
+          cacheManager: MangaImageCacheManager.instance,
         ),
         context,
+        onError: (_, _) {},
       );
     }
   }

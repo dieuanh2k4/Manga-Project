@@ -156,10 +156,17 @@ class _AuthPageState extends State<AuthPage>
         children: [
           const SizedBox(height: 4),
           _FieldLabel('Username'),
-          _RoundedInput(controller: _loginUserName),
+          _RoundedInput(
+            key: const Key('login_username_field'),
+            controller: _loginUserName,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Password'),
-          _RoundedInput(controller: _loginPassword, obscureText: true),
+          _RoundedInput(
+            key: const Key('login_password_field'),
+            controller: _loginPassword,
+            obscureText: true,
+          ),
           const SizedBox(height: 6),
           const Align(
             alignment: Alignment.centerRight,
@@ -170,6 +177,7 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: 10),
           _MainButton(
+            key: const Key('login_submit_button'),
             label: auth.isBusy ? 'LOADING...' : 'LOG IN',
             onTap: auth.isBusy
                 ? null
@@ -313,7 +321,11 @@ class _RoundedInput extends StatelessWidget {
   final TextEditingController controller;
   final bool obscureText;
 
-  const _RoundedInput({required this.controller, this.obscureText = false});
+  const _RoundedInput({
+    super.key,
+    required this.controller,
+    this.obscureText = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +357,11 @@ class _MainButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _MainButton({required this.label, required this.onTap});
+  const _MainButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

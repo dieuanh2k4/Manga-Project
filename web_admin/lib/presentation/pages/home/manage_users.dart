@@ -16,6 +16,7 @@ import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
 import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
 import 'package:web_admin/presentation/pages/home/manage_overview.dart';
+import 'package:web_admin/presentation/pages/home/manage_genres.dart';
 
 class ManageUsers extends StatefulWidget {
   final RemoteMangaController mangaController;
@@ -935,10 +936,12 @@ class _ManageUsersState extends State<ManageUsers> {
               ),
               actions: <Widget>[
                 TextButton(
+                  key: const Key('manage_user_dialog_cancel_button'),
                   onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Hủy'),
                 ),
                 ElevatedButton(
+                  key: const Key('manage_user_dialog_save_button'),
                   onPressed: () async {
                     try {
                       final Options options = await _authorizedOptions();
@@ -2312,6 +2315,17 @@ class _ManageUsersState extends State<ManageUsers> {
     );
   }
 
+  void _openGenresPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageGenres(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   void _openNotificationsPage() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -2542,6 +2556,7 @@ class _ManageUsersState extends State<ManageUsers> {
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton.icon(
+                      key: const Key('manage_users_create_button'),
                       onPressed: () => _showUserDialog(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF040617),
