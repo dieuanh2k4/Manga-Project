@@ -68,6 +68,7 @@ class _LibraryPageState extends State<LibraryPage>
     return Consumer<LibraryController>(
       builder: (context, controller, _) {
         return Scaffold(
+          key: const Key('library_page'),
           backgroundColor: Colors.white,
           body: SafeArea(
             child: Column(
@@ -190,6 +191,7 @@ class _LibraryPageState extends State<LibraryPage>
   Widget _buildBody(LibraryController controller) {
     if (controller.isLoading) {
       return const Center(
+        key: Key('library_loading'),
         child: CircularProgressIndicator(color: _primaryColor),
       );
     }

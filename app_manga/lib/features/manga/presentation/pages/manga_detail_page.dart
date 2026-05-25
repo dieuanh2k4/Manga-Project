@@ -375,11 +375,17 @@ class _FollowButtonState extends State<_FollowButton> {
   @override
   void initState() {
     super.initState();
-    final auth = context.read<AuthController>();
-    final token = auth.session?.token;
-    if (token != null && token.isNotEmpty) {
-      context.read<LibraryController>().fetchLibraryManga(token);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final auth = context.read<AuthController>();
+      final token = auth.session?.token;
+      if (token != null && token.isNotEmpty) {
+        context.read<LibraryController>().fetchLibraryManga(token);
+      }
+    });
   }
 
   @override
