@@ -38,4 +38,11 @@ namespace backend.src.Dtos.Dashboard
         public double Score { get; set; }
         public decimal EstimatedRevenue { get; set; }
     }
+
+    public class RecentActivityDto
+    {
+        public string Message { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string Type { get; set; } = string.Empty; // "vip", "register"
+    }
 }

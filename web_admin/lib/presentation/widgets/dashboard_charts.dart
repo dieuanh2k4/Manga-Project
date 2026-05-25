@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:web_admin/data/models/dashboard_dto.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
+import 'package:web_admin/injection_container.dart';
 
 class DashboardLineChart extends StatefulWidget {
   final List<RevenuePointModel> data;
@@ -21,12 +23,10 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final localOffset = renderBox.globalToLocal(event.position);
     
-    // Calculate the chart drawable area
     const double paddingLeft = 60.0;
     const double paddingRight = 20.0;
     final double drawWidth = constraints.maxWidth - paddingLeft - paddingRight;
     
-    // Find nearest data point based on x coordinate
     final int pointsCount = widget.data.length;
     if (pointsCount < 2) return;
     
@@ -61,6 +61,7 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return LayoutBuilder(
       builder: (context, constraints) {
         return MouseRegion(
@@ -74,10 +75,11 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
                 painter: LineChartPainter(
                   data: widget.data,
                   hoveredIndex: _hoveredIndex,
+                  isDarkMode: isDark,
                 ),
               ),
               if (_hoveredIndex != -1 && _hoveredIndex < widget.data.length)
-                _buildTooltip(constraints),
+                _buildTooltip(constraints, isDark),
             ],
           ),
         );
@@ -85,7 +87,7 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
     );
   }
 
-  Widget _buildTooltip(BoxConstraints constraints) {
+  Widget _buildTooltip(BoxConstraints constraints, bool isDark) {
     final point = widget.data[_hoveredIndex];
     const double paddingLeft = 60.0;
     const double paddingRight = 20.0;
@@ -93,7 +95,6 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
     final double stepX = drawWidth / (widget.data.length - 1);
     final double pX = paddingLeft + _hoveredIndex * stepX;
 
-    // Formatting revenue: e.g. "1.5M VND" or simple number representation
     final String formattedRevenue = point.revenue >= 1000000
         ? '${(point.revenue / 1000000).toStringAsFixed(1)}M'
         : '${(point.revenue / 1000).toStringAsFixed(0)}K';
@@ -105,12 +106,15 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A).withOpacity(0.95),
+            color: isDark ? const Color(0xFF0F172A).withOpacity(0.95) : Colors.white.withOpacity(0.95),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFFF512F).withOpacity(0.4), width: 1),
+            border: Border.all(
+              color: isDark ? const Color(0xFFFF512F).withOpacity(0.4) : const Color(0xFFFF512F).withOpacity(0.6), 
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF512F).withOpacity(0.2),
+                color: isDark ? const Color(0xFFFF512F).withOpacity(0.2) : Colors.black.withOpacity(0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               )
@@ -122,7 +126,11 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
             children: [
               Text(
                 'Ngày: ${point.date}',
-                style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF334155), 
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -144,8 +152,13 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
 class LineChartPainter extends CustomPainter {
   final List<RevenuePointModel> data;
   final int hoveredIndex;
+  final bool isDarkMode;
 
-  LineChartPainter({required this.data, required this.hoveredIndex});
+  LineChartPainter({
+    required this.data, 
+    required this.hoveredIndex, 
+    required this.isDarkMode,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -159,13 +172,11 @@ class LineChartPainter extends CustomPainter {
     final double drawWidth = size.width - paddingLeft - paddingRight;
     final double drawHeight = size.height - paddingTop - paddingBottom;
 
-    // Find max values
     double maxRevenue = data.map((p) => p.revenue).fold(1000.0, (prev, elem) => max(prev, elem));
     if (maxRevenue == 0) maxRevenue = 1000.0;
     
-    // Format Y Axis helper
     final Paint gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = isDarkMode ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
@@ -179,10 +190,8 @@ class LineChartPainter extends CustomPainter {
       final double y = paddingTop + drawHeight - (i * (drawHeight / yDivisions));
       final double value = (maxRevenue / yDivisions) * i;
 
-      // Draw Gridline
       canvas.drawLine(Offset(paddingLeft, y), Offset(size.width - paddingRight, y), gridPaint);
 
-      // Draw Label
       String label = value >= 1000000
           ? '${(value / 1000000).toStringAsFixed(1)}M'
           : '${(value / 1000).toStringAsFixed(0)}K';
@@ -191,7 +200,7 @@ class LineChartPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: label,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.4),
+          color: isDarkMode ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B),
           fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
@@ -205,7 +214,6 @@ class LineChartPainter extends CustomPainter {
 
     final double stepX = drawWidth / (pointsCount - 1);
 
-    // Prepare paths for Revenue curve (cubic spline approximation)
     final Path curvePath = Path();
     final Path areaPath = Path();
 
@@ -216,7 +224,6 @@ class LineChartPainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    // Cubic Bezier spline interpolation
     curvePath.moveTo(points[0].dx, points[0].dy);
     areaPath.moveTo(points[0].dx, paddingTop + drawHeight);
     areaPath.lineTo(points[0].dx, points[0].dy);
@@ -234,7 +241,6 @@ class LineChartPainter extends CustomPainter {
     areaPath.lineTo(points.last.dx, paddingTop + drawHeight);
     areaPath.close();
 
-    // 1. Draw Area Gradient under the curve
     final Paint areaPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -247,15 +253,13 @@ class LineChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(areaPath, areaPaint);
 
-    // 2. Draw Glow Line (Shadow Effect)
     final Paint glowPaint = Paint()
-      ..color = const Color(0xFFFF512F).withOpacity(0.4)
+      ..color = const Color(0xFFFF512F).withOpacity(isDarkMode ? 0.4 : 0.15)
       ..strokeWidth = 5
       ..style = PaintingStyle.stroke
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
     canvas.drawPath(curvePath, glowPaint);
 
-    // 3. Draw Main Line
     final Paint linePaint = Paint()
       ..color = const Color(0xFFFF512F)
       ..strokeWidth = 3
@@ -263,14 +267,14 @@ class LineChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(curvePath, linePaint);
 
-    // 4. Draw X axis dates (4 items spaced out)
+    // Draw X axis dates
     final int labelStep = (pointsCount / 4).ceil();
     for (int i = 0; i < pointsCount; i += labelStep) {
       final double x = paddingLeft + i * stepX;
       textPainter.text = TextSpan(
         text: data[i].date,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.4),
+          color: isDarkMode ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B),
           fontSize: 9,
           fontWeight: FontWeight.w600,
         ),
@@ -279,11 +283,10 @@ class LineChartPainter extends CustomPainter {
       textPainter.paint(canvas, Offset(x - textPainter.width / 2, paddingTop + drawHeight + 8));
     }
 
-    // 5. Draw interactive hover line & point
+    // Draw interactive hover line & point
     if (hoveredIndex != -1 && hoveredIndex < points.length) {
       final Offset activePoint = points[hoveredIndex];
 
-      // Draw Vertical Line
       final Paint hoverLinePaint = Paint()
         ..color = const Color(0xFFFF512F).withOpacity(0.25)
         ..strokeWidth = 1.5
@@ -294,14 +297,12 @@ class LineChartPainter extends CustomPainter {
         hoverLinePaint,
       );
 
-      // Draw Outer Glow Circle
       final Paint outerCirclePaint = Paint()
         ..color = const Color(0xFFFF512F).withOpacity(0.35)
         ..style = PaintingStyle.fill
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
       canvas.drawCircle(activePoint, 8, outerCirclePaint);
 
-      // Draw Inner Point
       final Paint innerCirclePaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.fill;
@@ -341,7 +342,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     const double paddingRight = 10.0;
     final double drawWidth = constraints.maxWidth - paddingLeft - paddingRight;
 
-    final int barsCount = min(widget.data.length, 5); // Display top 5
+    final int barsCount = min(widget.data.length, 5);
     if (barsCount == 0) return;
 
     final double groupWidth = drawWidth / barsCount;
@@ -374,6 +375,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return LayoutBuilder(
       builder: (context, constraints) {
         return MouseRegion(
@@ -385,6 +387,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
             painter: BarChartPainter(
               data: widget.data,
               hoveredIndex: _hoveredIndex,
+              isDarkMode: isDark,
             ),
           ),
         );
@@ -396,12 +399,17 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
 class BarChartPainter extends CustomPainter {
   final List<GenreViewsModel> data;
   final int hoveredIndex;
+  final bool isDarkMode;
 
-  BarChartPainter({required this.data, required this.hoveredIndex});
+  BarChartPainter({
+    required this.data, 
+    required this.hoveredIndex,
+    required this.isDarkMode,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final int barsCount = min(data.length, 5); // Display top 5 genres
+    final int barsCount = min(data.length, 5);
     if (barsCount == 0) return;
 
     const double paddingTop = 25.0;
@@ -412,12 +420,11 @@ class BarChartPainter extends CustomPainter {
     final double drawWidth = size.width - paddingLeft - paddingRight;
     final double drawHeight = size.height - paddingTop - paddingBottom;
 
-    // Find max views
     double maxViews = data.map((d) => d.viewsCount.toDouble()).fold(10.0, (prev, elem) => max(prev, elem));
     if (maxViews == 0) maxViews = 10.0;
 
     final Paint gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = isDarkMode ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06)
       ..strokeWidth = 1;
 
     final TextPainter textPainter = TextPainter(
@@ -432,7 +439,6 @@ class BarChartPainter extends CustomPainter {
 
       canvas.drawLine(Offset(paddingLeft, y), Offset(size.width - paddingRight, y), gridPaint);
 
-      // Label
       String label = val >= 1000
           ? '${(val / 1000).toStringAsFixed(1)}K'
           : '${val.toInt()}';
@@ -441,7 +447,7 @@ class BarChartPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: label,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.4),
+          color: isDarkMode ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B),
           fontSize: 9,
           fontWeight: FontWeight.w600,
         ),
@@ -463,7 +469,6 @@ class BarChartPainter extends CustomPainter {
 
       final bool isHovered = i == hoveredIndex;
 
-      // Outer glow for hovered bar
       if (isHovered) {
         final Paint glowPaint = Paint()
           ..color = const Color(0xFF00CDAC).withOpacity(0.35)
@@ -476,7 +481,6 @@ class BarChartPainter extends CustomPainter {
         canvas.drawRRect(glowRect, glowPaint);
       }
 
-      // Draw rounded column bar
       final Paint barPaint = Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
@@ -499,11 +503,12 @@ class BarChartPainter extends CustomPainter {
       );
       canvas.drawRRect(barRect, barPaint);
 
-      // Value text on top of bar
       textPainter.text = TextSpan(
         text: '${item.viewsCount}',
         style: TextStyle(
-          color: isHovered ? Colors.white : Colors.white.withOpacity(0.6),
+          color: isHovered 
+              ? (isDarkMode ? Colors.white : const Color(0xFF0F172A)) 
+              : (isDarkMode ? Colors.white.withOpacity(0.6) : const Color(0xFF64748B)),
           fontSize: 9,
           fontWeight: FontWeight.w700,
         ),
@@ -511,11 +516,12 @@ class BarChartPainter extends CustomPainter {
       textPainter.layout();
       textPainter.paint(canvas, Offset(groupCenterX - textPainter.width / 2, barTop - textPainter.height - 4));
 
-      // Draw Genre Name Label under bar
       textPainter.text = TextSpan(
         text: item.genreName,
         style: TextStyle(
-          color: isHovered ? Colors.white : Colors.white.withOpacity(0.4),
+          color: isHovered 
+              ? (isDarkMode ? Colors.white : const Color(0xFF0F172A)) 
+              : (isDarkMode ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B)),
           fontSize: 9,
           fontWeight: FontWeight.w600,
         ),

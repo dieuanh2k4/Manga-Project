@@ -8,6 +8,7 @@ import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
@@ -2329,153 +2330,156 @@ class _ManageUsersState extends State<ManageUsers> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight = (constraints.maxHeight - 24)
-            .clamp(620.0, 920.0)
-            .toDouble();
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
+        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF2F3034),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
-                  child: SizedBox(
-                    height: shellHeight,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FC),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          ManageMangaSidebar(
-                            compact: isCompactSidebar,
-                            selectedKey: sidebarKeyUsers,
-                            onSelect: (key) {
-                              if (key == sidebarKeyOverview) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ManageOverview(
-                                      mangaController: widget.mangaController,
-                                      onLogout: widget.onLogout,
-                                    ),
-                                  ),
-                                );
-                              } else if (key == sidebarKeyManga) {
-                                _openMangaPage();
-                              } else if (key == sidebarKeyAuthors) {
-                                _openAuthorsPage();
-                              } else if (key == sidebarKeyNotifications) {
-                                _openNotificationsPage();
-                              } else if (key == sidebarKeyVip) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ManageVipPackages(
-                                      mangaController: widget.mangaController,
-                                      onLogout: widget.onLogout,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompactSidebar = constraints.maxWidth < 1120;
+            final double shellHeight = (constraints.maxHeight - 24)
+                .clamp(620.0, 920.0)
+                .toDouble();
+
+            return Scaffold(
+              backgroundColor: scaffoldBg,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: SizedBox(
+                        height: shellHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: shellBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: shellBorder, width: 1),
                           ),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topRight: Radius.circular(14),
-                                bottomRight: Radius.circular(14),
+                          child: Row(
+                            children: [
+                              ManageMangaSidebar(
+                                compact: isCompactSidebar,
+                                selectedKey: sidebarKeyUsers,
+                                onSelect: (key) {
+                                  if (key == sidebarKeyOverview) {
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                  } else if (key == sidebarKeyManga) {
+                                    _openMangaPage();
+                                  } else if (key == sidebarKeyAuthors) {
+                                    _openAuthorsPage();
+                                  } else if (key == sidebarKeyNotifications) {
+                                    _openNotificationsPage();
+                                  } else if (key == sidebarKeyVip) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ManageVipPackages(
+                                          mangaController: widget.mangaController,
+                                          onLogout: widget.onLogout,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
                               ),
-                              child: Container(
-                                color: const Color(0xFFF7F8FC),
-                                child: Column(
-                                  children: [
-                                    ManageMangaTopHeader(
-                                      searchController: _searchController,
-                                      onLogout: widget.onLogout,
-                                      onNotificationTap:
-                                          _openNotificationsPage,
-                                      hintText: 'Tìm kiếm người dùng...',
-                                      customHeaderWidget: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(
-                                                  6,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xFFEFF4FF,
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(14),
+                                    bottomRight: Radius.circular(14),
+                                  ),
+                                  child: Container(
+                                    color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
+                                    child: Column(
+                                      children: [
+                                        ManageMangaTopHeader(
+                                          searchController: _searchController,
+                                          onLogout: widget.onLogout,
+                                          onNotificationTap:
+                                              _openNotificationsPage,
+                                          hintText: 'Tìm kiếm người dùng...',
+                                          customHeaderWidget: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: <Widget>[
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(
+                                                      6,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
+                                                      borderRadius:
+                                                          BorderRadius.circular(8),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.people_alt_rounded,
+                                                      size: 18,
+                                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                                                    ),
                                                   ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.people_alt_rounded,
-                                                  size: 18,
-                                                  color: Color(0xFF1F5BFF),
-                                                ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    'Quản lý người dùng',
+                                                    style: TextStyle(
+                                                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                                                      fontSize: 26,
+                                                      fontWeight: FontWeight.w800,
+                                                      letterSpacing: -0.3,
+                                                      height: 1.1,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(width: 10),
-                                              const Text(
-                                                'Quản lý người dùng',
-                                                style: TextStyle(
-                                                  color: Color(0xFF1D2638),
-                                                  fontSize: 26,
-                                                  fontWeight: FontWeight.w800,
-                                                  letterSpacing: -0.3,
-                                                  height: 1.1,
+                                              const SizedBox(height: 2),
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 2),
+                                                child: Text(
+                                                  'Quản lý tài khoản độc giả theo dữ liệu thực tế',
+                                                  style: TextStyle(
+                                                    color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          const Padding(
-                                            padding: EdgeInsets.only(left: 2),
-                                            child: Text(
-                                              'Quản lý tài khoản độc giả theo dữ liệu thực tế',
-                                              style: TextStyle(
-                                                color: Color(0xFF7B879B),
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          20,
-                                          20,
-                                          20,
-                                          16,
                                         ),
-                                        child: _buildMainContent(context),
-                                      ),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              20,
+                                              20,
+                                              20,
+                                              16,
+                                            ),
+                                            child: _buildMainContent(context),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

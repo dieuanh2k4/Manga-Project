@@ -34,4 +34,24 @@ class DashboardApiService {
     final Map<String, dynamic> dataMap = Map<String, dynamic>.from(response.data as Map);
     return DashboardModel.fromJson(dataMap);
   }
+
+  Future<List<RecentActivityModel>> getRecentActivities({int limit = 20}) async {
+    final Map<String, dynamic> headers = await _buildAuthHeaders();
+
+    final response = await _dio.get<dynamic>(
+      '${newAPIBaseURL}Dashboard/get-recent-activities',
+      queryParameters: {'limit': limit},
+      options: Options(headers: headers),
+    );
+
+    if (response.data == null) return [];
+
+    final List<dynamic> list = response.data is List
+        ? response.data as List
+        : (response.data as Map)['\$values'] as List? ?? [];
+
+    return list
+        .map((item) => RecentActivityModel.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
+  }
 }

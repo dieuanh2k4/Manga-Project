@@ -7,6 +7,7 @@ import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/helper/manage_manga_helper.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/pages/home/create_manga_page.dart';
 import 'package:web_admin/presentation/pages/home/create_manga_submit_result.dart';
 import 'package:web_admin/presentation/pages/home/edit_manga_page.dart';
@@ -331,27 +332,37 @@ class _ManageMangaState extends State<ManageManga> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight = (constraints.maxHeight - 24)
-            .clamp(620.0, 920.0)
-            .toDouble();
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
+        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF1A1D2E),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
-                  child: SizedBox(
-                    height: shellHeight,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FC),
-                        borderRadius: BorderRadius.circular(16),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompactSidebar = constraints.maxWidth < 1120;
+            final double shellHeight = (constraints.maxHeight - 24)
+                .clamp(620.0, 920.0)
+                .toDouble();
+
+            return Scaffold(
+              backgroundColor: scaffoldBg,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: SizedBox(
+                        height: shellHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: shellBg,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: shellBorder, width: 1),
                         boxShadow: const [
                           BoxShadow(
                             color: Color(0x22000000),
@@ -369,14 +380,7 @@ class _ManageMangaState extends State<ManageManga> {
                               selectedKey: sidebarKeyManga,
                               onSelect: (key) {
                                 if (key == sidebarKeyOverview) {
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageOverview(
-                                        mangaController: widget.mangaController,
-                                        onLogout: widget.onLogout,
-                                      ),
-                                    ),
-                                  );
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
                                 } else if (key == sidebarKeyAuthors) {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(
@@ -420,11 +424,14 @@ class _ManageMangaState extends State<ManageManga> {
         );
       },
     );
+      },
+    );
   }
 
   Widget _buildMainContent(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
-      color: const Color(0xFFF7F8FC),
+      color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
       child: Column(
         children: [
           ManageMangaTopHeader(

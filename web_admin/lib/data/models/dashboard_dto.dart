@@ -128,3 +128,26 @@ class MangaRankModel {
     );
   }
 }
+
+class RecentActivityModel {
+  final String message;
+  final DateTime timestamp;
+  final String type; // 'vip', 'register'
+
+  const RecentActivityModel({
+    required this.message,
+    required this.timestamp,
+    required this.type,
+  });
+
+  factory RecentActivityModel.fromJson(Map<String, dynamic> map) {
+    return RecentActivityModel(
+      message: map['message']?.toString() ?? map['Message']?.toString() ?? '',
+      timestamp: DateTime.tryParse(
+            map['timestamp']?.toString() ?? map['Timestamp']?.toString() ?? '',
+          )?.toLocal() ??
+          DateTime.now(),
+      type: map['type']?.toString() ?? map['Type']?.toString() ?? 'register',
+    );
+  }
+}

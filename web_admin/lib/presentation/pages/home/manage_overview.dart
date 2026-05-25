@@ -6,6 +6,7 @@ import 'package:web_admin/core/resources/data_state.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/controllers/dashboard_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'package:web_admin/presentation/widgets/dashboard_charts.dart';
@@ -39,25 +40,15 @@ class _ManageOverviewState extends State<ManageOverview> {
     super.initState();
     _dashboardController = sl<DashboardController>();
     _dashboardController.loadDashboardStats();
-    _setupRealtimeSimulation();
+    _dashboardController.loadRecentActivities();
+    _dashboardController.startActivityPolling(intervalSeconds: 60);
   }
 
   @override
   void dispose() {
+    _dashboardController.stopActivityPolling();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _setupRealtimeSimulation() {
-    // Add simulated activities on timer to make the dashboard alive
-    Future.delayed(const Duration(seconds: 15), () {
-      if (!mounted) return;
-      _dashboardController.triggerMockActivity(
-        'Độc giả Hoàng Nam vừa nâng cấp gói thành viên VIP Diamond.',
-        'vip',
-      );
-      _setupRealtimeSimulation();
-    });
   }
 
   Future<void> _onNestedRouteLogout() async {
@@ -66,7 +57,7 @@ class _ManageOverviewState extends State<ManageOverview> {
   }
 
   void _openNotificationsPage() {
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ManageNotifications(
           mangaController: widget.mangaController,
@@ -77,7 +68,7 @@ class _ManageOverviewState extends State<ManageOverview> {
   }
 
   void _openMangaPage() {
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ManageManga(
           mangaController: widget.mangaController,
@@ -89,176 +80,169 @@ class _ManageOverviewState extends State<ManageOverview> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight = (constraints.maxHeight - 24)
-            .clamp(620.0, 920.0)
-            .toDouble();
+    final themeController = sl<ThemeController>();
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF1A1D2E),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
-                  child: SizedBox(
-                    height: shellHeight,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0E1326),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x33000000),
-                            blurRadius: 32,
-                            offset: Offset(0, 8),
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompactSidebar = constraints.maxWidth < 1120;
+            final double shellHeight = (constraints.maxHeight - 24)
+                .clamp(620.0, 920.0)
+                .toDouble();
+
+            final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+            final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
+            final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+
+            return Scaffold(
+              backgroundColor: scaffoldBg,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: SizedBox(
+                        height: shellHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: shellBg,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: shellBorder, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(isDark ? 0.35 : 0.06),
+                                blurRadius: 32,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Row(
-                          children: [
-                            ManageMangaSidebar(
-                              compact: isCompactSidebar,
-                              selectedKey: sidebarKeyOverview,
-                              onSelect: (key) {
-                                if (key == sidebarKeyManga) {
-                                  _openMangaPage();
-                                } else if (key == sidebarKeyAuthors) {
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageAuthors(
-                                        mangaController: widget.mangaController,
-                                        onLogout: _onNestedRouteLogout,
-                                      ),
-                                    ),
-                                  );
-                                } else if (key == sidebarKeyUsers) {
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageUsers(
-                                        mangaController: widget.mangaController,
-                                        onLogout: _onNestedRouteLogout,
-                                      ),
-                                    ),
-                                  );
-                                } else if (key == sidebarKeyVip) {
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageVipPackages(
-                                        mangaController: widget.mangaController,
-                                        onLogout: _onNestedRouteLogout,
-                                      ),
-                                    ),
-                                  );
-                                } else if (key == sidebarKeyNotifications) {
-                                  _openNotificationsPage();
-                                }
-                              },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Row(
+                              children: [
+                                ManageMangaSidebar(
+                                  compact: isCompactSidebar,
+                                  selectedKey: sidebarKeyOverview,
+                                  onSelect: (key) {
+                                    if (key == sidebarKeyManga) {
+                                      _openMangaPage();
+                                    } else if (key == sidebarKeyAuthors) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageAuthors(
+                                            mangaController: widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (key == sidebarKeyUsers) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageUsers(
+                                            mangaController: widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (key == sidebarKeyVip) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageVipPackages(
+                                            mangaController: widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (key == sidebarKeyNotifications) {
+                                      _openNotificationsPage();
+                                    }
+                                  },
+                                ),
+                                Expanded(child: _buildMainContent(context, isDark)),
+                              ],
                             ),
-                            Expanded(child: _buildMainContent(context)),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildMainContent(BuildContext context) {
+  Widget _buildMainContent(BuildContext context, bool isDark) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subtitleColor = isDark ? Colors.white70.withOpacity(0.6) : const Color(0xFF64748B);
+
     return Container(
-      color: const Color(0xFF080C1B),
+      color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF8FAFC),
       child: Column(
         children: [
-          // Override top header styling for Dark theme dashboard overview
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF0E1326),
-              border: Border(
-                bottom: BorderSide(color: Color(0xFF1E2640), width: 1),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Standard Top Header integrated dynamically
+          ManageMangaTopHeader(
+            searchController: _searchController,
+            onLogout: _onNestedRouteLogout,
+            onNotificationTap: _openNotificationsPage,
+            customHeaderWidget: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF512F).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.grid_view_rounded,
+                    size: 18,
+                    color: Color(0xFFFF512F),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF512F).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.grid_view_rounded,
-                            size: 18,
-                            color: Color(0xFFFF512F),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Tổng quan Hệ thống',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                            height: 1.1,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Tổng quan Hệ thống',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        height: 1.1,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Báo cáo và phân tích hoạt động kinh doanh, độc giả thời gian thực',
-                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11),
+                      'Báo cáo phân tích hoạt động kinh doanh thực tế',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 9,
+                      ),
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
-                      tooltip: 'Làm mới số liệu',
-                      onPressed: () => _dashboardController.loadDashboardStats(),
-                    ),
-                    const SizedBox(width: 12),
-                    // Action logout
-                    ElevatedButton.icon(
-                      onPressed: widget.onLogout,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A1D2E),
-                        foregroundColor: Colors.white70,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: Color(0xFF2F3652)),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      ),
-                      icon: const Icon(Icons.logout_rounded, size: 14),
-                      label: const Text('Đăng xuất', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    )
-                  ],
-                )
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: Icon(Icons.refresh_rounded, color: isDark ? Colors.white70 : const Color(0xFF64748B), size: 18),
+                  tooltip: 'Làm mới số liệu',
+                  onPressed: () => _dashboardController.loadDashboardStats(),
+                ),
               ],
             ),
           ),
+          
           Expanded(
             child: ListenableBuilder(
               listenable: _dashboardController,
@@ -266,15 +250,15 @@ class _ManageOverviewState extends State<ManageOverview> {
                 final state = _dashboardController.state;
 
                 if (state is DashboardLoading) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CupertinoActivityIndicator(radius: 16, color: Color(0xFFFF512F)),
-                        SizedBox(height: 14),
+                        const CupertinoActivityIndicator(radius: 16, color: Color(0xFFFF512F)),
+                        const SizedBox(height: 14),
                         Text(
                           'Đang tổng hợp số liệu thực tế...',
-                          style: TextStyle(color: Color(0xFF8491A7)),
+                          style: TextStyle(color: isDark ? const Color(0xFF8491A7) : const Color(0xFF64748B)),
                         ),
                       ],
                     ),
@@ -290,14 +274,18 @@ class _ManageOverviewState extends State<ManageOverview> {
                         children: [
                           const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'Lỗi kết nối cơ sở dữ liệu backend',
-                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF0F172A), 
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             state.errorMessage ?? '',
-                            style: const TextStyle(color: Color(0xFF8491A7), fontSize: 12),
+                            style: TextStyle(color: isDark ? const Color(0xFF8491A7) : const Color(0xFF64748B), fontSize: 12),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
@@ -322,7 +310,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                         const SizedBox(height: 20),
                         _buildChartsHub(stats),
                         const SizedBox(height: 20),
-                        _buildBottomRow(stats),
+                        _buildBottomRow(stats, isDark),
                       ],
                     ),
                   );
@@ -465,7 +453,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                           value,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
                           ),
@@ -530,14 +518,28 @@ class _ManageOverviewState extends State<ManageOverview> {
     required double height,
     required Widget child,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
+
     return Container(
       width: width,
       height: height,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF0E1326),
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E2640), width: 1),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0), 
+          width: 1,
+        ),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,8 +552,8 @@ class _ManageOverviewState extends State<ManageOverview> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
@@ -561,13 +563,17 @@ class _ManageOverviewState extends State<ManageOverview> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: isDark ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B),
                       fontSize: 9,
                     ),
                   ),
                 ],
               ),
-              const Icon(Icons.analytics_outlined, color: Colors.white24, size: 16),
+              Icon(
+                Icons.analytics_outlined, 
+                color: isDark ? Colors.white24 : const Color(0xFFABB3C2), 
+                size: 16,
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -577,7 +583,7 @@ class _ManageOverviewState extends State<ManageOverview> {
     );
   }
 
-  Widget _buildBottomRow(DashboardModel stats) {
+  Widget _buildBottomRow(DashboardModel stats, bool isDark) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isColumn = constraints.maxWidth < 950;
@@ -585,8 +591,8 @@ class _ManageOverviewState extends State<ManageOverview> {
         final double rightWidth = isColumn ? constraints.maxWidth : constraints.maxWidth * 0.60 - 10;
 
         final List<Widget> children = [
-          _buildLiveFeedWidget(leftWidth),
-          _buildTopMangaTable(stats.topManga, rightWidth),
+          _buildLiveFeedWidget(leftWidth, isDark),
+          _buildTopMangaTable(stats.topManga, rightWidth, isDark),
         ];
 
         if (isColumn) {
@@ -608,15 +614,29 @@ class _ManageOverviewState extends State<ManageOverview> {
     );
   }
 
-  Widget _buildLiveFeedWidget(double width) {
+  Widget _buildLiveFeedWidget(double width, bool isDark) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final borderCol = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+    final itemTextCol = isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF334155);
+    final itemTimeCol = isDark ? Colors.white.withOpacity(0.3) : const Color(0xFF94A3B8);
+
     return Container(
       width: width,
       height: 320,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0E1326),
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E2640), width: 1),
+        border: Border.all(color: borderCol, width: 1),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,9 +644,14 @@ class _ManageOverviewState extends State<ManageOverview> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'LUỒNG HOẠT ĐỘNG LIVE',
-                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                style: TextStyle(
+                  color: titleColor, 
+                  fontSize: 12, 
+                  fontWeight: FontWeight.w800, 
+                  letterSpacing: 0.5,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -646,66 +671,93 @@ class _ManageOverviewState extends State<ManageOverview> {
           ),
           const SizedBox(height: 14),
           Expanded(
-            child: ListView.separated(
-              itemCount: _dashboardController.liveActivities.length,
-              separatorBuilder: (_, __) => const Divider(color: Color(0xFF1E2640), height: 1),
-              itemBuilder: (context, index) {
-                final act = _dashboardController.liveActivities[index];
-                
-                Color iconColor = Colors.white;
-                IconData iconData = Icons.info_outline;
+            child: ListenableBuilder(
+              listenable: _dashboardController,
+              builder: (context, _) {
+                final activities = _dashboardController.recentActivities;
+                final isLoading = _dashboardController.activitiesLoading;
 
-                switch (act.type) {
-                  case 'vip':
-                    iconColor = const Color(0xFFFF512F);
-                    iconData = Icons.stars_rounded;
-                    break;
-                  case 'register':
-                    iconColor = const Color(0xFF00CDAC);
-                    iconData = Icons.person_add_rounded;
-                    break;
-                  case 'compress':
-                    iconColor = const Color(0xFFF09819);
-                    iconData = Icons.speed_rounded;
-                    break;
-                  case 'system':
-                    iconColor = const Color(0xFF8A2387);
-                    iconData = Icons.settings_rounded;
-                    break;
+                if (isLoading && activities.isEmpty) {
+                  return const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF512F)),
+                    ),
+                  );
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: iconColor.withOpacity(0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(iconData, color: iconColor, size: 14),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              act.message,
-                              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 10, height: 1.4),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              DateFormat('HH:mm:ss').format(act.timestamp),
-                              style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 8, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
+                if (activities.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Chưa có hoạt động nào',
+                      style: TextStyle(color: itemTimeCol, fontSize: 11),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  itemCount: activities.length,
+                  separatorBuilder: (_, __) => Divider(
+                    color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF1F5F9),
+                    height: 1,
                   ),
+                  itemBuilder: (context, index) {
+                    final act = activities[index];
+
+                    Color iconColor;
+                    IconData iconData;
+
+                    switch (act.type) {
+                      case 'vip':
+                        iconColor = const Color(0xFFFF512F);
+                        iconData = Icons.stars_rounded;
+                        break;
+                      case 'register':
+                      default:
+                        iconColor = const Color(0xFF00CDAC);
+                        iconData = Icons.person_add_rounded;
+                        break;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(iconData, color: iconColor, size: 14),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  act.message,
+                                  style: TextStyle(color: itemTextCol, fontSize: 10, height: 1.4),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  DateFormat('HH:mm:ss').format(act.timestamp),
+                                  style: TextStyle(
+                                    color: itemTimeCol,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -715,29 +767,47 @@ class _ManageOverviewState extends State<ManageOverview> {
     );
   }
 
-  Widget _buildTopMangaTable(List<MangaRankModel> list, double width) {
+  Widget _buildTopMangaTable(List<MangaRankModel> list, double width, bool isDark) {
     final formatCurrency = NumberFormat.simpleCurrency(locale: 'vi_VN', decimalDigits: 0);
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final borderCol = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+    final tableCellTextCol = isDark ? Colors.white70 : const Color(0xFF334155);
+    final labelStyleCol = isDark ? Colors.white60 : const Color(0xFF64748B);
 
     return Container(
       width: width,
       height: 320,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0E1326),
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E2640), width: 1),
+        border: Border.all(color: borderCol, width: 1),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'BẢNG XẾP HẠNG TOP MANGA',
-                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                style: TextStyle(
+                  color: titleColor, 
+                  fontSize: 12, 
+                  fontWeight: FontWeight.w800, 
+                  letterSpacing: 0.5,
+                ),
               ),
-              Icon(Icons.emoji_events_outlined, color: Color(0xFFF09819), size: 18),
+              const Icon(Icons.emoji_events_outlined, color: Color(0xFFF09819), size: 18),
             ],
           ),
           const SizedBox(height: 12),
@@ -753,12 +823,12 @@ class _ManageOverviewState extends State<ManageOverview> {
                   dataRowMinHeight: 45,
                   dataRowMaxHeight: 45,
                   dividerThickness: 0.5,
-                  columns: const [
-                    DataColumn(label: Text('MANGA', style: TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('LƯỢT ĐỌC', style: TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('ĐÁNH GIÁ', style: TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('ĐIỂM SỐ', style: TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('D.THU ƯỚC TÍNH', style: TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700))),
+                  columns: [
+                    DataColumn(label: Text('MANGA', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
+                    DataColumn(label: Text('LƯỢT ĐỌC', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
+                    DataColumn(label: Text('ĐÁNH GIÁ', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
+                    DataColumn(label: Text('ĐIỂM SỐ', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
+                    DataColumn(label: Text('D.THU ƯỚC TÍNH', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
                   ],
                   rows: list.map((manga) {
                     return DataRow(
@@ -771,14 +841,14 @@ class _ManageOverviewState extends State<ManageOverview> {
                                 child: Container(
                                   width: 22,
                                   height: 32,
-                                  color: Colors.white.withOpacity(0.05),
+                                  color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9),
                                   child: manga.thumbnail.isNotEmpty
                                       ? Image.network(
                                           manga.thumbnail,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 12, color: Colors.white24),
+                                          errorBuilder: (_, __, ___) => Icon(Icons.image, size: 12, color: isDark ? Colors.white24 : Colors.grey),
                                         )
-                                      : const Icon(Icons.image, size: 12, color: Colors.white24),
+                                      : Icon(Icons.image, size: 12, color: isDark ? Colors.white24 : Colors.grey),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -792,14 +862,21 @@ class _ManageOverviewState extends State<ManageOverview> {
                                       manga.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A), 
+                                        fontSize: 10, 
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       manga.authorName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 8),
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B), 
+                                        fontSize: 8,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -810,7 +887,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                         DataCell(
                           Text(
                             '${manga.views}',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: tableCellTextCol, fontSize: 10, fontWeight: FontWeight.w600),
                           ),
                         ),
                         DataCell(
@@ -821,7 +898,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                               const SizedBox(width: 2),
                               Text(
                                 '${manga.rating}',
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                style: TextStyle(color: tableCellTextCol, fontSize: 10, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),

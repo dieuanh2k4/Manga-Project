@@ -9,6 +9,7 @@ import 'package:web_admin/domain/entities/manga.dart';
 import 'package:web_admin/domain/usecases/get_authors.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_overview.dart';
@@ -466,90 +467,96 @@ class _ManageAuthorsState extends State<ManageAuthors> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight = (constraints.maxHeight - 24)
-            .clamp(620.0, 920.0)
-            .toDouble();
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
+        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF2F3034),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
-                  child: SizedBox(
-                    height: shellHeight,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FC),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          ManageMangaSidebar(
-                            compact: isCompactSidebar,
-                            selectedKey: sidebarKeyAuthors,
-                            onSelect: (key) {
-                              if (key == sidebarKeyOverview) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ManageOverview(
-                                      mangaController: widget.mangaController,
-                                      onLogout: widget.onLogout,
-                                    ),
-                                  ),
-                                );
-                              } else if (key == sidebarKeyManga) {
-                                _openMangaPage();
-                              } else if (key == sidebarKeyUsers) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ManageUsers(
-                                      mangaController: widget.mangaController,
-                                      onLogout: widget.onLogout,
-                                    ),
-                                  ),
-                                );
-                              } else if (key == sidebarKeyVip) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ManageVipPackages(
-                                      mangaController: widget.mangaController,
-                                      onLogout: widget.onLogout,
-                                    ),
-                                  ),
-                                );
-                              } else if (key == sidebarKeyNotifications) {
-                                _openNotificationsPage();
-                              }
-                            },
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompactSidebar = constraints.maxWidth < 1120;
+            final double shellHeight = (constraints.maxHeight - 24)
+                .clamp(620.0, 920.0)
+                .toDouble();
+
+            return Scaffold(
+              backgroundColor: scaffoldBg,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: SizedBox(
+                        height: shellHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: shellBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: shellBorder, width: 1),
                           ),
-                          Expanded(child: _buildMainContent()),
-                        ],
+                          child: Row(
+                            children: [
+                              ManageMangaSidebar(
+                                compact: isCompactSidebar,
+                                selectedKey: sidebarKeyAuthors,
+                                onSelect: (key) {
+                                  if (key == sidebarKeyOverview) {
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                  } else if (key == sidebarKeyManga) {
+                                    _openMangaPage();
+                                  } else if (key == sidebarKeyUsers) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ManageUsers(
+                                          mangaController: widget.mangaController,
+                                          onLogout: widget.onLogout,
+                                        ),
+                                      ),
+                                    );
+                                  } else if (key == sidebarKeyVip) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ManageVipPackages(
+                                          mangaController: widget.mangaController,
+                                          onLogout: widget.onLogout,
+                                        ),
+                                      ),
+                                    );
+                                  } else if (key == sidebarKeyNotifications) {
+                                    _openNotificationsPage();
+                                  }
+                                },
+                              ),
+                              Expanded(child: _buildMainContent()),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildMainContent() {
+    final isDark = sl<ThemeController>().isDarkMode;
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topRight: Radius.circular(14),
         bottomRight: Radius.circular(14),
       ),
       child: Container(
-        color: const Color(0xFFF7F8FC),
+        color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
         child: Column(
           children: [
             ManageMangaTopHeader(
@@ -566,20 +573,20 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEFF4FF),
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.person_pin_rounded,
                           size: 18,
-                          color: Color(0xFF1F5BFF),
+                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
+                      Text(
                         'Quản lý Tác giả',
                         style: TextStyle(
-                          color: Color(0xFF1D2638),
+                          color: isDark ? Colors.white : const Color(0xFF1D2638),
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
@@ -589,11 +596,14 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2),
                     child: Text(
                       'Quản lý danh sách tác giả của hệ thống',
-                      style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],

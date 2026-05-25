@@ -35,5 +35,19 @@ namespace backend.src.Controllers
                 return ReturnException(ex);
             }
         }
+
+        [HttpGet("get-recent-activities")]
+        public async Task<IActionResult> GetRecentActivities([FromQuery] int limit = 20)
+        {
+            try
+            {
+                var activities = await _dashboardService.GetRecentActivitiesAsync(limit);
+                return Ok(activities);
+            }
+            catch (Exception ex)
+            {
+                return ReturnException(ex);
+            }
+        }
     }
 }

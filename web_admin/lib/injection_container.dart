@@ -31,6 +31,7 @@ import 'package:web_admin/presentation/controllers/remote_manga_controller.dart'
 import 'package:web_admin/presentation/helper/manage_manga_service.dart';
 import 'package:web_admin/data/data_sources/remote/dashboard_api_service.dart';
 import 'package:web_admin/presentation/controllers/dashboard_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 
 final sl = GetIt.instance;
 
@@ -41,6 +42,7 @@ Future<void> initilizeDependencies() async {
   // Local storage
   final SharedPreferences sharedPreferences =
       await SharedPreferences.getInstance();
+  sl.registerSingleton<SharedPreferences>(sharedPreferences);
   sl.registerSingleton<AuthTokenStorage>(AuthTokenStorage(sharedPreferences));
 
   // Dependencies
@@ -84,6 +86,7 @@ Future<void> initilizeDependencies() async {
   sl.registerLazySingleton<DashboardController>(
     () => DashboardController(sl()),
   );
+  sl.registerSingleton<ThemeController>(ThemeController(sl()));
 
   // Presentation services
   sl.registerSingleton<ManageMangaService>(

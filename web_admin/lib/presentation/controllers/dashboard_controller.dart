@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:web_admin/data/data_sources/remote/dashboard_api_service.dart';
 import 'package:web_admin/data/models/dashboard_dto.dart';
@@ -21,61 +22,23 @@ class DashboardError extends DashboardState {
   const DashboardError(String errorMessage) : super(errorMessage: errorMessage);
 }
 
-class LiveActivity {
-  final String message;
-  final DateTime timestamp;
-  final String type; // 'vip', 'register', 'system', 'compress'
-
-  const LiveActivity({
-    required this.message,
-    required this.timestamp,
-    required this.type,
-  });
-}
-
 class DashboardController extends ChangeNotifier {
   final DashboardApiService _apiService;
 
-  DashboardController(this._apiService) {
-    _initSimulatedActivities();
-  }
+  DashboardController(this._apiService);
 
   DashboardState _state = const DashboardLoading();
   DashboardState get state => _state;
 
-  final List<LiveActivity> _liveActivities = [];
-  List<LiveActivity> get liveActivities => List.unmodifiable(_liveActivities);
+  // Real activities from backend
+  final List<RecentActivityModel> _recentActivities = [];
+  List<RecentActivityModel> get recentActivities =>
+      List.unmodifiable(_recentActivities);
 
-  void _initSimulatedActivities() {
-    final now = DateTime.now();
-    _liveActivities.addAll([
-      LiveActivity(
-        message: 'Hệ thống đã nén và chuyển đổi thành công 15 ảnh bộ "One Piece" sang định dạng WebP.',
-        timestamp: now.subtract(const Duration(minutes: 2)),
-        type: 'compress',
-      ),
-      LiveActivity(
-        message: 'Độc giả Trần Thị B vừa thanh toán gói VIP Premium 30 ngày.',
-        timestamp: now.subtract(const Duration(minutes: 5)),
-        type: 'vip',
-      ),
-      LiveActivity(
-        message: 'Người dùng Nguyễn Văn A đã đăng ký tài khoản mới thành công.',
-        timestamp: now.subtract(const Duration(minutes: 12)),
-        type: 'register',
-      ),
-      LiveActivity(
-        message: 'Hệ thống tự động dọn dẹp bộ nhớ đệm cache và tối ưu hóa PostgreSQL.',
-        timestamp: now.subtract(const Duration(minutes: 30)),
-        type: 'system',
-      ),
-      LiveActivity(
-        message: 'Độc giả Lê Văn C vừa bình luận tại Chương 45 bộ "Naruto".',
-        timestamp: now.subtract(const Duration(hours: 1)),
-        type: 'register',
-      ),
-    ]);
-  }
+  bool _activitiesLoading = false;
+  bool get activitiesLoading => _activitiesLoading;
+
+  Timer? _activityPollingTimer;
 
   Future<void> loadDashboardStats() async {
     _state = const DashboardLoading();
@@ -91,19 +54,42 @@ class DashboardController extends ChangeNotifier {
     }
   }
 
-  // Adding simulated realtime updates to WOW the user on interval or manual trigger
-  void triggerMockActivity(String message, String type) {
-    _liveActivities.insert(
-      0,
-      LiveActivity(
-        message: message,
-        timestamp: DateTime.now(),
-        type: type,
-      ),
-    );
-    if (_liveActivities.length > 20) {
-      _liveActivities.removeLast();
-    }
+  /// Load recent activities from real backend data.
+  /// Combines VIP purchases + new registrations, sorted by timestamp.
+  Future<void> loadRecentActivities() async {
+    _activitiesLoading = true;
     notifyListeners();
+
+    try {
+      final activities = await _apiService.getRecentActivities(limit: 20);
+      _recentActivities
+        ..clear()
+        ..addAll(activities);
+    } catch (_) {
+      // Silently fail - keep previous activities if any
+    } finally {
+      _activitiesLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Start auto-polling every [intervalSeconds] seconds.
+  void startActivityPolling({int intervalSeconds = 60}) {
+    _activityPollingTimer?.cancel();
+    _activityPollingTimer = Timer.periodic(
+      Duration(seconds: intervalSeconds),
+      (_) => loadRecentActivities(),
+    );
+  }
+
+  void stopActivityPolling() {
+    _activityPollingTimer?.cancel();
+    _activityPollingTimer = null;
+  }
+
+  @override
+  void dispose() {
+    stopActivityPolling();
+    super.dispose();
   }
 }

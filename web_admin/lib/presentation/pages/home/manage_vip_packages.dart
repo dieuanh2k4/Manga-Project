@@ -6,6 +6,7 @@ import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
@@ -751,117 +752,120 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight = (constraints.maxHeight - 24)
-            .clamp(620.0, 920.0)
-            .toDouble();
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
+        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF2F3034),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
-                  child: SizedBox(
-                    height: shellHeight,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FC),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          ManageMangaSidebar(
-                            compact: isCompactSidebar,
-                            selectedKey: sidebarKeyVip,
-                            onSelect: (key) {
-                              if (key == sidebarKeyOverview) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ManageOverview(
-                                      mangaController: widget.mangaController,
-                                      onLogout: widget.onLogout,
-                                    ),
-                                  ),
-                                );
-                              } else if (key == sidebarKeyManga) {
-                                _openMangaPage();
-                              } else if (key == sidebarKeyAuthors) {
-                                _openAuthorsPage();
-                              } else if (key == sidebarKeyUsers) {
-                                _openUsersPage();
-                              } else if (key == sidebarKeyNotifications) {
-                                _openNotificationsPage();
-                              }
-                            },
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompactSidebar = constraints.maxWidth < 1120;
+            final double shellHeight = (constraints.maxHeight - 24)
+                .clamp(620.0, 920.0)
+                .toDouble();
+
+            return Scaffold(
+              backgroundColor: scaffoldBg,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: SizedBox(
+                        height: shellHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: shellBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: shellBorder, width: 1),
                           ),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topRight: Radius.circular(14),
-                                bottomRight: Radius.circular(14),
+                          child: Row(
+                            children: [
+                              ManageMangaSidebar(
+                                compact: isCompactSidebar,
+                                selectedKey: sidebarKeyVip,
+                                onSelect: (key) {
+                                  if (key == sidebarKeyOverview) {
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                  } else if (key == sidebarKeyManga) {
+                                    _openMangaPage();
+                                  } else if (key == sidebarKeyAuthors) {
+                                    _openAuthorsPage();
+                                  } else if (key == sidebarKeyUsers) {
+                                    _openUsersPage();
+                                  } else if (key == sidebarKeyNotifications) {
+                                    _openNotificationsPage();
+                                  }
+                                },
                               ),
-                              child: Container(
-                                color: const Color(0xFFF7F8FC),
-                                child: Column(
-                                  children: [
-                                    ManageMangaTopHeader(
-                                      searchController: _searchController,
-                                      onLogout: widget.onLogout,
-                                      onNotificationTap: _openNotificationsPage,
-                                      hintText: 'Tìm kiếm gói VIP...',
-                                      customHeaderWidget: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(6),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFFFF4D6),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.stars_rounded,
-                                                  size: 18,
-                                                  color: Color(0xFFB45309),
-                                                ),
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(14),
+                                    bottomRight: Radius.circular(14),
+                                  ),
+                                  child: Container(
+                                    color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
+                                    child: Column(
+                                      children: [
+                                        ManageMangaTopHeader(
+                                          searchController: _searchController,
+                                          onLogout: widget.onLogout,
+                                          onNotificationTap: _openNotificationsPage,
+                                          hintText: 'Tìm kiếm gói VIP...',
+                                          customHeaderWidget: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: <Widget>[
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color: isDark ? const Color(0xFF452200) : const Color(0xFFFFF4D6),
+                                                      borderRadius:
+                                                          BorderRadius.circular(8),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.stars_rounded,
+                                                      size: 18,
+                                                      color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    'Quản lý gói VIP',
+                                                    style: TextStyle(
+                                                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                                                      fontSize: 26,
+                                                      fontWeight: FontWeight.w800,
+                                                      letterSpacing: -0.3,
+                                                      height: 1.1,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(width: 10),
-                                              const Text(
-                                                'Quản lý gói VIP',
-                                                style: TextStyle(
-                                                  color: Color(0xFF1D2638),
-                                                  fontSize: 26,
-                                                  fontWeight: FontWeight.w800,
-                                                  letterSpacing: -0.3,
-                                                  height: 1.1,
+                                              const SizedBox(height: 2),
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 2),
+                                                child: Text(
+                                                  'Thiết lập ưu đãi & thời hạn cho từng gói hội viên VIP',
+                                                  style: TextStyle(
+                                                    color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          const Padding(
-                                            padding: EdgeInsets.only(left: 2),
-                                            child: Text(
-                                              'Thiết lập ưu đãi & thời hạn cho từng gói hội viên VIP',
-                                              style: TextStyle(
-                                                color: Color(0xFF7B879B),
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                        ),
                                     if (_vipLoading)
                                       const LinearProgressIndicator(minHeight: 3),
                                     if (_vipError != null)
@@ -922,6 +926,8 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
             ),
           ),
         );
+      },
+    );
       },
     );
   }

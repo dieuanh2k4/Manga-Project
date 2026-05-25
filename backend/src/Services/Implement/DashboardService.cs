@@ -167,5 +167,53 @@ namespace backend.src.Services.Implement
                 TopManga = rawTopMangaList
             };
         }
+
+        public async Task<List<RecentActivityDto>> GetRecentActivitiesAsync(int limit = 20)
+        {
+            var activities = new List<RecentActivityDto>();
+
+            // VIP purchases - most recent
+            var vipPurchases = await _context.ReaderPackages
+                .Include(rp => rp.Reader)
+                .Include(rp => rp.Package)
+                .OrderByDescending(rp => rp.PurchasedAt)
+                .Take(limit)
+                .ToListAsync();
+
+            foreach (var rp in vipPurchases)
+            {
+                var readerName = rp.Reader?.FullName ?? "Một độc giả";
+                var packageName = rp.Package?.Title ?? "VIP";
+                activities.Add(new RecentActivityDto
+                {
+                    Message = $"{readerName} vừa đăng ký gói {packageName}.",
+                    Timestamp = rp.PurchasedAt,
+                    Type = "vip"
+                });
+            }
+
+            // New reader registrations - most recent
+            var newReaders = await _context.Readers
+                .OrderByDescending(r => r.RegisteredAt)
+                .Take(limit)
+                .ToListAsync();
+
+            foreach (var r in newReaders)
+            {
+                var readerName = r.FullName ?? "Một người dùng";
+                activities.Add(new RecentActivityDto
+                {
+                    Message = $"{readerName} đã đăng ký tài khoản mới.",
+                    Timestamp = r.RegisteredAt,
+                    Type = "register"
+                });
+            }
+
+            // Sort by most recent and return top N
+            return activities
+                .OrderByDescending(a => a.Timestamp)
+                .Take(limit)
+                .ToList();
+        }
     }
 }
