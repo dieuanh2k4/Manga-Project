@@ -60,9 +60,11 @@ class LibraryController extends ChangeNotifier {
       // app subcribe topic khi user add manga vào library
       await FcmNotificationService.instance.subscribeToManga(mangaId);
       await fetchLibraryManga(token);
+      return true;
     } catch (e) {
       error = e.toString();
       notifyListeners();
+      return false;
     }
   }
 
