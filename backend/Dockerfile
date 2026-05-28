@@ -1,13 +1,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ["backend/backend.csproj", "backend/"]
+COPY ["backend.csproj", "./"]
 
-RUN dotnet restore "backend/backend.csproj"
+RUN dotnet restore "backend.csproj"
 
 COPY . .
 
-WORKDIR "/src/backend"
 RUN dotnet build "backend.csproj" -c Release -o /app/build
 
 # Stage 2: Publish
