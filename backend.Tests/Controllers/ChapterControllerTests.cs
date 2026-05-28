@@ -169,7 +169,7 @@ public class ChapterControllerTests
 
         Assert.Equal("Xóa chapter thành công", message);
         Assert.Equal(1, data?.Id);
-        Assert.Empty(dbContext.Chapters);
+        chapterService.Verify(x => x.DeleteChapter(1, 1), Times.Once);
     }
 
     [Fact]
