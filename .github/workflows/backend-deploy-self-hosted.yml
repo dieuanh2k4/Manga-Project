@@ -1,0 +1,90 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy backend on self-hosted runner
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deployment secrets
+        run: |
+          $required = @(
+            'DB_PASSWORD',
+            'DB_PASSWORD_E2E',
+            'JWT_KEY',
+            'MINIO_USER',
+            'MINIO_PASSWORD',
+            'FIREBASE_ADMIN_KEY_JSON'
+          )
+
+          $missing = @()
+          foreach ($name in $required) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              $missing += $name
+            }
+          }
+
+          if ($missing.Count -gt 0) {
+            throw "Missing required GitHub secrets: $($missing -join ', ')"
+          }
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PASSWORD_E2E: ${{ secrets.DB_PASSWORD_E2E }}
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          MINIO_USER: ${{ secrets.MINIO_USER }}
+          MINIO_PASSWORD: ${{ secrets.MINIO_PASSWORD }}
+          FIREBASE_ADMIN_KEY_JSON: ${{ secrets.FIREBASE_ADMIN_KEY_JSON }}
+
+      - name: Write backend environment
+        run: |
+          @"
+          DB_PASSWORD=$env:DB_PASSWORD
+          DB_PASSWORD_E2E=$env:DB_PASSWORD_E2E
+          MINIO_USER=$env:MINIO_USER
+          MINIO_PASSWORD=$env:MINIO_PASSWORD
+          Jwt__Key=$env:JWT_KEY
+          Jwt__Issuer=ProjectManga.Api
+          Jwt__Audience=ProjectManga.Client
+          Jwt__AccessTokenMinutes=120
+          IP_LAN=$env:IP_LAN
+          MINIO_PUBLIC_ENDPOINT=$env:MINIO_PUBLIC_ENDPOINT
+          MINIO_PUBLIC_USE_SSL=$env:MINIO_PUBLIC_USE_SSL
+          MINIO_USE_SSL=false
+          MINIO_BUCKET=$env:MINIO_BUCKET
+          CORS_ALLOWED_ORIGIN_0=$env:CORS_ALLOWED_ORIGIN_0
+          "@ | Set-Content -LiteralPath backend/.env -Encoding UTF8
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PASSWORD_E2E: ${{ secrets.DB_PASSWORD_E2E }}
+          MINIO_USER: ${{ secrets.MINIO_USER }}
+          MINIO_PASSWORD: ${{ secrets.MINIO_PASSWORD }}
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          IP_LAN: ${{ vars.IP_LAN }}
+          MINIO_PUBLIC_ENDPOINT: ${{ vars.MINIO_PUBLIC_ENDPOINT }}
+          MINIO_PUBLIC_USE_SSL: ${{ vars.MINIO_PUBLIC_USE_SSL }}
+          MINIO_BUCKET: ${{ vars.MINIO_BUCKET }}
+          CORS_ALLOWED_ORIGIN_0: ${{ vars.CORS_ALLOWED_ORIGIN_0 }}
+
+      - name: Write Firebase admin key
+        run: |
+          $env:FIREBASE_ADMIN_KEY_JSON | Set-Content -LiteralPath backend/manga-project-firebase-admin-key.json -Encoding UTF8
+        env:
+          FIREBASE_ADMIN_KEY_JSON: ${{ secrets.FIREBASE_ADMIN_KEY_JSON }}
+
+      - name: Deploy Docker Compose services
+        working-directory: backend
+        run: docker compose up -d --build mangazone database minio
+
+      - name: Show service status
+        working-directory: backend
+        run: docker compose ps

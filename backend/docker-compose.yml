@@ -12,9 +12,18 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=postgres;Username=postgres.mruxtgnyueiermswvmzn;Password=${DB_PASSWORD}
       - ASPNETCORE_URLS=http://+:8080
+      - Jwt__Key=${Jwt__Key}
+      - Jwt__Issuer=${Jwt__Issuer:-ProjectManga.Api}
+      - Jwt__Audience=${Jwt__Audience:-ProjectManga.Client}
+      - Jwt__AccessTokenMinutes=${Jwt__AccessTokenMinutes:-120}
       - Minio__Endpoint=minio:9000
-      - Minio__PublicEndpoint=${IP_LAN}:9004
-      - Minio__UseSSL=false
+      - Minio__PublicEndpoint=${MINIO_PUBLIC_ENDPOINT:-}
+      - Minio__AccessKey=${MINIO_USER}
+      - Minio__SecretKey=${MINIO_PASSWORD}
+      - Minio__Bucket=${MINIO_BUCKET:-manga-images}
+      - Minio__UseSSL=${MINIO_USE_SSL:-false}
+      - Minio__PublicUseSSL=${MINIO_PUBLIC_USE_SSL:-false}
+      - Cors__AllowedOrigins__0=${CORS_ALLOWED_ORIGIN_0:-}
     depends_on:
       database:
         condition: service_healthy
