@@ -1,6 +1,6 @@
-# Ignore generated build artifacts from backend tests
-backend.Tests/bin/
-backend.Tests/obj/
+# Ignore generated build artifacts
+**/bin/
+**/obj/
 
 # Ignore local VS Code user settings for this workspace
 .vscode/settings.json
@@ -15,3 +15,6 @@ Project_Context.md
 .env.e2e
 
 manga-project-firebase-admin-key.json
+
+actions-runner/
+_work/
