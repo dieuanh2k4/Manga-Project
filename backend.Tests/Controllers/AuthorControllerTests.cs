@@ -65,7 +65,13 @@ public class AuthorControllerTests
             .Setup(x => x.CreateAuthor(It.IsAny<CreateAuthorDto>()))
             .ReturnsAsync(new Authors { Id = 1, FullName = "New" });
 
-        var controller = new AuthorController(dbContext, authorService.Object, ControllerTestHelper.CreateLogger<AuthorController>());
+        var controller = new AuthorController(dbContext, authorService.Object, ControllerTestHelper.CreateLogger<AuthorController>())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
         var dto = new CreateAuthorDto { FullName = "New" };
 
         var result = await controller.CreateAuthor(dto, file);
@@ -73,6 +79,7 @@ public class AuthorControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var payload = Assert.IsType<Authors>(okResult.Value);
         Assert.Equal(1, payload.Id);
+        Assert.True(controller.Response.Headers.ContainsKey("X-Upload-Status"));
         authorService.Verify(x => x.UploadImage(It.IsAny<IFormFile>()), Times.Once);
     }
 
@@ -91,13 +98,20 @@ public class AuthorControllerTests
             .Setup(x => x.UpdateAuthor(It.IsAny<UpdateAuthorDto>(), 1))
             .ReturnsAsync(new Authors { Id = 1, FullName = "Updated" });
 
-        var controller = new AuthorController(dbContext, authorService.Object, ControllerTestHelper.CreateLogger<AuthorController>());
+        var controller = new AuthorController(dbContext, authorService.Object, ControllerTestHelper.CreateLogger<AuthorController>())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
 
         var result = await controller.UpdateAuthor(new UpdateAuthorDto { FullName = "Updated" }, file, 1);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
         var payload = Assert.IsType<Authors>(okResult.Value);
         Assert.Equal("Updated", payload.FullName);
+        Assert.True(controller.Response.Headers.ContainsKey("X-Upload-Status"));
         authorService.Verify(x => x.UploadImage(It.IsAny<IFormFile>()), Times.Once);
     }
 
