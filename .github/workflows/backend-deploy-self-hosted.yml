@@ -1,0 +1,56 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Backend CI
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write backend .env
+        run: |
+          @"
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PASSWORD_E2E=${{ secrets.DB_PASSWORD_E2E }}
+          MINIO_USER=${{ secrets.MINIO_USER }}
+          MINIO_PASSWORD=${{ secrets.MINIO_PASSWORD }}
+          Jwt__Key=${{ secrets.JWT_KEY }}
+          Jwt__Issuer=ProjectManga.Api
+          Jwt__Audience=ProjectManga.Client
+          Jwt__AccessTokenMinutes=120
+          IP_LAN=${{ vars.IP_LAN }}
+          MINIO_PUBLIC_ENDPOINT=${{ vars.MINIO_PUBLIC_ENDPOINT }}
+          MINIO_PUBLIC_USE_SSL=${{ vars.MINIO_PUBLIC_USE_SSL }}
+          MINIO_USE_SSL=false
+          MINIO_BUCKET=${{ vars.MINIO_BUCKET }}
+          CORS_ALLOWED_ORIGIN_0=${{ vars.CORS_ALLOWED_ORIGIN_0 }}
+          "@ | Set-Content -LiteralPath backend/.env -Encoding UTF8
+
+      - name: Write Firebase admin key
+        run: |
+          '${{ secrets.FIREBASE_ADMIN_KEY_JSON }}' | Set-Content -LiteralPath backend/manga-project-firebase-admin-key.json -Encoding UTF8
+
+      - name: Deploy backend
+        working-directory: backend
+        run: docker compose up -d --build mangazone database minio
+
+      - name: Show containers
+        working-directory: backend
+        run: docker compose ps
