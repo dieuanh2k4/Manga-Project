@@ -5,12 +5,21 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/network/protected_network_image.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/pages/me_page.dart';
+import '../../../manga/domain/entities/manga_entity.dart';
+import '../../../manga/presentation/controllers/search_controller.dart';
 import '../../../manga/presentation/pages/manga_detail_page.dart';
 import '../../../manga/presentation/pages/search_page.dart';
 import '../../../manga/presentation/pages/home_page.dart';
 import '../../domain/entities/library_manga_entity.dart';
 import '../../domain/entities/history_item_entity.dart';
 import '../controllers/library_controller.dart';
+
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
 
 class LibraryPage extends StatefulWidget {
   final String token;
@@ -40,6 +49,11 @@ class _LibraryPageState extends State<LibraryPage>
         setState(() {});
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = context.read<LibraryController>();
+      controller.fetchLibraryManga(widget.token);
+      controller.fetchHistory(widget.token);
+    });
   }
 
   @override
@@ -51,23 +65,14 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) =>
-          LibraryController(
-              getLibraryMangaUseCase: context.read(),
-              getHistoryUseCase: context.read(),
-              addMangaToLibraryUseCase: context.read(),
-              deleteMangaFromLibraryUseCase: context.read(),
-            )
-            ..fetchLibraryManga(widget.token)
-            ..fetchHistory(widget.token),
-      child: Consumer<LibraryController>(
-        builder: (context, controller, _) {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: SafeArea(
-              child: Column(
-                children: [
+    return Consumer<LibraryController>(
+      builder: (context, controller, _) {
+        return Scaffold(
+          key: const Key('library_page'),
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
                     child: Align(
@@ -87,6 +92,7 @@ class _LibraryPageState extends State<LibraryPage>
                       children: [
                         Expanded(
                           child: TextField(
+                            key: const Key('library_search_field'),
                             controller: _searchController,
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
@@ -128,7 +134,7 @@ class _LibraryPageState extends State<LibraryPage>
                         const SizedBox(width: 10),
                         IconButton(
                           icon: const Icon(Icons.more_vert),
-                          onPressed: () {},
+                          onPressed: () => _openAddMangaSheet(context),
                         ),
                       ],
                     ),
@@ -172,20 +178,20 @@ class _LibraryPageState extends State<LibraryPage>
                         ],
                       ),
                     ),
-                  Expanded(child: _buildBody(controller)),
-                ],
-              ),
+                Expanded(child: _buildBody(controller)),
+              ],
             ),
-            bottomNavigationBar: _buildBottomNav(context),
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: _buildBottomNav(context),
+        );
+      },
     );
   }
 
   Widget _buildBody(LibraryController controller) {
     if (controller.isLoading) {
       return const Center(
+        key: Key('library_loading'),
         child: CircularProgressIndicator(color: _primaryColor),
       );
     }
@@ -557,17 +563,262 @@ class _LibraryPageState extends State<LibraryPage>
       },
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
+          icon: Icon(Icons.home_outlined, key: Key('library_nav_home')),
+          activeIcon: Icon(Icons.home, key: Key('library_nav_home')),
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.menu_book_outlined),
+          icon: Icon(Icons.menu_book_outlined, key: Key('library_nav_library')),
           label: 'Library',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Me'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search, key: Key('library_nav_search')),
+          label: 'Search',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline, key: Key('library_nav_me')),
+          label: 'Me',
+        ),
       ],
+    );
+  }
+
+  void _openAddMangaSheet(BuildContext context) {
+    context.read<MangaSearchController>().initialize();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _AddMangaSheet(token: widget.token),
+    );
+  }
+}
+
+class _AddMangaSheet extends StatefulWidget {
+  final String token;
+
+  const _AddMangaSheet({required this.token});
+
+  @override
+  State<_AddMangaSheet> createState() => _AddMangaSheetState();
+}
+
+class _AddMangaSheetState extends State<_AddMangaSheet> {
+  final TextEditingController _queryController = TextEditingController();
+  final Set<int> _pendingAdds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<MangaSearchController>().initialize();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mangaController = context.watch<MangaSearchController>();
+    final libraryController = context.watch<LibraryController>();
+    final libraryIds = libraryController.libraryManga.map((e) => e.id).toSet();
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 14,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDDDDD),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: const [
+                Icon(Icons.bookmark_add_outlined, color: Color(0xFFE8742B)),
+                SizedBox(width: 8),
+                Text(
+                  'Them truyen vao thu vien',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _queryController,
+              onChanged: mangaController.onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Tim ten truyen',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (mangaController.isLoading)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(color: Color(0xFFE8742B)),
+              )
+            else if (mangaController.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  mangaController.errorMessage!,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              )
+            else
+              Flexible(
+                child: _AddMangaList(
+                  items: mangaController.searchResult,
+                  libraryIds: libraryIds,
+                  isAdding: (id) => _pendingAdds.contains(id),
+                  onAdd: (mangaId) async {
+                    if (libraryIds.contains(mangaId)) {
+                      return;
+                    }
+                    setState(() => _pendingAdds.add(mangaId));
+                    try {
+                      final success =
+                          await libraryController.addManga(mangaId, widget.token);
+                      if (!mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success
+                              ? 'Da them vao thu vien.'
+                              : (libraryController.error ??
+                                  'Them truyen that bai. Vui long thu lai.')),
+                        ),
+                      );
+                    } catch (_) {
+                      if (!mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Them truyen that bai. Vui long thu lai.'),
+                        ),
+                      );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _pendingAdds.remove(mangaId));
+                      }
+                    }
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddMangaList extends StatelessWidget {
+  final List<MangaEntity> items;
+  final Set<int> libraryIds;
+  final bool Function(int) isAdding;
+  final Future<void> Function(int) onAdd;
+
+  const _AddMangaList({
+    required this.items,
+    required this.libraryIds,
+    required this.isAdding,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Text('Khong tim thay truyen phu hop.'),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final manga = items[index];
+        final bool added = libraryIds.contains(manga.id);
+        final bool adding = isAdding(manga.id);
+
+        final imageUrl = manga.thumbnail == null || manga.thumbnail!.isEmpty
+            ? 'https://via.placeholder.com/60x85?text=Manga'
+            : manga.thumbnail!.startsWith('http')
+                ? manga.thumbnail!
+                : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: ProtectedNetworkImage(
+              imageUrl: imageUrl,
+              width: 48,
+              height: 68,
+              fit: BoxFit.cover,
+              errorWidget: Container(
+                width: 48,
+                height: 68,
+                color: Colors.grey.shade200,
+                child: const Icon(Icons.image_not_supported_outlined, size: 18),
+              ),
+            ),
+          ),
+          title: Text(
+            manga.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(manga.status ?? 'Unknown status'),
+          trailing: ElevatedButton(
+            onPressed: added || adding ? null : () => onAdd(manga.id),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE8742B),
+              disabledBackgroundColor: const Color(0xFFE8E0DA),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: adding
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(added ? 'Da them' : 'Them'),
+          ),
+        );
+      },
     );
   }
 }
@@ -598,6 +849,7 @@ class _LibraryListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      key: Key('library_manga_${_e2eKeyPart(manga.title)}'),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => MangaDetailPage(mangaId: manga.id)),
@@ -692,9 +944,13 @@ class _HistoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chapterLabel = (item.lastChapterNumber == null ||
+        item.lastChapterNumber!.trim().isEmpty)
+      ? item.lastChapterId.toString()
+      : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+      : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -781,9 +1037,13 @@ class _HistoryGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chapterLabel = (item.lastChapterNumber == null ||
+        item.lastChapterNumber!.trim().isEmpty)
+      ? item.lastChapterId.toString()
+      : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-        : 'Đọc tiếp Chapter ${item.lastChapterId}';
+      : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(

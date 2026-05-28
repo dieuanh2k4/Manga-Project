@@ -22,6 +22,7 @@ class ManageMangaPageHeading extends StatelessWidget {
         ],
       ),
       child: ElevatedButton.icon(
+        key: const Key('manage_manga_create_button'),
         onPressed: onAddTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
@@ -47,21 +48,14 @@ class ManageMangaPageHeading extends StatelessWidget {
         if (isTight) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTitle(),
-              const SizedBox(height: 12),
-              addButton,
-            ],
+            children: [_buildTitle(), const SizedBox(height: 12), addButton],
           );
         }
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _buildTitle(),
-            addButton,
-          ],
+          children: [_buildTitle(), addButton],
         );
       },
     );

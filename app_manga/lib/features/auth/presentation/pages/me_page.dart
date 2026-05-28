@@ -47,6 +47,7 @@ class MePage extends StatelessWidget {
     final token = auth.session?.token ?? '';
 
     return Scaffold(
+      key: const Key('me_page'),
       backgroundColor: const Color(0xFFF2F2F2),
       appBar: AppBar(
         title: const Text('Me'),
@@ -219,6 +220,7 @@ class MePage extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
+                            key: const Key('me_logout_button'),
                             onPressed: () async {
                               await auth.logout();
                               if (!context.mounted) {
@@ -268,15 +270,21 @@ class MePage extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
+            icon: Icon(Icons.home_outlined, key: Key('me_nav_home')),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_outlined),
+            icon: Icon(Icons.menu_book_outlined, key: Key('me_nav_library')),
             label: 'Library',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search, key: Key('me_nav_search')),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, key: Key('me_nav_me')),
+            label: 'Me',
+          ),
         ],
       ),
     );

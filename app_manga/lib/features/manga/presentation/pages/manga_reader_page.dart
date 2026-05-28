@@ -20,6 +20,7 @@ class MangaReaderPage extends StatelessWidget {
   final String mangaTitle;
   final List<ChapterEntity> chapters;
   final int initialChapterId;
+  final int? initialPageId;
 
   const MangaReaderPage({
     super.key,
@@ -27,6 +28,7 @@ class MangaReaderPage extends StatelessWidget {
     required this.mangaTitle,
     required this.chapters,
     required this.initialChapterId,
+    this.initialPageId,
   });
 
   @override
@@ -42,6 +44,7 @@ class MangaReaderPage extends StatelessWidget {
         token: auth.session?.token,
         getPagesByChapterUseCase: GetPagesByChapterUseCase(mangaRepository),
         upsertHistoryUseCase: UpsertHistoryUseCase(mangaRepository),
+        initialPageId: initialPageId,
       )..initialize(initialChapterId),
       child: const _MangaReaderView(),
     );
@@ -69,6 +72,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
   bool _isSwitchingChapterForRestore = false;
   int? _lastPrecachedChapterId;
   int? _lastPrecachedCenterIndex;
+  bool _didApplyInitialHistory = false;
 
   @override
   void initState() {
@@ -177,6 +181,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
 
     return Scaffold(
+      key: const Key('manga_reader_page'),
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F1116),
@@ -308,6 +313,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
               controller.toggleTaskbar();
             },
             child: PageView.builder(
+              key: const Key('manga_reader_horizontal_pages'),
               controller: _horizontalPageController,
               itemCount: controller.pages.length,
               onPageChanged: (index) {
@@ -346,6 +352,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     _syncPageKeys(controller.pages.length);
     return NotificationListener<ScrollNotification>(
+      key: const Key('manga_reader_vertical_pages'),
       onNotification: (notification) {
         if (notification is UserScrollNotification) {
           controller.updateTaskbarOnScroll(notification.direction);
@@ -392,6 +399,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     );
   }
 
+  //
   Future<void> _restoreProgressIfNeeded(
     MangaReaderController controller,
   ) async {
@@ -401,6 +409,34 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
 
     final chapterId = controller.currentChapter.id;
     if (_restoredChapterId == chapterId) {
+      return;
+    }
+
+    if (!_didApplyInitialHistory &&
+        controller.initialPageIndex != null &&
+        controller.pages.isNotEmpty) {
+      final targetIndex = controller.initialPageIndex!
+          .clamp(0, controller.pages.length - 1);
+      controller.setCurrentImageIndex(targetIndex);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+
+        if (controller.mode == ReaderMode.horizontal &&
+            _horizontalPageController.hasClients) {
+          _horizontalPageController.jumpToPage(targetIndex);
+        }
+
+        if (controller.mode == ReaderMode.vertical &&
+            _itemScrollController.isAttached) {
+          _itemScrollController.jumpTo(index: targetIndex, alignment: 0);
+        }
+
+        _restoredChapterId = chapterId;
+        _didApplyInitialHistory = true;
+        _lastSavedIndex = targetIndex;
+      });
       return;
     }
 
@@ -467,6 +503,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
   }
 
+  // lưu lại pageIndex hiện tại
   void _saveProgress(MangaReaderController controller, int index) {
     if (_lastSavedIndex == index) {
       return;
@@ -498,6 +535,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
     });
   }
 
+  // lưu index ảnh khi đọc dọc
   void _onItemPositionsChanged() {
     if (!mounted) {
       return;
@@ -571,6 +609,7 @@ class _MangaReaderViewState extends State<_MangaReaderView> {
           cacheManager: MangaImageCacheManager.instance,
         ),
         context,
+        onError: (_, _) {},
       );
     }
   }

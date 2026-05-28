@@ -8,3 +8,10 @@ backend.Tests/obj/
 # Ignore sensitive files
 .env
 manga-project-firebase-admin-key.json
+
+# Local planning and context documents
+DASHBOARD_PLAN.md
+Project_Context.md
+.env.e2e
+
+manga-project-firebase-admin-key.json

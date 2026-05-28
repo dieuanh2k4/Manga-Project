@@ -65,11 +65,15 @@ class _HomePageState extends State<HomePage> {
     final allManga = controller.mangas;
 
     if (controller.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressPath()));
+      return const Scaffold(
+        key: Key('home_loading'),
+        body: Center(child: CircularProgressPath()),
+      );
     }
 
     if (controller.errorMessage != null) {
       return Scaffold(
+        key: const Key('home_error'),
         backgroundColor: Colors.white,
         body: Center(
           child: Padding(
@@ -105,6 +109,7 @@ class _HomePageState extends State<HomePage> {
 
     if (allManga.isEmpty) {
       return Scaffold(
+        key: const Key('home_empty'),
         backgroundColor: Colors.white,
         body: const Center(
           child: Text(
@@ -117,6 +122,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
+      key: const Key('home_page'),
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
@@ -173,13 +179,7 @@ class _HomePageState extends State<HomePage> {
       height: 220,
       margin: const EdgeInsets.only(bottom: 20),
       decoration: const BoxDecoration(
-        color: Color(0xFFF7F7F7),
-        image: DecorationImage(
-          image: NetworkImage(
-            'https://via.placeholder.com/600x300/ffccaa/ffffff?text=Frieren+Banner',
-          ),
-          fit: BoxFit.cover,
-        ),
+        color: Color(0xFFFFE2CA),
       ),
       child: SafeArea(
         child: Padding(
@@ -188,9 +188,14 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
-                backgroundColor: Color(0xFFE8742B),
-                child: Icon(Icons.person, color: Colors.white),
+              CircleAvatar(
+                backgroundColor: const Color(0xFFE8742B),
+                child: Image.asset(
+                  'assets/images/MANGA_MINUS.png',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                ),
               ),
               Stack(
                 clipBehavior: Clip.none,
@@ -345,16 +350,22 @@ class _HomePageState extends State<HomePage> {
       },
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
+          icon: Icon(Icons.home_outlined, key: Key('home_nav_home')),
+          activeIcon: Icon(Icons.home, key: Key('home_nav_home')),
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.menu_book_outlined),
+          icon: Icon(Icons.menu_book_outlined, key: Key('home_nav_library')),
           label: 'Library',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Me'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search, key: Key('home_nav_search')),
+          label: 'Search',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline, key: Key('home_nav_me')),
+          label: 'Me',
+        ),
       ],
     );
   }

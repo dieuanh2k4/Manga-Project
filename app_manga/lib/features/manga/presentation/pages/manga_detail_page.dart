@@ -2,13 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../library/presentation/controllers/library_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../../domain/repositories/manga_repository.dart';
 import '../../domain/usecases/get_chapters_by_manga_usecase.dart';
 import '../../domain/usecases/get_manga_detail_usecase.dart';
+import '../../../library/domain/usecases/get_history_usecase.dart';
 import '../controllers/manga_detail_controller.dart';
 import 'manga_reader_page.dart';
+
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
 
 class MangaDetailPage extends StatelessWidget {
   final int mangaId;
@@ -18,12 +28,15 @@ class MangaDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repository = context.read<MangaRepository>();
+    final auth = context.read<AuthController>();
+    final historyUseCase = context.read<GetHistoryUseCase>();
 
     return ChangeNotifierProvider(
       create: (_) => MangaDetailController(
         getMangaDetailUseCase: GetMangaDetailUseCase(repository),
         getChaptersByMangaUseCase: GetChaptersByMangaUseCase(repository),
-      )..load(mangaId),
+        getHistoryUseCase: historyUseCase,
+      )..load(mangaId, token: auth.session?.token),
       child: const _MangaDetailView(),
     );
   }
@@ -77,8 +90,17 @@ class _MangaDetailView extends StatelessWidget {
     }
 
     final manga = controller.manga!;
+    final historyItem = controller.lastHistoryItem;
+    final hasChapters = controller.chapters.isNotEmpty;
+    final fallbackChapterId =
+      hasChapters ? controller.chapters.last.id : 0;
+    final continueChapterId = historyItem?.lastChapterId ?? fallbackChapterId;
+    final continuePageId = historyItem?.lastPageId;
+    final canContinue = continueChapterId > 0;
+    final continueLabel = historyItem == null ? 'READ' : 'CONTINUE';
 
     return Scaffold(
+      key: const Key('manga_detail_page'),
       backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
         title: const Text('Manga'),
@@ -100,7 +122,25 @@ class _MangaDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _HeaderSection(manga: manga),
+            _HeaderSection(
+              manga: manga,
+              continueLabel: continueLabel,
+              onContinue: canContinue
+                  ? () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => MangaReaderPage(
+                            mangaId: manga.id,
+                            mangaTitle: manga.title,
+                            chapters: controller.chapters,
+                            initialChapterId: continueChapterId,
+                            initialPageId: continuePageId,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
+            ),
             const Divider(height: 1, thickness: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
@@ -208,8 +248,14 @@ class _MangaDetailView extends StatelessWidget {
 
 class _HeaderSection extends StatelessWidget {
   final MangaEntity manga;
+  final String continueLabel;
+  final VoidCallback? onContinue;
 
-  const _HeaderSection({required this.manga});
+  const _HeaderSection({
+    required this.manga,
+    required this.continueLabel,
+    required this.onContinue,
+  });
 
   String _resolveImageUrl() {
     final thumbnail = manga.thumbnail;
@@ -280,10 +326,10 @@ class _HeaderSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  children: const [
-                    Expanded(child: _ActionButton(label: 'FOLLOWING')),
-                    SizedBox(width: 10),
-                    Expanded(child: _ActionButton(label: 'CONTINUE')),
+                  children: [
+                    Expanded(child: _FollowButton(manga: manga)),
+                    const SizedBox(width: 10),
+                    const Expanded(child: _ActionButton(label: 'CONTINUE')),
                   ],
                 ),
               ],
@@ -316,15 +362,93 @@ class _TagChip extends StatelessWidget {
   }
 }
 
+class _FollowButton extends StatefulWidget {
+  final MangaEntity manga;
+
+  const _FollowButton({required this.manga});
+
+  @override
+  State<_FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends State<_FollowButton> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final auth = context.read<AuthController>();
+      final token = auth.session?.token;
+      if (token != null && token.isNotEmpty) {
+        context.read<LibraryController>().fetchLibraryManga(token);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthController>();
+    final libraryController = context.watch<LibraryController>();
+    final token = auth.session?.token ?? '';
+    final isAuthenticated = token.isNotEmpty;
+    final isInLibrary = libraryController.libraryManga
+        .any((manga) => manga.id == widget.manga.id);
+
+    return OutlinedButton(
+      onPressed: isAuthenticated
+          ? () async {
+              final success = isInLibrary
+                  ? await libraryController.deleteManga(
+                      widget.manga.id,
+                      token,
+                    )
+                  : await libraryController.addManga(
+                      widget.manga.id,
+                      token,
+                    );
+              if (!context.mounted) {
+                return;
+              }
+              final fallback = isInLibrary
+                  ? 'Bo theo doi that bai. Vui long thu lai.'
+                  : 'Them truyen that bai. Vui long thu lai.';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? (isInLibrary
+                            ? 'Da bo theo doi.'
+                            : 'Da them vao thu vien.')
+                        : (libraryController.error ?? fallback),
+                  ),
+                ),
+              );
+            }
+          : null,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFE8742B)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        foregroundColor: const Color(0xFFE8742B),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+      child: Text(isInLibrary ? 'FOLLOWING' : 'FOLLOW'),
+    );
+  }
+}
+
 class _ActionButton extends StatelessWidget {
   final String label;
+  final VoidCallback? onPressed;
 
-  const _ActionButton({required this.label});
+  const _ActionButton({required this.label, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton(
-      onPressed: () {},
+      onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         side: const BorderSide(color: Color(0xFFE8742B)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -357,6 +481,7 @@ class _ChapterTile extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE1E4EA)),
       ),
       child: ListTile(
+        key: Key('manga_chapter_${_e2eKeyPart(chapter.title)}'),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         title: Text(
           chapterLabel,
