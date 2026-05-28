@@ -1,0 +1,46 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: Build and test backend
+    runs-on: windows-latest
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      ASPNETCORE_ENVIRONMENT: CI
+      Jwt__Key: ${{ secrets.JWT_KEY }}
+      Jwt__Issuer: ProjectManga.Api
+      Jwt__Audience: ProjectManga.Client
+      Jwt__AccessTokenMinutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ProjectManga.sln
+
+      - name: Build
+        run: dotnet build ProjectManga.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test backend.Tests/backend.Tests.csproj --configuration Release --no-build --verbosity normal
