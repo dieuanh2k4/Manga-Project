@@ -52,12 +52,15 @@ if (!isSeedCommand)
 
 builder.Services.AddHttpContextAccessor();
 
+var allowedCorsOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebAdminCors", policy =>
     {
         policy
-            // Allow localhost/127.0.0.1 for local web frontend even when the dev port changes.
             .SetIsOriginAllowed(origin =>
             {
                 if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
@@ -65,8 +68,17 @@ builder.Services.AddCors(options =>
                     return false;
                 }
 
-                return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                return allowedCorsOrigins.Any(allowedOrigin =>
+                    string.Equals(
+                        allowedOrigin.TrimEnd('/'),
+                        origin.TrimEnd('/'),
+                        StringComparison.OrdinalIgnoreCase));
             })
             .AllowAnyHeader()
             .AllowAnyMethod();
