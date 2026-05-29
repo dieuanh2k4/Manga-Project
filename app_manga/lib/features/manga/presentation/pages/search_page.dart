@@ -12,7 +12,9 @@ import 'home_page.dart';
 import 'manga_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  final int initialTabIndex;
+
+  const SearchPage({super.key, this.initialTabIndex = 0});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -26,7 +28,12 @@ class _SearchPageState extends State<SearchPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final initialIndex = widget.initialTabIndex.clamp(0, 2);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MangaSearchController>().initialize();
     });
@@ -73,10 +80,12 @@ class _SearchPageState extends State<SearchPage>
                         _buildMangaList(
                           controller.popularItems(),
                           isUpdateList: false,
+                          sizeScale: 2,
                         ),
                         _buildMangaList(
                           controller.lastUpdateItems(),
                           isUpdateList: true,
+                          sizeScale: 2,
                         ),
                         _buildDirectoryTab(controller),
                       ],
@@ -173,6 +182,7 @@ class _SearchPageState extends State<SearchPage>
     List<MangaEntity> items, {
     required bool isUpdateList,
     bool isEmbedded = false,
+    double sizeScale = 1,
   }) {
     if (items.isEmpty) {
       return const Center(
@@ -188,11 +198,16 @@ class _SearchPageState extends State<SearchPage>
       physics: isEmbedded
           ? const NeverScrollableScrollPhysics()
           : const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(vertical: 4 * sizeScale),
       itemCount: items.length,
       separatorBuilder: (context, separatorIndex) =>
           const Divider(height: 1, color: Color(0xFFD0D0D0)),
       itemBuilder: (context, index) {
         final manga = items[index];
+        final imageWidth = 54 * sizeScale;
+        final imageHeight = 74 * sizeScale;
+        final titleFont = 20.0 * sizeScale.clamp(1, 1.3);
+        final metaFont = 12.0 * sizeScale.clamp(1, 1.2);
         final imageUrl = manga.thumbnail == null || manga.thumbnail!.isEmpty
             ? 'https://via.placeholder.com/60x85?text=Manga'
             : manga.thumbnail!.startsWith('http')
@@ -209,7 +224,10 @@ class _SearchPageState extends State<SearchPage>
           },
           child: Container(
             color: const Color(0xFFF2F2F2),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            padding: EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 10 * sizeScale,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -217,12 +235,12 @@ class _SearchPageState extends State<SearchPage>
                   borderRadius: BorderRadius.circular(2),
                   child: ProtectedNetworkImage(
                     imageUrl: imageUrl,
-                    width: 54,
-                    height: 74,
+                    width: imageWidth,
+                    height: imageHeight,
                     fit: BoxFit.cover,
                     errorWidget: Container(
-                      width: 54,
-                      height: 74,
+                      width: imageWidth,
+                      height: imageHeight,
                       color: Colors.grey.shade300,
                       alignment: Alignment.center,
                       child: const Icon(
@@ -232,7 +250,7 @@ class _SearchPageState extends State<SearchPage>
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10 * sizeScale.clamp(1, 1.4)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,36 +259,36 @@ class _SearchPageState extends State<SearchPage>
                         manga.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          color: Color(0xFF333333),
-                          fontWeight: FontWeight.w500,
+                        style: TextStyle(
+                          fontSize: titleFont,
+                          color: const Color(0xFF333333),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 4 * sizeScale.clamp(1, 1.3)),
                       Text(
                         manga.status ?? 'Unknown status',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
+                        style: TextStyle(
+                          fontSize: metaFont + 2,
+                          color: const Color(0xFF6B7280),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 6 * sizeScale.clamp(1, 1.3)),
                       Text(
                         'cap ${manga.totalChapter}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
+                        style: TextStyle(
+                          fontSize: metaFont + 1,
+                          color: const Color(0xFF6B7280),
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 4 * sizeScale.clamp(1, 1.2)),
                       Text(
                         isUpdateList
                             ? '${(index + 1) * 12} minutes ago'
                             : 'This have ${(manga.id * 246813) % 99999999} views',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
+                        style: TextStyle(
+                          fontSize: metaFont,
+                          color: const Color(0xFF6B7280),
                         ),
                       ),
                     ],
@@ -362,6 +380,7 @@ class _SearchPageState extends State<SearchPage>
               controller.directoryItems(),
               isUpdateList: true,
               isEmbedded: true,
+              sizeScale: 1.5,
             ),
         ],
       ),

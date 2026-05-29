@@ -32,26 +32,29 @@ class MangaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageWidth = isGrid ? double.infinity : width;
+    final imageHeight = isGrid ? null : height;
+
     return Container(
-      width: isGrid ? null : width,
+      width: isGrid ? double.infinity : width,
       margin: isGrid ? null : const EdgeInsets.only(right: 12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: ProtectedNetworkImage(
                 imageUrl: _getImageUrl(manga.thumbnail),
-                width: isGrid ? null : width,
-                height: isGrid ? null : height,
+                width: imageWidth,
+                height: imageHeight,
                 fit: BoxFit.cover,
                 errorWidget: Container(
-                  width: isGrid ? null : width,
-                  height: isGrid ? null : height,
+                  width: imageWidth,
+                  height: imageHeight,
                   color: Colors.grey[300],
                   child: const Icon(Icons.error),
                 ),

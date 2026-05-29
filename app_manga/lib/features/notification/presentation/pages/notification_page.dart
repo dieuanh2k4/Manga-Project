@@ -38,7 +38,7 @@ class _NotificationPageState extends State<NotificationPage> {
         foregroundColor: const Color(0xFFBA541E),
         elevation: 0,
         title: const Text(
-          'Thong bao',
+          'Thông báo',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
@@ -47,7 +47,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 ? null
                 : () => controller.markAllAsRead(token),
             icon: const Icon(Icons.done_all, size: 18),
-            label: const Text('Da doc tat ca'),
+            label: const Text('Đã đọc tất cả'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFBA541E),
               disabledForegroundColor: Colors.black26,
@@ -101,7 +101,7 @@ class _NotificationPageState extends State<NotificationPage> {
           Icon(Icons.notifications_none, size: 44, color: Color(0xFFBA541E)),
           SizedBox(height: 12),
           Text(
-            'Chua co thong bao',
+            'Chưa có thông báo',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black54),
           ),

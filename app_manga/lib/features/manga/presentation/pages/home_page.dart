@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage> {
                 const Icon(Icons.cloud_off, size: 40, color: Color(0xFFBA541E)),
                 const SizedBox(height: 12),
                 const Text(
-                  'Khong tai duoc du lieu truyen',
+                  'Không tải được dữ liệu manga',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => controller.loadManga(),
-                  child: const Text('Thu lai'),
+                  child: const Text('Thử lại'),
                 ),
               ],
             ),
@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.white,
         body: const Center(
           child: Text(
-            'Chua co truyen de hien thi',
+            'Chưa có truyện để hiển thị',
             style: TextStyle(fontSize: 16, color: Colors.black54),
           ),
         ),
@@ -122,17 +122,40 @@ class _HomePageState extends State<HomePage> {
         slivers: [
           SliverToBoxAdapter(child: _buildBanner()),
           SliverToBoxAdapter(
-            child: _buildHorizontalSection('Last Updates', allManga),
+            child: _buildHorizontalSection(
+              'Mới cập nhật',
+              allManga,
+              onViewMore: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => const SearchPage(initialTabIndex: 1),
+                  ),
+                );
+              },
+              cardWidth: 170,
+              cardHeight: 250,
+              listHeight: 270,
+            ),
           ),
           SliverToBoxAdapter(
-            child: _buildSectionHeader('Most Viewed', showGenreBtn: true),
+            child: _buildSectionHeader(
+              'Phổ biến',
+              actionLabel: 'Xem thêm',
+              onAction: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => const SearchPage(initialTabIndex: 0),
+                  ),
+                );
+              },
+            ),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 170,
-                childAspectRatio: 0.62,
+                mainAxisExtent: 270,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
@@ -156,9 +179,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
-          SliverToBoxAdapter(
-            child: _buildHorizontalSection('For you', allManga.reversed.toList()),
-          ),
           SliverToBoxAdapter(child: const SizedBox(height: 30)),
         ],
       ),
@@ -168,85 +188,170 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBanner() {
     final unreadCount = context.watch<NotificationController>().unreadCount;
+    const previewSlides = [
+      {
+        'title': 'Hot pick #1',
+        'subtitle': 'Cho manga vào đây',
+        'colors': [Color(0xFFFFD3A0), Color(0xFFF59E5B)],
+      },
+      {
+        'title': 'Hot pick #2',
+        'subtitle': 'Cho manga vào đây',
+        'colors': [Color(0xFFFFE6C7), Color(0xFFED7B2A)],
+      },
+      {
+        'title': 'Hot pick #3',
+        'subtitle': 'Cho manga vào đây',
+        'colors': [Color(0xFFFFE1B6), Color(0xFFE46C1B)],
+      },
+      {
+        'title': 'Hot pick #4',
+        'subtitle': 'Cho manga vào đây',
+        'colors': [Color(0xFFFFD4A8), Color(0xFFD85B16)],
+      },
+    ];
 
     return Container(
-      height: 220,
       margin: const EdgeInsets.only(bottom: 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF7F7F7),
-        image: DecorationImage(
-          image: NetworkImage(
-            'https://via.placeholder.com/600x300/ffccaa/ffffff?text=Frieren+Banner',
-          ),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CircleAvatar(
-                backgroundColor: Color(0xFFE8742B),
-                child: Icon(Icons.person, color: Colors.white),
-              ),
-              Stack(
-                clipBehavior: Clip.none,
+      child: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white.withOpacity(0.92),
-                    child: IconButton(
-                      tooltip: 'Thong bao',
-                      icon: const Icon(
-                        Icons.notifications_outlined,
-                        color: Color(0xFFBA541E),
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/daruma.png',
+                        width: 30,
+                        height: 30,
                       ),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const NotificationPage(),
-                          ),
-                        );
-                      },
-                    ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'MangaMINUS',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                          fontFamily: 'Georgia',
+                        ),
+                      ),
+                    ],
                   ),
-                  if (unreadCount > 0)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE53935),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          unreadCount > 99 ? '99+' : unreadCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: IconButton(
+                          tooltip: 'Thông báo',
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            color: Color(0xFFBA541E),
                           ),
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const NotificationPage(),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53935),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              unreadCount > 99
+                                  ? '99+'
+                                  : unreadCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          SizedBox(
+            height: 240,
+            child: PageView.builder(
+              itemCount: previewSlides.length,
+              itemBuilder: (context, index) {
+                final slide = previewSlides[index];
+                final colors = slide['colors']! as List<Color>;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: colors,
+                    ),
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          slide['title']! as String,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          slide['subtitle']! as String,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, {bool showGenreBtn = false}) {
+  Widget _buildSectionHeader(
+    String title, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -260,16 +365,20 @@ class _HomePageState extends State<HomePage> {
               color: Color(0xFFBA541E),
             ),
           ),
-          if (showGenreBtn)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8742B),
-                borderRadius: BorderRadius.circular(20),
+          if (actionLabel != null)
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFE8742B),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
-              child: const Text(
-                'Genres >',
-                style: TextStyle(color: Colors.white, fontSize: 12),
+              child: Text(
+                actionLabel,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
         ],
@@ -277,13 +386,24 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHorizontalSection(String title, List<MangaEntity> mangas) {
+  Widget _buildHorizontalSection(
+    String title,
+    List<MangaEntity> mangas, {
+    required VoidCallback onViewMore,
+    double cardWidth = 150,
+    double cardHeight = 220,
+    double listHeight = 240,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(title),
+        _buildSectionHeader(
+          title,
+          actionLabel: 'Xem thêm >',
+          onAction: onViewMore,
+        ),
         SizedBox(
-          height: 200,
+          height: listHeight,
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
@@ -292,8 +412,8 @@ class _HomePageState extends State<HomePage> {
               final selected = mangas[index];
               return MangaCard(
                 manga: selected,
-                width: 110,
-                height: 160,
+                width: cardWidth,
+                height: cardHeight,
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
