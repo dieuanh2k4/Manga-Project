@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../library/presentation/controllers/library_controller.dart';
 import '../../domain/entities/chapter_entity.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../../domain/repositories/manga_repository.dart';
@@ -318,19 +319,9 @@ class _HeaderSection extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'FOLLOWING',
-                        onPressed: () {},
-                      ),
-                    ),
+                    Expanded(child: _FollowButton(manga: manga)),
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: _ActionButton(
-                        label: continueLabel,
-                        onPressed: onContinue,
-                      ),
-                    ),
+                    const Expanded(child: _ActionButton(label: 'CONTINUE')),
                   ],
                 ),
               ],
@@ -359,6 +350,77 @@ class _TagChip extends StatelessWidget {
         label,
         style: const TextStyle(fontSize: 20, color: Color(0xFFAF4D1A)),
       ),
+    );
+  }
+}
+
+class _FollowButton extends StatefulWidget {
+  final MangaEntity manga;
+
+  const _FollowButton({required this.manga});
+
+  @override
+  State<_FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends State<_FollowButton> {
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthController>();
+    final token = auth.session?.token;
+    if (token != null && token.isNotEmpty) {
+      context.read<LibraryController>().fetchLibraryManga(token);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthController>();
+    final libraryController = context.watch<LibraryController>();
+    final token = auth.session?.token ?? '';
+    final isAuthenticated = token.isNotEmpty;
+    final isInLibrary = libraryController.libraryManga
+        .any((manga) => manga.id == widget.manga.id);
+
+    return OutlinedButton(
+      onPressed: isAuthenticated
+          ? () async {
+              final success = isInLibrary
+                  ? await libraryController.deleteManga(
+                      widget.manga.id,
+                      token,
+                    )
+                  : await libraryController.addManga(
+                      widget.manga.id,
+                      token,
+                    );
+              if (!context.mounted) {
+                return;
+              }
+              final fallback = isInLibrary
+                  ? 'Bo theo doi that bai. Vui long thu lai.'
+                  : 'Them truyen that bai. Vui long thu lai.';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? (isInLibrary
+                            ? 'Da bo theo doi.'
+                            : 'Da them vao thu vien.')
+                        : (libraryController.error ?? fallback),
+                  ),
+                ),
+              );
+            }
+          : null,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFE8742B)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        foregroundColor: const Color(0xFFE8742B),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+      child: Text(isInLibrary ? 'FOLLOWING' : 'FOLLOW'),
     );
   }
 }

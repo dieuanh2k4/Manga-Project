@@ -42,6 +42,11 @@ class _LibraryPageState extends State<LibraryPage>
         setState(() {});
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = context.read<LibraryController>();
+      controller.fetchLibraryManga(widget.token);
+      controller.fetchHistory(widget.token);
+    });
   }
 
   @override
@@ -53,23 +58,13 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) =>
-          LibraryController(
-              getLibraryMangaUseCase: context.read(),
-              getHistoryUseCase: context.read(),
-              addMangaToLibraryUseCase: context.read(),
-              deleteMangaFromLibraryUseCase: context.read(),
-            )
-            ..fetchLibraryManga(widget.token)
-            ..fetchHistory(widget.token),
-      child: Consumer<LibraryController>(
-        builder: (context, controller, _) {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: SafeArea(
-              child: Column(
-                children: [
+    return Consumer<LibraryController>(
+      builder: (context, controller, _) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
                     child: Align(
@@ -174,14 +169,13 @@ class _LibraryPageState extends State<LibraryPage>
                         ],
                       ),
                     ),
-                  Expanded(child: _buildBody(controller)),
-                ],
-              ),
+                Expanded(child: _buildBody(controller)),
+              ],
             ),
-            bottomNavigationBar: _buildBottomNav(context),
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: _buildBottomNav(context),
+        );
+      },
     );
   }
 
