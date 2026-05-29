@@ -609,6 +609,7 @@ class _NotificationFilterBar extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           ElevatedButton.icon(
+            key: const Key('manage_notifications_create_button'),
             onPressed: onCreate,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF040617),

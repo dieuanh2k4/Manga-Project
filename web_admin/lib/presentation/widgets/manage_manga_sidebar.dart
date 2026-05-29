@@ -100,6 +100,7 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyVip),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_notifications'),
             icon: Icons.notifications_none_rounded,
             label: 'Quản lý Thông báo',
             compact: compact,
