@@ -536,7 +536,9 @@ class _LibraryPageState extends State<LibraryPage>
       currentIndex: 1,
       selectedItemColor: _primaryColor,
       unselectedItemColor: Colors.grey,
-      showUnselectedLabels: true,
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      iconSize: 30,
       onTap: (index) {
         if (index == 0) {
           Navigator.of(context).pushReplacement(
@@ -561,14 +563,14 @@ class _LibraryPageState extends State<LibraryPage>
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
-          label: 'Home',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.menu_book_outlined),
-          label: 'Library',
+          label: '',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Me'),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
       ],
     );
   }

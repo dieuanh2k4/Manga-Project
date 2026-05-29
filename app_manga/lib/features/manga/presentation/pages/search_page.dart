@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/network/protected_network_image.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/pages/me_page.dart';
+import '../../../library/presentation/pages/library_page.dart';
 import '../../domain/entities/manga_entity.dart';
 import '../controllers/search_controller.dart';
 import 'home_page.dart';
@@ -372,12 +374,28 @@ class _SearchPageState extends State<SearchPage>
       currentIndex: 2,
       selectedItemColor: const Color(0xFFE8742B),
       unselectedItemColor: Colors.grey,
-      showUnselectedLabels: true,
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      iconSize: 30,
       onTap: (index) {
         if (index == 0) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomePage()),
           );
+        }
+        if (index == 1) {
+          final auth = Provider.of<AuthController>(context, listen: false);
+          if (auth.session != null) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => LibraryPage(token: auth.session!.token),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Bạn cần đăng nhập để xem thư viện!')),
+            );
+          }
         }
         if (index == 3) {
           Navigator.of(
@@ -389,14 +407,14 @@ class _SearchPageState extends State<SearchPage>
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
-          label: 'Home',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.menu_book_outlined),
-          label: 'Library',
+          label: '',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Me'),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
       ],
     );
   }

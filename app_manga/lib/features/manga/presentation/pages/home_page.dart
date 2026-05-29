@@ -316,7 +316,9 @@ class _HomePageState extends State<HomePage> {
       currentIndex: 0,
       selectedItemColor: const Color(0xFFE8742B),
       unselectedItemColor: Colors.grey,
-      showUnselectedLabels: true,
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      iconSize: 30,
       onTap: (index) {
         if (index == 1) {
           final auth = Provider.of<AuthController>(context, listen: false);
@@ -347,14 +349,14 @@ class _HomePageState extends State<HomePage> {
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
-          label: 'Home',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.menu_book_outlined),
-          label: 'Library',
+          label: '',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Me'),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
       ],
     );
   }
