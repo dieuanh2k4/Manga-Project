@@ -195,7 +195,7 @@ class MangaRemoteDataSource {
         'mangaId': mangaId,
         'chapterId': chapterId,
         'pageNumber': pageId,
-        'isCompleted': ?isCompleted,
+        if (isCompleted != null) 'isCompleted': isCompleted,
       }),
     );
 
