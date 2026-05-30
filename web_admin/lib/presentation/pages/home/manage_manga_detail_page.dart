@@ -172,7 +172,9 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      editing == null ? 'Thêm Chapter mới' : 'Chỉnh sửa Chapter',
+                      editing == null
+                          ? 'Thêm Chapter mới'
+                          : 'Chỉnh sửa Chapter',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -253,7 +255,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                     ),
                     onChanged: (value) =>
                         setDialogState(() => isPremium = value),
-                    activeColor: const Color(0xFFD97706),
+                    activeThumbColor: const Color(0xFFD97706),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -635,10 +637,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
 
                   return Row(
                     children: [
-                      SizedBox(
-                        width: 360,
-                        child: _buildChapterPanel(),
-                      ),
+                      SizedBox(width: 360, child: _buildChapterPanel()),
                       const SizedBox(width: 16),
                       Expanded(child: _buildPagePanel()),
                     ],
@@ -669,7 +668,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                 width: 36,
                 height: 36,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox(
+                errorBuilder: (_, _, _) => const SizedBox(
                   width: 36,
                   height: 36,
                   child: Icon(
@@ -681,7 +680,11 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
               ),
             )
           else
-            const Icon(Icons.menu_book_rounded, color: Colors.white54, size: 22),
+            const Icon(
+              Icons.menu_book_rounded,
+              color: Colors.white54,
+              size: 22,
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

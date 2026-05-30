@@ -60,7 +60,7 @@ namespace backend.src.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost("create-manga")]
-        public async Task<IActionResult> CreateManga([FromForm] CreateMangaDto dto, IFormFile? file)
+        public async Task<IActionResult> CreateManga([FromForm] CreateMangaDto dto, [FromForm(Name = "file")] IFormFile? file)
         {
             try
             {
@@ -89,7 +89,7 @@ namespace backend.src.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("update-manga/{id}")]
-        public async Task<IActionResult> UpdateManga([FromForm] UpdateMangaDto dto, IFormFile? file, int id) 
+        public async Task<IActionResult> UpdateManga([FromForm] UpdateMangaDto dto, [FromForm(Name = "file")] IFormFile? file, int id) 
         {
             try 
             {

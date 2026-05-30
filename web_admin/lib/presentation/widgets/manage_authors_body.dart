@@ -77,7 +77,10 @@ class _AuthorSearchCard extends StatelessWidget {
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Nhập tên tác giả...',
-                hintStyle: const TextStyle(color: Color(0xFFABB3C2), fontSize: 13),
+                hintStyle: const TextStyle(
+                  color: Color(0xFFABB3C2),
+                  fontSize: 13,
+                ),
                 prefixIcon: const Icon(
                   Icons.search,
                   color: Color(0xFFABB3C2),
@@ -218,7 +221,7 @@ class _AuthorListCard extends StatelessWidget {
                   )
                 : ListView.separated(
                     itemCount: visibleAuthors.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final AuthorEntity author = visibleAuthors[index];
                       final int authorId = author.id ?? 0;

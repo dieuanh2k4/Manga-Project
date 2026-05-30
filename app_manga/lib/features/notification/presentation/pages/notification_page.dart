@@ -67,10 +67,7 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Widget _buildBody(
-    NotificationController controller,
-    String? token,
-  ) {
+  Widget _buildBody(NotificationController controller, String? token) {
     if (controller.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFFE8742B)),
@@ -82,7 +79,11 @@ class _NotificationPageState extends State<NotificationPage> {
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 120),
-          const Icon(Icons.notifications_off_outlined, size: 44, color: Color(0xFFBA541E)),
+          const Icon(
+            Icons.notifications_off_outlined,
+            size: 44,
+            color: Color(0xFFBA541E),
+          ),
           const SizedBox(height: 12),
           Text(
             controller.error!,
@@ -112,7 +113,7 @@ class _NotificationPageState extends State<NotificationPage> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: controller.notifications.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final notification = controller.notifications[index];
         final hasManga = notification.mangaId > 0;
@@ -126,7 +127,10 @@ class _NotificationPageState extends State<NotificationPage> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
             leading: CircleAvatar(
               backgroundColor: notification.isRead
                   ? const Color(0xFFF2F2F2)
@@ -143,7 +147,9 @@ class _NotificationPageState extends State<NotificationPage> {
             title: Text(
               notification.title,
               style: TextStyle(
-                fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w800,
+                fontWeight: notification.isRead
+                    ? FontWeight.w500
+                    : FontWeight.w800,
                 color: notification.isRead ? Colors.black54 : Colors.black87,
               ),
             ),
@@ -181,9 +187,8 @@ class _NotificationPageState extends State<NotificationPage> {
 
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => MangaDetailPage(
-                          mangaId: notification.mangaId,
-                        ),
+                        builder: (_) =>
+                            MangaDetailPage(mangaId: notification.mangaId),
                       ),
                     );
                   },

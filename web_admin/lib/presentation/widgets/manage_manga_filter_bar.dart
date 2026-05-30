@@ -131,7 +131,7 @@ class ManageMangaFilterBar extends StatelessWidget {
         ),
         suffixIcon: ListenableBuilder(
           listenable: searchController,
-          builder: (_, __) => searchController.text.isNotEmpty
+          builder: (_, _) => searchController.text.isNotEmpty
               ? IconButton(
                   icon: const Icon(
                     Icons.close_rounded,

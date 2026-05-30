@@ -184,5 +184,10 @@ namespace Server.src.Services.Implements
             // 7) Trả signed URL ngắn hạn thay vì link public cố định.
             return await presignClient.PresignedGetObjectAsync(args);
         }
+
+        public bool TryParseStoragePath(string fileName, out string bucket, out string objectName)
+        {
+            return _minioHelper.TryParseStoragePath(fileName, out bucket, out objectName);
+        }
     }
 }

@@ -123,8 +123,7 @@ class MangaChapterPanel extends StatelessWidget {
                     itemCount: chapters.length,
                     itemBuilder: (context, index) {
                       final ChapterItem chapter = chapters[index];
-                      final bool selected =
-                          chapter.id == selectedChapter?.id;
+                      final bool selected = chapter.id == selectedChapter?.id;
 
                       return _ChapterTile(
                         chapter: chapter,
@@ -192,9 +191,7 @@ class _ChapterTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: selected
-                          ? Colors.white
-                          : const Color(0xFF4E5A6F),
+                      color: selected ? Colors.white : const Color(0xFF4E5A6F),
                     ),
                   ),
                 ),
@@ -608,9 +605,7 @@ class _PageThumbnail extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF1F5BFF)
-                : const Color(0xFFE4E8F2),
+            color: selected ? const Color(0xFF1F5BFF) : const Color(0xFFE4E8F2),
             width: selected ? 2.5 : 1,
           ),
           boxShadow: selected
@@ -644,7 +639,7 @@ class _PageThumbnail extends StatelessWidget {
                       ),
                     );
                   },
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     color: const Color(0xFFE5EAF3),
                     child: const Icon(
                       Icons.broken_image_outlined,

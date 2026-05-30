@@ -93,7 +93,21 @@ namespace backend.src.Services.Implement
 
             var newManga = await dto.FromDtoToManga();
 
-            newManga.Thumbnail = dto.Thumbnail;
+            if (!string.IsNullOrWhiteSpace(dto.Thumbnail))
+            {
+                if (_minio.TryParseStoragePath(dto.Thumbnail, out var bucket, out var objectName))
+                {
+                    newManga.Thumbnail = $"{bucket}/{objectName}";
+                }
+                else
+                {
+                    newManga.Thumbnail = dto.Thumbnail;
+                }
+            }
+            else
+            {
+                newManga.Thumbnail = dto.Thumbnail;
+            }
 
             await _context.AddAsync(newManga);
             await _context.SaveChangesAsync();
@@ -146,7 +160,26 @@ namespace backend.src.Services.Implement
             manga.TotalChapter = dto.TotalChapter;
             manga.Description = dto.Description;
             manga.Rate = dto.Rate;
-            manga.Thumbnail = dto.Thumbnail;
+            
+            if (dto.Thumbnail != "Đang xử lý")
+            {
+                if (!string.IsNullOrWhiteSpace(dto.Thumbnail))
+                {
+                    if (_minio.TryParseStoragePath(dto.Thumbnail, out var bucket, out var objectName))
+                    {
+                        manga.Thumbnail = $"{bucket}/{objectName}";
+                    }
+                    else
+                    {
+                        manga.Thumbnail = dto.Thumbnail;
+                    }
+                }
+                else
+                {
+                    manga.Thumbnail = dto.Thumbnail;
+                }
+            }
+
             manga.Title = dto.Title;
             manga.EndDate = dto.EndDate;
 

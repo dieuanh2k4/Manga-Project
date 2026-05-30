@@ -215,7 +215,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
       return Image.network(
         currentThumbnail,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return const _ThumbnailPlaceholder(icon: Icons.broken_image_outlined);
         },
       );
@@ -326,7 +326,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
                       _buildStatusRow(),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
-                        value: _authorId,
+                        initialValue: _authorId,
                         decoration: const InputDecoration(labelText: 'Tác giả'),
                         items: authorItems,
                         onChanged: (value) {
@@ -445,7 +445,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
       builder: (context, constraints) {
         final bool isCompact = constraints.maxWidth < 700;
         final Widget statusField = DropdownButtonFormField<String>(
-          value: _status,
+          initialValue: _status,
           decoration: const InputDecoration(labelText: 'Trạng thái'),
           items: _statusOptions
               .map(

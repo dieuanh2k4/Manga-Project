@@ -155,7 +155,7 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: targetRole,
+                      initialValue: targetRole,
                       decoration: const InputDecoration(
                         labelText: 'Đối tượng nhận',
                         border: OutlineInputBorder(),
@@ -181,7 +181,7 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      value: selectedMangaId,
+                      initialValue: selectedMangaId,
                       decoration: InputDecoration(
                         labelText: targetRole == 'LikedManga'
                             ? 'Chọn Manga'
@@ -351,9 +351,13 @@ class _ManageNotificationsState extends State<ManageNotifications> {
       listenable: themeController,
       builder: (context, _) {
         final isDark = themeController.isDarkMode;
-        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
         final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -385,9 +389,13 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                                 selectedKey: sidebarKeyNotifications,
                                 onSelect: (key) {
                                   if (key == sidebarKeyOverview) {
-                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
                                   } else if (key == sidebarKeyManga) {
                                     _openMangaPage();
+                                  } else if (key == sidebarKeyGenres) {
+                                    _openGenresPage();
                                   } else if (key == sidebarKeyAuthors) {
                                     _openAuthorsPage();
                                   } else if (key == sidebarKeyUsers) {
@@ -396,7 +404,8 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute<void>(
                                         builder: (_) => ManageVipPackages(
-                                          mangaController: widget.mangaController,
+                                          mangaController:
+                                              widget.mangaController,
                                           onLogout: widget.onLogout,
                                         ),
                                       ),
@@ -445,20 +454,26 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFEFF4FF),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           Icons.notifications_active_rounded,
                           size: 18,
-                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                          color: isDark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF1F5BFF),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         'Quản lý thông báo',
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1D2638),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1D2638),
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
@@ -473,7 +488,9 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                     child: Text(
                       'Quản lý thông báo hệ thống và gửi thông báo tới độc giả',
                       style: TextStyle(
-                        color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF7B879B),
                         fontSize: 13,
                       ),
                     ),
@@ -486,7 +503,7 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                 child: ListenableBuilder(
                   listenable: _notificationController,
-                  builder: (_, __) {
+                  builder: (_, _) {
                     final RemoteNotificationState state =
                         _notificationController.state;
                     if (state is RemoteNotificationLoading) {
@@ -516,7 +533,8 @@ class _ManageNotificationsState extends State<ManageNotifications> {
                                 _selectedSort = value;
                               });
                             },
-                            onRefresh: _notificationController.loadNotifications,
+                            onRefresh:
+                                _notificationController.loadNotifications,
                             onCreate: _showCreateNotificationDialog,
                           ),
                           const SizedBox(height: 14),
@@ -570,7 +588,7 @@ class _NotificationFilterBar extends StatelessWidget {
           SizedBox(
             width: 170,
             child: DropdownButtonFormField<String>(
-              value: selectedSort,
+              initialValue: selectedSort,
               decoration: const InputDecoration(
                 isDense: true,
                 labelText: 'Sắp xếp',
@@ -601,10 +619,18 @@ class _NotificationFilterBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF1F5BFF)),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              size: 16,
+              color: Color(0xFF1F5BFF),
+            ),
             label: const Text(
               'Làm mới',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1F5BFF)),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F5BFF),
+              ),
             ),
           ),
           const SizedBox(width: 10),

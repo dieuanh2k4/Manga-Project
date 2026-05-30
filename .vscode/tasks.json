@@ -7,19 +7,7 @@
 			"command": "powershell",
 			"args": [
 				"-Command",
-				"Set-Location 'web_admin'; flutter run -d chrome"
-			],
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
-			"label": "Run web_admin (Flutter web)",
-			"type": "shell",
-			"command": "powershell",
-			"args": [
-				"-Command",
-				"Set-Location 'web_admin'; flutter run -d chrome"
+				"Set-Location 'web_admin'; flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:5219/api/"
 			],
 			"isBackground": true,
 			"problemMatcher": [],

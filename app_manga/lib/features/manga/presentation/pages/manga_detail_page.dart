@@ -51,7 +51,9 @@ class _MangaDetailView extends StatelessWidget {
 
     if (controller.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Color(0xFFE8742B))),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFFE8742B)),
+        ),
       );
     }
 
@@ -69,7 +71,11 @@ class _MangaDetailView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 42, color: Color(0xFFBA541E)),
+                const Icon(
+                  Icons.error_outline,
+                  size: 42,
+                  color: Color(0xFFBA541E),
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'Khong tai duoc chi tiet truyen',
@@ -92,8 +98,7 @@ class _MangaDetailView extends StatelessWidget {
     final manga = controller.manga!;
     final historyItem = controller.lastHistoryItem;
     final hasChapters = controller.chapters.isNotEmpty;
-    final fallbackChapterId =
-      hasChapters ? controller.chapters.last.id : 0;
+    final fallbackChapterId = hasChapters ? controller.chapters.last.id : 0;
     final continueChapterId = historyItem?.lastChapterId ?? fallbackChapterId;
     final continuePageId = historyItem?.lastPageId;
     final canContinue = continueChapterId > 0;
@@ -147,9 +152,9 @@ class _MangaDetailView extends StatelessWidget {
               child: Text(
                 'Introduction',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF32363F),
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF32363F),
+                ),
               ),
             ),
             Padding(
@@ -170,9 +175,9 @@ class _MangaDetailView extends StatelessWidget {
               child: Text(
                 'Genres',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF32363F),
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF32363F),
+                ),
               ),
             ),
             Padding(
@@ -181,10 +186,10 @@ class _MangaDetailView extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 10,
                 children: manga.genres.isEmpty
-                    ? const [
-                        _TagChip(label: 'Updating'),
-                      ]
-                    : manga.genres.map((genre) => _TagChip(label: genre.name)).toList(),
+                    ? const [_TagChip(label: 'Updating')]
+                    : manga.genres
+                          .map((genre) => _TagChip(label: genre.name))
+                          .toList(),
               ),
             ),
             Padding(
@@ -195,9 +200,9 @@ class _MangaDetailView extends StatelessWidget {
                   Text(
                     'Chapters',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF32363F),
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF32363F),
+                    ),
                   ),
                   Text(
                     '${controller.chapters.length} chap',
@@ -322,7 +327,10 @@ class _HeaderSection extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   manga.status ?? 'Unknown status',
-                  style: const TextStyle(fontSize: 21, color: Color(0xFF6D7482)),
+                  style: const TextStyle(
+                    fontSize: 21,
+                    color: Color(0xFF6D7482),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -394,21 +402,16 @@ class _FollowButtonState extends State<_FollowButton> {
     final libraryController = context.watch<LibraryController>();
     final token = auth.session?.token ?? '';
     final isAuthenticated = token.isNotEmpty;
-    final isInLibrary = libraryController.libraryManga
-        .any((manga) => manga.id == widget.manga.id);
+    final isInLibrary = libraryController.libraryManga.any(
+      (manga) => manga.id == widget.manga.id,
+    );
 
     return OutlinedButton(
       onPressed: isAuthenticated
           ? () async {
               final success = isInLibrary
-                  ? await libraryController.deleteManga(
-                      widget.manga.id,
-                      token,
-                    )
-                  : await libraryController.addManga(
-                      widget.manga.id,
-                      token,
-                    );
+                  ? await libraryController.deleteManga(widget.manga.id, token)
+                  : await libraryController.addManga(widget.manga.id, token);
               if (!context.mounted) {
                 return;
               }
@@ -420,8 +423,8 @@ class _FollowButtonState extends State<_FollowButton> {
                   content: Text(
                     success
                         ? (isInLibrary
-                            ? 'Da bo theo doi.'
-                            : 'Da them vao thu vien.')
+                              ? 'Da bo theo doi.'
+                              : 'Da them vao thu vien.')
                         : (libraryController.error ?? fallback),
                   ),
                 ),
@@ -443,7 +446,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
 
-  const _ActionButton({required this.label, this.onPressed});
+  const _ActionButton({required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -485,7 +488,10 @@ class _ChapterTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         title: Text(
           chapterLabel,
-          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2E2E2E),
+          ),
         ),
         subtitle: Text(
           chapter.title.trim().isEmpty ? 'No title' : chapter.title,

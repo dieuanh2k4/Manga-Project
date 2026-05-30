@@ -904,7 +904,7 @@ class _ManageUsersState extends State<ManageUsers> {
                       _buildDialogInput(_genderController, 'Giới tính'),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: _editingRole,
+                        initialValue: _editingRole,
                         decoration: InputDecoration(
                           labelText: 'Vai trò',
                           border: OutlineInputBorder(
@@ -923,10 +923,11 @@ class _ManageUsersState extends State<ManageUsers> {
                         ],
                         onChanged: _editingUserId == null
                             ? (String? val) {
-                                if (val != null)
+                                if (val != null) {
                                   setStateDialog(() {
                                     _editingRole = val;
                                   });
+                                }
                               }
                             : null,
                       ),
@@ -1474,7 +1475,7 @@ class _ManageUsersState extends State<ManageUsers> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _vipPackages.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final _VipPackage package = _vipPackages[index];
                 return _buildVipPackageCard(
@@ -1488,7 +1489,7 @@ class _ManageUsersState extends State<ManageUsers> {
             Expanded(
               child: ListView.separated(
                 itemCount: _vipPackages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final _VipPackage package = _vipPackages[index];
                   return _buildVipPackageCard(
@@ -1562,7 +1563,7 @@ class _ManageUsersState extends State<ManageUsers> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _vipPrivileges.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final _VipPrivilege item = _vipPrivileges[index];
                 return Container(
@@ -1601,7 +1602,7 @@ class _ManageUsersState extends State<ManageUsers> {
             Expanded(
               child: ListView.separated(
                 itemCount: _vipPrivileges.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final _VipPrivilege item = _vipPrivileges[index];
                   return Container(
@@ -2349,9 +2350,13 @@ class _ManageUsersState extends State<ManageUsers> {
       listenable: themeController,
       builder: (context, _) {
         final isDark = themeController.isDarkMode;
-        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
         final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -2383,9 +2388,13 @@ class _ManageUsersState extends State<ManageUsers> {
                                 selectedKey: sidebarKeyUsers,
                                 onSelect: (key) {
                                   if (key == sidebarKeyOverview) {
-                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
                                   } else if (key == sidebarKeyManga) {
                                     _openMangaPage();
+                                  } else if (key == sidebarKeyGenres) {
+                                    _openGenresPage();
                                   } else if (key == sidebarKeyAuthors) {
                                     _openAuthorsPage();
                                   } else if (key == sidebarKeyNotifications) {
@@ -2394,7 +2403,8 @@ class _ManageUsersState extends State<ManageUsers> {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute<void>(
                                         builder: (_) => ManageVipPackages(
-                                          mangaController: widget.mangaController,
+                                          mangaController:
+                                              widget.mangaController,
                                           onLogout: widget.onLogout,
                                         ),
                                       ),
@@ -2409,7 +2419,9 @@ class _ManageUsersState extends State<ManageUsers> {
                                     bottomRight: Radius.circular(14),
                                   ),
                                   child: Container(
-                                    color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
+                                    color: isDark
+                                        ? const Color(0xFF080C1B)
+                                        : const Color(0xFFF7F8FC),
                                     child: Column(
                                       children: [
                                         ManageMangaTopHeader(
@@ -2427,27 +2439,45 @@ class _ManageUsersState extends State<ManageUsers> {
                                               Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.all(
-                                                      6,
-                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(6),
                                                     decoration: BoxDecoration(
-                                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF1E293B,
+                                                            )
+                                                          : const Color(
+                                                              0xFFEFF4FF,
+                                                            ),
                                                       borderRadius:
-                                                          BorderRadius.circular(8),
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                     child: Icon(
                                                       Icons.people_alt_rounded,
                                                       size: 18,
-                                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF60A5FA,
+                                                            )
+                                                          : const Color(
+                                                              0xFF1F5BFF,
+                                                            ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
                                                     'Quản lý người dùng',
                                                     style: TextStyle(
-                                                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                                                      color: isDark
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF1D2638,
+                                                            ),
                                                       fontSize: 26,
-                                                      fontWeight: FontWeight.w800,
+                                                      fontWeight:
+                                                          FontWeight.w800,
                                                       letterSpacing: -0.3,
                                                       height: 1.1,
                                                     ),
@@ -2456,11 +2486,17 @@ class _ManageUsersState extends State<ManageUsers> {
                                               ),
                                               const SizedBox(height: 2),
                                               Padding(
-                                                padding: const EdgeInsets.only(left: 2),
+                                                padding: const EdgeInsets.only(
+                                                  left: 2,
+                                                ),
                                                 child: Text(
                                                   'Quản lý tài khoản độc giả theo dữ liệu thực tế',
                                                   style: TextStyle(
-                                                    color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                                                    color: isDark
+                                                        ? Colors.white70
+                                                        : const Color(
+                                                            0xFF7B879B,
+                                                          ),
                                                     fontSize: 13,
                                                   ),
                                                 ),
@@ -2772,12 +2808,10 @@ class _ManageUsersState extends State<ManageUsers> {
                                 );
                                 return DataRow(
                                   selected: selected,
-                                  color: MaterialStateProperty.resolveWith((
-                                    Set<MaterialState> states,
+                                  color: WidgetStateProperty.resolveWith((
+                                    Set<WidgetState> states,
                                   ) {
-                                    if (states.contains(
-                                      MaterialState.selected,
-                                    )) {
+                                    if (states.contains(WidgetState.selected)) {
                                       return const Color(0xFFF3F6FF);
                                     }
                                     return null;
@@ -2831,12 +2865,10 @@ class _ManageUsersState extends State<ManageUsers> {
                                   selected: _selectedUserIds.contains(
                                     user.uniqueKey,
                                   ),
-                                  color: MaterialStateProperty.resolveWith((
-                                    Set<MaterialState> states,
+                                  color: WidgetStateProperty.resolveWith((
+                                    Set<WidgetState> states,
                                   ) {
-                                    if (states.contains(
-                                      MaterialState.selected,
-                                    )) {
+                                    if (states.contains(WidgetState.selected)) {
                                       return const Color(0xFFF3F6FF);
                                     }
                                     return null;
@@ -3066,18 +3098,18 @@ class _ManageUsersState extends State<ManageUsers> {
                                           child: ScrollbarTheme(
                                             data: ScrollbarThemeData(
                                               thickness:
-                                                  MaterialStateProperty.all(8),
+                                                  WidgetStateProperty.all(8),
                                               radius: const Radius.circular(8),
                                               thumbColor:
-                                                  MaterialStateProperty.all(
+                                                  WidgetStateProperty.all(
                                                     const Color(0xFFB5C0D6),
                                                   ),
                                               trackColor:
-                                                  MaterialStateProperty.all(
+                                                  WidgetStateProperty.all(
                                                     const Color(0xFFE7ECF5),
                                                   ),
                                               trackBorderColor:
-                                                  MaterialStateProperty.all(
+                                                  WidgetStateProperty.all(
                                                     const Color(0xFFD5DDEA),
                                                   ),
                                             ),
@@ -3120,22 +3152,20 @@ class _ManageUsersState extends State<ManageUsers> {
                                             child: ScrollbarTheme(
                                               data: ScrollbarThemeData(
                                                 thickness:
-                                                    MaterialStateProperty.all(
-                                                      8,
-                                                    ),
+                                                    WidgetStateProperty.all(8),
                                                 radius: const Radius.circular(
                                                   8,
                                                 ),
                                                 thumbColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                       const Color(0xFFB5C0D6),
                                                     ),
                                                 trackColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                       const Color(0xFFE7ECF5),
                                                     ),
                                                 trackBorderColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                       const Color(0xFFD5DDEA),
                                                     ),
                                               ),

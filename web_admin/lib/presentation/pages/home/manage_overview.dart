@@ -16,6 +16,7 @@ import 'package:web_admin/presentation/pages/home/manage_authors.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
 import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
 import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
+import 'package:web_admin/presentation/pages/home/manage_genres.dart';
 
 class ManageOverview extends StatefulWidget {
   final RemoteMangaController mangaController;
@@ -94,9 +95,13 @@ class _ManageOverviewState extends State<ManageOverview> {
                 .clamp(620.0, 920.0)
                 .toDouble();
 
-            final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+            final scaffoldBg = isDark
+                ? const Color(0xFF1A1D2E)
+                : const Color(0xFFDFE3ED);
             final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-            final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+            final shellBorder = isDark
+                ? const Color(0xFF1E2640)
+                : const Color(0xFFE2E8F0);
 
             return Scaffold(
               backgroundColor: scaffoldBg,
@@ -115,7 +120,9 @@ class _ManageOverviewState extends State<ManageOverview> {
                             border: Border.all(color: shellBorder, width: 1),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(isDark ? 0.35 : 0.06),
+                                color: Colors.black.withOpacity(
+                                  isDark ? 0.35 : 0.06,
+                                ),
                                 blurRadius: 32,
                                 offset: const Offset(0, 8),
                               ),
@@ -131,11 +138,22 @@ class _ManageOverviewState extends State<ManageOverview> {
                                   onSelect: (key) {
                                     if (key == sidebarKeyManga) {
                                       _openMangaPage();
+                                    } else if (key == sidebarKeyGenres) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageGenres(
+                                            mangaController:
+                                                widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
                                     } else if (key == sidebarKeyAuthors) {
                                       Navigator.of(context).push(
                                         MaterialPageRoute<void>(
                                           builder: (_) => ManageAuthors(
-                                            mangaController: widget.mangaController,
+                                            mangaController:
+                                                widget.mangaController,
                                             onLogout: _onNestedRouteLogout,
                                           ),
                                         ),
@@ -144,7 +162,8 @@ class _ManageOverviewState extends State<ManageOverview> {
                                       Navigator.of(context).push(
                                         MaterialPageRoute<void>(
                                           builder: (_) => ManageUsers(
-                                            mangaController: widget.mangaController,
+                                            mangaController:
+                                                widget.mangaController,
                                             onLogout: _onNestedRouteLogout,
                                           ),
                                         ),
@@ -153,7 +172,8 @@ class _ManageOverviewState extends State<ManageOverview> {
                                       Navigator.of(context).push(
                                         MaterialPageRoute<void>(
                                           builder: (_) => ManageVipPackages(
-                                            mangaController: widget.mangaController,
+                                            mangaController:
+                                                widget.mangaController,
                                             onLogout: _onNestedRouteLogout,
                                           ),
                                         ),
@@ -163,7 +183,9 @@ class _ManageOverviewState extends State<ManageOverview> {
                                     }
                                   },
                                 ),
-                                Expanded(child: _buildMainContent(context, isDark)),
+                                Expanded(
+                                  child: _buildMainContent(context, isDark),
+                                ),
                               ],
                             ),
                           ),
@@ -182,7 +204,9 @@ class _ManageOverviewState extends State<ManageOverview> {
 
   Widget _buildMainContent(BuildContext context, bool isDark) {
     final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final subtitleColor = isDark ? Colors.white70.withOpacity(0.6) : const Color(0xFF64748B);
+    final subtitleColor = isDark
+        ? Colors.white70.withOpacity(0.6)
+        : const Color(0xFF64748B);
 
     return Container(
       color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF8FAFC),
@@ -226,23 +250,24 @@ class _ManageOverviewState extends State<ManageOverview> {
                     const SizedBox(height: 2),
                     Text(
                       'Báo cáo phân tích hoạt động kinh doanh thực tế',
-                      style: TextStyle(
-                        color: subtitleColor,
-                        fontSize: 9,
-                      ),
+                      style: TextStyle(color: subtitleColor, fontSize: 9),
                     ),
                   ],
                 ),
                 const SizedBox(width: 12),
                 IconButton(
-                  icon: Icon(Icons.refresh_rounded, color: isDark ? Colors.white70 : const Color(0xFF64748B), size: 18),
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                    size: 18,
+                  ),
                   tooltip: 'Làm mới số liệu',
                   onPressed: () => _dashboardController.loadDashboardStats(),
                 ),
               ],
             ),
           ),
-          
+
           Expanded(
             child: ListenableBuilder(
               listenable: _dashboardController,
@@ -254,11 +279,18 @@ class _ManageOverviewState extends State<ManageOverview> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const CupertinoActivityIndicator(radius: 16, color: Color(0xFFFF512F)),
+                        const CupertinoActivityIndicator(
+                          radius: 16,
+                          color: Color(0xFFFF512F),
+                        ),
                         const SizedBox(height: 14),
                         Text(
                           'Đang tổng hợp số liệu thực tế...',
-                          style: TextStyle(color: isDark ? const Color(0xFF8491A7) : const Color(0xFF64748B)),
+                          style: TextStyle(
+                            color: isDark
+                                ? const Color(0xFF8491A7)
+                                : const Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -272,27 +304,39 @@ class _ManageOverviewState extends State<ManageOverview> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            color: Colors.redAccent,
+                            size: 48,
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             'Lỗi kết nối cơ sở dữ liệu backend',
                             style: TextStyle(
-                              color: isDark ? Colors.white : const Color(0xFF0F172A), 
-                              fontSize: 16, 
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             state.errorMessage ?? '',
-                            style: TextStyle(color: isDark ? const Color(0xFF8491A7) : const Color(0xFF64748B), fontSize: 12),
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFF8491A7)
+                                  : const Color(0xFF64748B),
+                              fontSize: 12,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => _dashboardController.loadDashboardStats(),
+                            onPressed: () =>
+                                _dashboardController.loadDashboardStats(),
                             child: const Text('Thử lại'),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -302,7 +346,10 @@ class _ManageOverviewState extends State<ManageOverview> {
                 if (state is DashboardDone && state.stats != null) {
                   final stats = state.stats!;
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -326,12 +373,16 @@ class _ManageOverviewState extends State<ManageOverview> {
   }
 
   Widget _buildKpiHeroGrid(DashboardModel stats) {
-    final formatCurrency = NumberFormat.simpleCurrency(locale: 'vi_VN', decimalDigits: 0);
+    final formatCurrency = NumberFormat.simpleCurrency(
+      locale: 'vi_VN',
+      decimalDigits: 0,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool stacked = constraints.maxWidth < 600;
-        final bool twoColumn = constraints.maxWidth >= 600 && constraints.maxWidth < 1100;
+        final bool twoColumn =
+            constraints.maxWidth >= 600 && constraints.maxWidth < 1100;
 
         final List<Widget> cards = [
           _buildKpiCard(
@@ -362,10 +413,14 @@ class _ManageOverviewState extends State<ManageOverview> {
 
         if (stacked) {
           return Column(
-            children: cards.map((card) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: card,
-            )).toList(),
+            children: cards
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: card,
+                  ),
+                )
+                .toList(),
           );
         }
 
@@ -374,17 +429,23 @@ class _ManageOverviewState extends State<ManageOverview> {
           return Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: cards.map((card) => SizedBox(width: cardWidth, child: card)).toList(),
+            children: cards
+                .map((card) => SizedBox(width: cardWidth, child: card))
+                .toList(),
           );
         }
 
         return Row(
-          children: cards.map((card) => Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: card,
-            ),
-          )).toList(),
+          children: cards
+              .map(
+                (card) => Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: card,
+                  ),
+                ),
+              )
+              .toList(),
         );
       },
     );
@@ -418,10 +479,12 @@ class _ManageOverviewState extends State<ManageOverview> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: gradientColors.last.withOpacity(isHovered ? 0.45 : 0.25),
+                    color: gradientColors.last.withOpacity(
+                      isHovered ? 0.45 : 0.25,
+                    ),
                     blurRadius: isHovered ? 20 : 12,
                     offset: const Offset(0, 6),
-                  )
+                  ),
                 ],
               ),
               child: Row(
@@ -460,7 +523,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -474,7 +537,9 @@ class _ManageOverviewState extends State<ManageOverview> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isColumn = constraints.maxWidth < 950;
-        final double width = isColumn ? constraints.maxWidth : (constraints.maxWidth - 20) / 2;
+        final double width = isColumn
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 20) / 2;
 
         final List<Widget> children = [
           _buildChartContainer(
@@ -495,11 +560,7 @@ class _ManageOverviewState extends State<ManageOverview> {
 
         if (isColumn) {
           return Column(
-            children: [
-              children[0],
-              const SizedBox(height: 20),
-              children[1],
-            ],
+            children: [children[0], const SizedBox(height: 20), children[1]],
           );
         }
 
@@ -528,7 +589,7 @@ class _ManageOverviewState extends State<ManageOverview> {
         color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0), 
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0),
           width: 1,
         ),
         boxShadow: isDark
@@ -538,7 +599,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
       ),
       child: Column(
@@ -563,15 +624,17 @@ class _ManageOverviewState extends State<ManageOverview> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: isDark ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.4)
+                          : const Color(0xFF64748B),
                       fontSize: 9,
                     ),
                   ),
                 ],
               ),
               Icon(
-                Icons.analytics_outlined, 
-                color: isDark ? Colors.white24 : const Color(0xFFABB3C2), 
+                Icons.analytics_outlined,
+                color: isDark ? Colors.white24 : const Color(0xFFABB3C2),
                 size: 16,
               ),
             ],
@@ -587,8 +650,12 @@ class _ManageOverviewState extends State<ManageOverview> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isColumn = constraints.maxWidth < 950;
-        final double leftWidth = isColumn ? constraints.maxWidth : constraints.maxWidth * 0.40 - 10;
-        final double rightWidth = isColumn ? constraints.maxWidth : constraints.maxWidth * 0.60 - 10;
+        final double leftWidth = isColumn
+            ? constraints.maxWidth
+            : constraints.maxWidth * 0.40 - 10;
+        final double rightWidth = isColumn
+            ? constraints.maxWidth
+            : constraints.maxWidth * 0.60 - 10;
 
         final List<Widget> children = [
           _buildLiveFeedWidget(leftWidth, isDark),
@@ -597,11 +664,7 @@ class _ManageOverviewState extends State<ManageOverview> {
 
         if (isColumn) {
           return Column(
-            children: [
-              children[0],
-              const SizedBox(height: 20),
-              children[1],
-            ],
+            children: [children[0], const SizedBox(height: 20), children[1]],
           );
         }
 
@@ -616,9 +679,15 @@ class _ManageOverviewState extends State<ManageOverview> {
 
   Widget _buildLiveFeedWidget(double width, bool isDark) {
     final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final borderCol = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
-    final itemTextCol = isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF334155);
-    final itemTimeCol = isDark ? Colors.white.withOpacity(0.3) : const Color(0xFF94A3B8);
+    final borderCol = isDark
+        ? const Color(0xFF1E2640)
+        : const Color(0xFFE2E8F0);
+    final itemTextCol = isDark
+        ? Colors.white.withOpacity(0.9)
+        : const Color(0xFF334155);
+    final itemTimeCol = isDark
+        ? Colors.white.withOpacity(0.3)
+        : const Color(0xFF94A3B8);
 
     return Container(
       width: width,
@@ -635,7 +704,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
       ),
       child: Column(
@@ -647,9 +716,9 @@ class _ManageOverviewState extends State<ManageOverview> {
               Text(
                 'LUỒNG HOẠT ĐỘNG LIVE',
                 style: TextStyle(
-                  color: titleColor, 
-                  fontSize: 12, 
-                  fontWeight: FontWeight.w800, 
+                  color: titleColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -661,12 +730,23 @@ class _ManageOverviewState extends State<ManageOverview> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.fiber_manual_record, color: Colors.green, size: 8),
+                    Icon(
+                      Icons.fiber_manual_record,
+                      color: Colors.green,
+                      size: 8,
+                    ),
                     SizedBox(width: 4),
-                    Text('TRỰC TUYẾN', style: TextStyle(color: Colors.green, fontSize: 8, fontWeight: FontWeight.w700)),
+                    Text(
+                      'TRỰC TUYẾN',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -682,7 +762,10 @@ class _ManageOverviewState extends State<ManageOverview> {
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF512F)),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFFF512F),
+                      ),
                     ),
                   );
                 }
@@ -698,8 +781,10 @@ class _ManageOverviewState extends State<ManageOverview> {
 
                 return ListView.separated(
                   itemCount: activities.length,
-                  separatorBuilder: (_, __) => Divider(
-                    color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF1F5F9),
+                  separatorBuilder: (_, _) => Divider(
+                    color: isDark
+                        ? const Color(0xFF1E2640)
+                        : const Color(0xFFF1F5F9),
                     height: 1,
                   ),
                   itemBuilder: (context, index) {
@@ -740,7 +825,11 @@ class _ManageOverviewState extends State<ManageOverview> {
                               children: [
                                 Text(
                                   act.message,
-                                  style: TextStyle(color: itemTextCol, fontSize: 10, height: 1.4),
+                                  style: TextStyle(
+                                    color: itemTextCol,
+                                    fontSize: 10,
+                                    height: 1.4,
+                                  ),
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
@@ -761,16 +850,25 @@ class _ManageOverviewState extends State<ManageOverview> {
                 );
               },
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTopMangaTable(List<MangaRankModel> list, double width, bool isDark) {
-    final formatCurrency = NumberFormat.simpleCurrency(locale: 'vi_VN', decimalDigits: 0);
+  Widget _buildTopMangaTable(
+    List<MangaRankModel> list,
+    double width,
+    bool isDark,
+  ) {
+    final formatCurrency = NumberFormat.simpleCurrency(
+      locale: 'vi_VN',
+      decimalDigits: 0,
+    );
     final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final borderCol = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+    final borderCol = isDark
+        ? const Color(0xFF1E2640)
+        : const Color(0xFFE2E8F0);
     final tableCellTextCol = isDark ? Colors.white70 : const Color(0xFF334155);
     final labelStyleCol = isDark ? Colors.white60 : const Color(0xFF64748B);
 
@@ -789,7 +887,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
       ),
       child: Column(
@@ -801,13 +899,17 @@ class _ManageOverviewState extends State<ManageOverview> {
               Text(
                 'BẢNG XẾP HẠNG TOP MANGA',
                 style: TextStyle(
-                  color: titleColor, 
-                  fontSize: 12, 
-                  fontWeight: FontWeight.w800, 
+                  color: titleColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
-              const Icon(Icons.emoji_events_outlined, color: Color(0xFFF09819), size: 18),
+              const Icon(
+                Icons.emoji_events_outlined,
+                color: Color(0xFFF09819),
+                size: 18,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -824,11 +926,56 @@ class _ManageOverviewState extends State<ManageOverview> {
                   dataRowMaxHeight: 45,
                   dividerThickness: 0.5,
                   columns: [
-                    DataColumn(label: Text('MANGA', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('LƯỢT ĐỌC', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('ĐÁNH GIÁ', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('ĐIỂM SỐ', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
-                    DataColumn(label: Text('D.THU ƯỚC TÍNH', style: TextStyle(color: labelStyleCol, fontSize: 9, fontWeight: FontWeight.w700))),
+                    DataColumn(
+                      label: Text(
+                        'MANGA',
+                        style: TextStyle(
+                          color: labelStyleCol,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'LƯỢT ĐỌC',
+                        style: TextStyle(
+                          color: labelStyleCol,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'ĐÁNH GIÁ',
+                        style: TextStyle(
+                          color: labelStyleCol,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'ĐIỂM SỐ',
+                        style: TextStyle(
+                          color: labelStyleCol,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'D.THU ƯỚC TÍNH',
+                        style: TextStyle(
+                          color: labelStyleCol,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   ],
                   rows: list.map((manga) {
                     return DataRow(
@@ -841,14 +988,28 @@ class _ManageOverviewState extends State<ManageOverview> {
                                 child: Container(
                                   width: 22,
                                   height: 32,
-                                  color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9),
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : const Color(0xFFF1F5F9),
                                   child: manga.thumbnail.isNotEmpty
                                       ? Image.network(
                                           manga.thumbnail,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Icon(Icons.image, size: 12, color: isDark ? Colors.white24 : Colors.grey),
+                                          errorBuilder: (_, _, _) => Icon(
+                                            Icons.image,
+                                            size: 12,
+                                            color: isDark
+                                                ? Colors.white24
+                                                : Colors.grey,
+                                          ),
                                         )
-                                      : Icon(Icons.image, size: 12, color: isDark ? Colors.white24 : Colors.grey),
+                                      : Icon(
+                                          Icons.image,
+                                          size: 12,
+                                          color: isDark
+                                              ? Colors.white24
+                                              : Colors.grey,
+                                        ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -863,8 +1024,10 @@ class _ManageOverviewState extends State<ManageOverview> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: isDark ? Colors.white : const Color(0xFF0F172A), 
-                                        fontSize: 10, 
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF0F172A),
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -874,52 +1037,77 @@ class _ManageOverviewState extends State<ManageOverview> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: isDark ? Colors.white.withOpacity(0.4) : const Color(0xFF64748B), 
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.4)
+                                            : const Color(0xFF64748B),
                                         fontSize: 8,
                                       ),
                                     ),
                                   ],
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         ),
                         DataCell(
                           Text(
                             '${manga.views}',
-                            style: TextStyle(color: tableCellTextCol, fontSize: 10, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: tableCellTextCol,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         DataCell(
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                              const Icon(
+                                Icons.star_rounded,
+                                color: Colors.amber,
+                                size: 12,
+                              ),
                               const SizedBox(width: 2),
                               Text(
                                 '${manga.rating}',
-                                style: TextStyle(color: tableCellTextCol, fontSize: 10, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: tableCellTextCol,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFF512F).withOpacity(0.12),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               '${manga.score}',
-                              style: const TextStyle(color: Color(0xFFFF512F), fontSize: 9, fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                color: Color(0xFFFF512F),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),
                         DataCell(
                           Text(
                             formatCurrency.format(manga.estimatedRevenue),
-                            style: const TextStyle(color: Color(0xFF00CDAC), fontSize: 10, fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                              color: Color(0xFF00CDAC),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -928,7 +1116,7 @@ class _ManageOverviewState extends State<ManageOverview> {
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

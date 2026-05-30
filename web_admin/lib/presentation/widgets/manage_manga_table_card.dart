@@ -263,7 +263,7 @@ class _MangaDataRow extends StatelessWidget {
         width: _coverWidth,
         height: _coverHeight,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return Container(
             width: _coverWidth,
             height: _coverHeight,
@@ -291,8 +291,9 @@ class _MangaDataRow extends StatelessWidget {
         text,
         maxLines: maxLines,
         softWrap: true,
-        overflow:
-            maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
+        overflow: maxLines == null
+            ? TextOverflow.visible
+            : TextOverflow.ellipsis,
         style: TextStyle(
           color: const Color(0xFF4E5A6F),
           fontSize: 13,
@@ -452,8 +453,9 @@ class _StatusBadge extends StatelessWidget {
       return Align(alignment: Alignment.centerLeft, child: badge);
     }
 
-    final List<String> otherStatuses =
-        kMangaStatusOptions.where((s) => s != status).toList();
+    final List<String> otherStatuses = kMangaStatusOptions
+        .where((s) => s != status)
+        .toList();
 
     return Align(
       alignment: Alignment.centerLeft,

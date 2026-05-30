@@ -43,17 +43,17 @@ class MangaModel {
 
   factory MangaModel.fromJson(Map<String, dynamic> map) {
     return MangaModel(
-      id: _toInt(map['id']),
-      title: _toString(map['title']),
-      description: _toString(map['description']),
-      thumbnail: _toString(map['thumbnail']),
-      status: _toString(map['status']),
-      totalChapter: _toInt(map['totalChapter']),
-      rate: _toInt(map['rate']),
-      authorId: _toInt(map['authorId'] ?? map['authorid']),
-      genreIds: _toIntList(map['genreIds']),
-      releaseDate: _toDateTime(map['releaseDate']),
-      endDate: _toDateTime(map['endDate']),
+      id: _toInt(map['id'] ?? map['Id']),
+      title: _toString(map['title'] ?? map['Title']),
+      description: _toString(map['description'] ?? map['Description']),
+      thumbnail: _toString(map['thumbnail'] ?? map['Thumbnail']),
+      status: _toString(map['status'] ?? map['Status']),
+      totalChapter: _toInt(map['totalChapter'] ?? map['TotalChapter']),
+      rate: _toInt(map['rate'] ?? map['Rate']),
+      authorId: _toInt(map['authorId'] ?? map['AuthorId'] ?? map['authorid']),
+      genreIds: _toIntList(map['genreIds'] ?? map['GenreIds']),
+      releaseDate: _toDateTime(map['releaseDate'] ?? map['ReleaseDate']),
+      endDate: _toDateTime(map['endDate'] ?? map['EndDate']),
     );
   }
 
