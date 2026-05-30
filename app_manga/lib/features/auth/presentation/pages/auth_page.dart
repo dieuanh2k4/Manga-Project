@@ -313,7 +313,11 @@ class _RoundedInput extends StatelessWidget {
   final TextEditingController controller;
   final bool obscureText;
 
-  const _RoundedInput({required this.controller, this.obscureText = false});
+  const _RoundedInput({
+    super.key,
+    required this.controller,
+    this.obscureText = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +349,11 @@ class _MainButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _MainButton({required this.label, required this.onTap});
+  const _MainButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

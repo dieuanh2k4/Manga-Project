@@ -5,6 +5,7 @@ const String sidebarKeyManga = 'manga';
 const String sidebarKeyGenres = 'genres';
 const String sidebarKeyAuthors = 'authors';
 const String sidebarKeyUsers = 'users';
+const String sidebarKeyVip = 'vip';
 const String sidebarKeyNotifications = 'notifications';
 const String sidebarKeyAnalytics = 'analytics';
 
@@ -52,6 +53,7 @@ class ManageMangaSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_overview'),
             icon: Icons.grid_view_rounded,
             label: 'Tổng quan',
             compact: compact,
@@ -59,6 +61,7 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyOverview),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_manga'),
             icon: Icons.menu_book_rounded,
             label: 'Quản lý Manga',
             compact: compact,
@@ -66,6 +69,7 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyManga),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_genres'),
             icon: Icons.category_outlined,
             label: 'Quản lý Thể loại',
             compact: compact,
@@ -73,6 +77,7 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyGenres),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_authors'),
             icon: Icons.person_pin_rounded,
             label: 'Quản lý Tác giả',
             compact: compact,
@@ -80,6 +85,7 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyAuthors),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_users'),
             icon: Icons.people_outline_rounded,
             label: 'Quản lý Người dùng',
             compact: compact,
@@ -87,6 +93,14 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyUsers),
           ),
           _SidebarItem(
+            icon: Icons.stars_rounded,
+            label: 'Quản lý gói VIP',
+            compact: compact,
+            selected: selectedKey == sidebarKeyVip,
+            onTap: () => onSelect(sidebarKeyVip),
+          ),
+          _SidebarItem(
+            itemKey: const Key('admin_sidebar_notifications'),
             icon: Icons.notifications_none_rounded,
             label: 'Quản lý Thông báo',
             compact: compact,
@@ -94,70 +108,14 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyNotifications),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_analytics'),
             icon: Icons.bar_chart_rounded,
             label: 'Phân tích',
             compact: compact,
             selected: selectedKey == sidebarKeyAnalytics,
             onTap: () => onSelect(sidebarKeyAnalytics),
           ),
-          const Spacer(),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 12 : 16,
-              0,
-              compact ? 12 : 16,
-              16,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F2D5A),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF1C3E71)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: compact ? 8 : 12,
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Color(0xFF2563EB),
-                      child: Icon(Icons.person, color: Colors.white, size: 16),
-                    ),
-                    if (!compact) ...[
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Quản trị viên',
-                              style: TextStyle(
-                                color: Color(0xFFE6EDFF),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'admin@manga.vn',
-                              style: TextStyle(
-                                color: Color(0xFF9DB3D9),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -166,12 +124,14 @@ class ManageMangaSidebar extends StatelessWidget {
 
 class _SidebarItem extends StatelessWidget {
   final IconData icon;
+  final Key? itemKey;
   final String label;
   final bool selected;
   final bool compact;
   final VoidCallback onTap;
 
   const _SidebarItem({
+    this.itemKey,
     required this.icon,
     required this.label,
     required this.selected,
@@ -184,6 +144,7 @@ class _SidebarItem extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(compact ? 10 : 12, 4, compact ? 10 : 12, 4),
       child: InkWell(
+        key: itemKey,
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: Container(

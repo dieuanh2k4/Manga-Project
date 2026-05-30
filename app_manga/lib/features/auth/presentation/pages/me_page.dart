@@ -48,6 +48,7 @@ class MePage extends StatelessWidget {
     final token = auth.session?.token ?? '';
 
     return Scaffold(
+      key: const Key('me_page'),
       backgroundColor: const Color(0xFFF2F2F2),
       appBar: AppBar(
         title: const Text(''),
@@ -232,6 +233,7 @@ class MePage extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
+                            key: const Key('me_logout_button'),
                             onPressed: () async {
                               await auth.logout();
                               if (!context.mounted) {

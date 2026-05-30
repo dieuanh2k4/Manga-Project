@@ -14,6 +14,13 @@ import '../../domain/entities/library_manga_entity.dart';
 import '../../domain/entities/history_item_entity.dart';
 import '../controllers/library_controller.dart';
 
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
 class LibraryPage extends StatefulWidget {
   final String token;
   const LibraryPage({super.key, required this.token});
@@ -61,6 +68,7 @@ class _LibraryPageState extends State<LibraryPage>
     return Consumer<LibraryController>(
       builder: (context, controller, _) {
         return Scaffold(
+          key: const Key('library_page'),
           backgroundColor: Colors.white,
           body: SafeArea(
             child: Column(
@@ -71,6 +79,7 @@ class _LibraryPageState extends State<LibraryPage>
                       children: [
                         Expanded(
                           child: TextField(
+                            key: const Key('library_search_field'),
                             controller: _searchController,
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
@@ -169,6 +178,7 @@ class _LibraryPageState extends State<LibraryPage>
   Widget _buildBody(LibraryController controller) {
     if (controller.isLoading) {
       return const Center(
+        key: Key('library_loading'),
         child: CircularProgressIndicator(color: _primaryColor),
       );
     }
@@ -811,6 +821,7 @@ class _LibraryListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      key: Key('library_manga_${_e2eKeyPart(manga.title)}'),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => MangaDetailPage(mangaId: manga.id)),

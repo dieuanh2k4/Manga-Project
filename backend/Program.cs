@@ -19,6 +19,11 @@ using Google.Apis.Auth.OAuth2;
 
 DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
+var seedE2E = args.Any(arg => string.Equals(arg, "--seed-e2e", StringComparison.OrdinalIgnoreCase));
+var seedE2EMinioOnly = args.Any(arg => string.Equals(arg, "--seed-e2e-minio", StringComparison.OrdinalIgnoreCase));
+var skipE2EReset = args.Any(arg => string.Equals(arg, "--no-reset", StringComparison.OrdinalIgnoreCase));
+var isSeedCommand = seedE2E || seedE2EMinioOnly;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -36,20 +41,26 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 builder.Services.AddSignalR(); // gửi thông báo realtime
 
 // sử dụng FCM để push noti
-var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "manga-project-firebase-admin-key.json");
-FirebaseApp.Create(new AppOptions()
+if (!isSeedCommand)
 {
-    Credential = GoogleCredential.FromFile(firebaseKeyPath)
-});
+    var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "manga-project-firebase-admin-key.json");
+    FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile(firebaseKeyPath)
+    });
+}
 
 builder.Services.AddHttpContextAccessor();
+
+var allowedCorsOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebAdminCors", policy =>
     {
         policy
-            // Allow localhost/127.0.0.1 for local web frontend even when the dev port changes.
             .SetIsOriginAllowed(origin =>
             {
                 if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
@@ -57,8 +68,17 @@ builder.Services.AddCors(options =>
                     return false;
                 }
 
-                return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                return allowedCorsOrigins.Any(allowedOrigin =>
+                    string.Equals(
+                        allowedOrigin.TrimEnd('/'),
+                        origin.TrimEnd('/'),
+                        StringComparison.OrdinalIgnoreCase));
             })
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -167,6 +187,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
+// Dashboard Service
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
 // Manga Service
 builder.Services.AddScoped<IMangaService, MangaService>();
 
@@ -217,14 +240,39 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
+        if (seedE2EMinioOnly)
+        {
+            var minioClient = services.GetRequiredService<IMinioClient>();
+            await E2ESeedData.UploadMinioFixturesAsync(minioClient, builder.Configuration);
+            return;
+        }
+
         var context = services.GetRequiredService<ApplicationDbContext>();
         context.Database.Migrate();
+
+        if (seedE2E)
+        {
+            var minioClient = services.GetRequiredService<IMinioClient>();
+            if (!skipE2EReset)
+            {
+                await E2ESeedData.ResetAsync(context, minioClient, builder.Configuration);
+            }
+
+            await E2ESeedData.InitializeAsync(context, minioClient, builder.Configuration);
+            return;
+        }
+
         await SeedData.InitializeAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Lỗi khi chạy migrations");
+
+        if (isSeedCommand)
+        {
+            throw;
+        }
     }
 }
 

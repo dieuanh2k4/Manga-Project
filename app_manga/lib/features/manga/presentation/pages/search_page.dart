@@ -11,6 +11,13 @@ import '../controllers/search_controller.dart';
 import 'home_page.dart';
 import 'manga_detail_page.dart';
 
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
 class SearchPage extends StatefulWidget {
   final int initialTabIndex;
 
@@ -51,6 +58,7 @@ class _SearchPageState extends State<SearchPage>
     final controller = context.watch<MangaSearchController>();
 
     return Scaffold(
+      key: const Key('search_page'),
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
         child: controller.isLoading
@@ -136,6 +144,7 @@ class _SearchPageState extends State<SearchPage>
         children: [
           Expanded(
             child: TextField(
+              key: const Key('manga_search_field'),
               controller: _searchController,
               onChanged: controller.onSearchChanged,
               decoration: InputDecoration(
@@ -215,6 +224,7 @@ class _SearchPageState extends State<SearchPage>
             : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
 
         return InkWell(
+          key: Key('manga_search_result_${_e2eKeyPart(manga.title)}'),
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(

@@ -13,6 +13,13 @@ import '../../../library/domain/usecases/get_history_usecase.dart';
 import '../controllers/manga_detail_controller.dart';
 import 'manga_reader_page.dart';
 
+String _e2eKeyPart(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
 class MangaDetailPage extends StatelessWidget {
   final int mangaId;
 
@@ -93,6 +100,7 @@ class _MangaDetailView extends StatelessWidget {
     final continueLabel = historyItem == null ? 'READ' : 'CONTINUE';
 
     return Scaffold(
+      key: const Key('manga_detail_page'),
       backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
         title: const Text('Manga'),
@@ -367,11 +375,17 @@ class _FollowButtonState extends State<_FollowButton> {
   @override
   void initState() {
     super.initState();
-    final auth = context.read<AuthController>();
-    final token = auth.session?.token;
-    if (token != null && token.isNotEmpty) {
-      context.read<LibraryController>().fetchLibraryManga(token);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final auth = context.read<AuthController>();
+      final token = auth.session?.token;
+      if (token != null && token.isNotEmpty) {
+        context.read<LibraryController>().fetchLibraryManga(token);
+      }
+    });
   }
 
   @override
@@ -467,6 +481,7 @@ class _ChapterTile extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE1E4EA)),
       ),
       child: ListTile(
+        key: Key('manga_chapter_${_e2eKeyPart(chapter.title)}'),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         title: Text(
           chapterLabel,

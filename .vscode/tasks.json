@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run web_admin (Flutter web)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"Set-Location 'web_admin'; flutter run -d chrome"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run web_admin (Flutter web)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"Set-Location 'web_admin'; flutter run -d chrome"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

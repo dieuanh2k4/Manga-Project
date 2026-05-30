@@ -65,11 +65,15 @@ class _HomePageState extends State<HomePage> {
     final allManga = controller.mangas;
 
     if (controller.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressPath()));
+      return const Scaffold(
+        key: Key('home_loading'),
+        body: Center(child: CircularProgressPath()),
+      );
     }
 
     if (controller.errorMessage != null) {
       return Scaffold(
+        key: const Key('home_error'),
         backgroundColor: Colors.white,
         body: Center(
           child: Padding(
@@ -105,6 +109,7 @@ class _HomePageState extends State<HomePage> {
 
     if (allManga.isEmpty) {
       return Scaffold(
+        key: const Key('home_empty'),
         backgroundColor: Colors.white,
         body: const Center(
           child: Text(
@@ -117,6 +122,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
+      key: const Key('home_page'),
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [

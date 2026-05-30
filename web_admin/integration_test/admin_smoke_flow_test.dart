@@ -5,11 +5,15 @@ import 'package:web_admin/main.dart' as app;
 
 const String _adminUserName = String.fromEnvironment(
   'WEB_ADMIN_E2E_EMAIL',
-  defaultValue: 'admin',
+  defaultValue: 'e2e_admin',
 );
 const String _adminPassword = String.fromEnvironment(
   'WEB_ADMIN_E2E_PASSWORD',
-  defaultValue: 'admin123',
+  defaultValue: 'E2e@123456',
+);
+const String _seedMangaTitle = String.fromEnvironment(
+  'WEB_ADMIN_E2E_MANGA_TITLE',
+  defaultValue: 'E2E Readable Manga',
 );
 
 void main() {
@@ -37,8 +41,11 @@ void main() {
 
     await _loginAsAdmin(tester);
 
-    await _waitForTextContaining(tester, 'Manga');
-    expect(find.textContaining('Manga'), findsWidgets);
+    await _waitForFinder(
+      tester,
+      find.byKey(const Key('manage_manga_create_button')),
+    );
+    await _filterSeededManga(tester);
 
     await _openMangaCreateFormAndCancel(tester);
     await _openAuthorsAndCancelCreateDialog(tester);
@@ -58,98 +65,142 @@ Future<void> _setDesktopViewport(WidgetTester tester) async {
 Future<void> _loginAsAdmin(WidgetTester tester) async {
   await _waitForText(tester, 'Welcome to MangaMinus Admin');
 
-  final Finder fields = find.byType(TextFormField);
-  expect(fields, findsNWidgets(2));
-
-  await tester.enterText(fields.at(0), _adminUserName);
-  await tester.enterText(fields.at(1), _adminPassword);
-  await tester.tap(find.text('LOGIN'));
+  await tester.enterText(
+    find.byKey(const Key('admin_login_username_field')),
+    _adminUserName,
+  );
+  await tester.enterText(
+    find.byKey(const Key('admin_login_password_field')),
+    _adminPassword,
+  );
+  await tester.tap(find.byKey(const Key('admin_login_submit_button')));
   await tester.pump();
 
-  await _waitForGone(tester, find.text('LOGIN'));
+  await _waitForAuthenticatedShell(tester);
+}
+
+Future<void> _waitForAuthenticatedShell(WidgetTester tester) async {
+  final shellFinder = find.byKey(const Key('admin_sidebar_manga'));
+  final errorFinder = find.byKey(const Key('admin_login_error_message'));
+
+  await _waitUntil(
+    tester,
+    () => shellFinder.evaluate().isNotEmpty || errorFinder.evaluate().isNotEmpty,
+    reason:
+        'Admin login did not reach the authenticated shell and no login error was shown.',
+    timeout: const Duration(seconds: 60),
+  );
+
+  if (errorFinder.evaluate().isNotEmpty) {
+    final errorWidget = tester.widget<Container>(errorFinder.first);
+    final errorText = _extractText(errorWidget.child);
+    fail('Admin login failed: ${errorText ?? 'unknown login error'}');
+  }
+
+  expect(shellFinder, findsWidgets);
+}
+
+Future<void> _filterSeededManga(WidgetTester tester) async {
+  final searchField = find.byKey(const Key('manage_manga_search_field'));
+  await _waitForFinder(tester, searchField);
+
+  await tester.enterText(searchField, _seedMangaTitle);
+  await tester.pumpAndSettle();
+
+  await _waitForText(tester, _seedMangaTitle);
 }
 
 Future<void> _openMangaCreateFormAndCancel(WidgetTester tester) async {
-  await _waitForTextContaining(tester, 'Manga');
+  await _tapFirstKey(tester, const Key('manage_manga_create_button'));
 
-  await _tapFirstIcon(tester, Icons.add);
-
-  await _waitForTextContaining(tester, 'Thông tin cơ bản');
-  await _tapFirstVisibleText(tester, 'Hủy');
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manga_form_cancel_button')),
+  );
+  await _tapFirstKey(tester, const Key('manga_form_cancel_button'));
   await tester.pumpAndSettle();
 
-  await _waitForTextContaining(tester, 'Manga');
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_manga_create_button')),
+  );
 }
 
 Future<void> _openAuthorsAndCancelCreateDialog(WidgetTester tester) async {
-  await _tapFirstIcon(tester, Icons.person_pin_rounded);
-  await _waitForTextContaining(tester, 'tác giả');
+  await _tapFirstKey(tester, const Key('admin_sidebar_authors'));
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_authors_create_button')),
+  );
 
-  await _tapFirstVisibleTextContaining(tester, 'Thêm tác giả');
-  await _waitForTextContaining(tester, 'Tên tác giả');
-  await _tapFirstVisibleText(tester, 'Hủy');
+  await _tapFirstKey(tester, const Key('manage_authors_create_button'));
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_author_dialog_name_field')),
+  );
+  await _tapFirstKey(tester, const Key('manage_author_dialog_cancel_button'));
   await tester.pumpAndSettle();
 
-  await _waitForTextContaining(tester, 'tác giả');
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_authors_create_button')),
+  );
 }
 
 Future<void> _openUsersAndCancelCreateDialog(WidgetTester tester) async {
-  await _tapFirstIcon(tester, Icons.people_outline_rounded);
-  await _waitForTextContaining(tester, 'tài khoản');
+  await _tapFirstKey(tester, const Key('admin_sidebar_users'));
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_users_create_button')),
+  );
 
-  await _tapFirstVisibleTextContaining(tester, 'Thêm tài khoản');
-  await _waitForTextContaining(tester, 'người dùng');
-  await _tapFirstVisibleText(tester, 'Hủy');
+  await _tapFirstKey(tester, const Key('manage_users_create_button'));
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_user_dialog_cancel_button')),
+  );
+  await _tapFirstKey(tester, const Key('manage_user_dialog_cancel_button'));
   await tester.pumpAndSettle();
 
-  await _waitForTextContaining(tester, 'tài khoản');
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_users_create_button')),
+  );
 }
 
 Future<void> _openNotificationsAndCancelCreateDialog(
   WidgetTester tester,
 ) async {
-  await _tapLastIcon(tester, Icons.notifications_none_rounded);
-  await _waitForTextContaining(tester, 'thông báo');
+  await _tapFirstKey(tester, const Key('admin_sidebar_notifications'));
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_notifications_create_button')),
+  );
 
-  await _tapFirstVisibleTextContaining(tester, 'Tạo thông báo');
-  await _waitForTextContaining(tester, 'Tiêu đề');
-  await _tapFirstVisibleText(tester, 'Hủy');
+  await _tapFirstKey(tester, const Key('manage_notifications_create_button'));
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_notification_dialog_title_field')),
+  );
+  await _tapFirstKey(
+    tester,
+    const Key('manage_notification_dialog_cancel_button'),
+  );
   await tester.pumpAndSettle();
 
-  await _waitForTextContaining(tester, 'thông báo');
+  await _waitForFinder(
+    tester,
+    find.byKey(const Key('manage_notifications_create_button')),
+  );
 }
 
 Future<void> _logout(WidgetTester tester) async {
-  await _tapFirstIcon(tester, Icons.logout_rounded);
+  await _tapFirstKey(tester, const Key('admin_logout_button'));
   await _waitForText(tester, 'Welcome to MangaMinus Admin');
 }
 
-Future<void> _tapFirstIcon(WidgetTester tester, IconData icon) async {
-  final Finder finder = find.byIcon(icon);
-  await _waitForFinder(tester, finder);
-  await tester.tap(finder.first);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _tapLastIcon(WidgetTester tester, IconData icon) async {
-  final Finder finder = find.byIcon(icon);
-  await _waitForFinder(tester, finder);
-  await tester.tap(finder.last);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _tapFirstVisibleText(WidgetTester tester, String text) async {
-  final Finder finder = find.text(text);
-  await _waitForFinder(tester, finder);
-  await tester.ensureVisible(finder.first);
-  await tester.tap(finder.first);
-}
-
-Future<void> _tapFirstVisibleTextContaining(
-  WidgetTester tester,
-  String text,
-) async {
-  final Finder finder = find.textContaining(text);
+Future<void> _tapFirstKey(WidgetTester tester, Key key) async {
+  final Finder finder = find.byKey(key);
   await _waitForFinder(tester, finder);
   await tester.ensureVisible(finder.first);
   await tester.tap(finder.first);
@@ -160,8 +211,47 @@ Future<void> _waitForText(WidgetTester tester, String text) {
   return _waitForFinder(tester, find.text(text));
 }
 
-Future<void> _waitForTextContaining(WidgetTester tester, String text) {
-  return _waitForFinder(tester, find.textContaining(text));
+String? _extractText(Widget? widget) {
+  if (widget == null) {
+    return null;
+  }
+
+  if (widget is Text) {
+    return widget.data;
+  }
+
+  if (widget is SingleChildRenderObjectWidget) {
+    return _extractText(widget.child);
+  }
+
+  if (widget is MultiChildRenderObjectWidget) {
+    for (final child in widget.children) {
+      final text = _extractText(child);
+      if (text != null && text.trim().isNotEmpty) {
+        return text;
+      }
+    }
+  }
+
+  return null;
+}
+
+Future<void> _waitUntil(
+  WidgetTester tester,
+  bool Function() condition, {
+  required String reason,
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  final DateTime end = DateTime.now().add(timeout);
+
+  while (DateTime.now().isBefore(end)) {
+    await tester.pump(const Duration(milliseconds: 250));
+    if (condition()) {
+      return;
+    }
+  }
+
+  fail(reason);
 }
 
 Future<void> _waitForFinder(
