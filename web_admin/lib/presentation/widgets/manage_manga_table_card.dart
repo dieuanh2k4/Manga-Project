@@ -239,6 +239,7 @@ class _MangaDataRow extends StatelessWidget {
 
   Widget _buildCoverImage(String? thumbnail) {
     final String image = thumbnail?.trim() ?? '';
+    debugPrint("Cover image for '${manga.title}': '$image'");
 
     if (image.isEmpty) {
       return ClipRRect(
