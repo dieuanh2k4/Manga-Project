@@ -574,14 +574,17 @@ class _NotificationFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     const List<String> sortOptions = ['Mới nhất', 'Cũ nhất', 'Tiêu đề A-Z'];
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
       ),
       child: Row(
         children: [
@@ -589,10 +592,18 @@ class _NotificationFilterBar extends StatelessWidget {
             width: 170,
             child: DropdownButtonFormField<String>(
               initialValue: selectedSort,
-              decoration: const InputDecoration(
+              dropdownColor: isDark ? const Color(0xFF1E2640) : Colors.white,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1D2638),
+                fontSize: 13,
+              ),
+              decoration: InputDecoration(
                 isDense: true,
                 labelText: 'Sắp xếp',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(
+                  color: isDark ? const Color(0xFF8491A7) : const Color(0xFF64748B),
+                ),
+                border: const OutlineInputBorder(),
               ),
               items: sortOptions
                   .map(
@@ -614,30 +625,33 @@ class _NotificationFilterBar extends StatelessWidget {
             onPressed: onRefresh,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              side: const BorderSide(color: Color(0xFFCCD6EA)),
+              side: BorderSide(
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFCCD6EA),
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            icon: const Icon(
+            icon: Icon(
               Icons.refresh_rounded,
               size: 16,
-              color: Color(0xFF1F5BFF),
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
             ),
-            label: const Text(
+            label: Text(
               'Làm mới',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1F5BFF),
+                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
               ),
             ),
           ),
           const SizedBox(width: 10),
           ElevatedButton.icon(
+            key: const Key('manage_notifications_create_button'),
             onPressed: onCreate,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF040617),
+              backgroundColor: isDark ? const Color(0xFF1F5BFF) : const Color(0xFF040617),
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -664,17 +678,22 @@ class _NotificationTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
       ),
       child: notifications.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'Không có thông báo phù hợp',
-                style: TextStyle(color: Color(0xFF6C7B92)),
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF8491A7) : const Color(0xFF6C7B92),
+                ),
               ),
             )
           : SingleChildScrollView(

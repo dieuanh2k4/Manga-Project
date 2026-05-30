@@ -42,7 +42,6 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
 
   void _showSettingsDialog(BuildContext context) {
     final themeController = sl<ThemeController>();
-    final isDark = themeController.isDarkMode;
 
     showDialog<void>(
       context: context,

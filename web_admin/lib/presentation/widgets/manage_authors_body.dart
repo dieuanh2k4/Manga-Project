@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:web_admin/domain/entities/author.dart';
 import 'package:web_admin/domain/entities/manga.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
+import 'package:web_admin/injection_container.dart';
 
 class ManageAuthorsBody extends StatelessWidget {
   final TextEditingController searchController;
@@ -67,29 +69,33 @@ class _AuthorSearchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: _cardDecoration,
+      decoration: _getCardDecoration(isDark),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: searchController,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+              ),
               decoration: InputDecoration(
                 hintText: 'Nhập tên tác giả...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFFABB3C2),
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.white38 : const Color(0xFFABB3C2),
                   fontSize: 13,
                 ),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
-                  color: Color(0xFFABB3C2),
+                  color: isDark ? Colors.white38 : const Color(0xFFABB3C2),
                   size: 18,
                 ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 filled: true,
-                fillColor: const Color(0xFFF7F8FC),
+                fillColor: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFF7F8FC),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -136,23 +142,32 @@ class _AuthorFilterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: _cardDecoration,
+      decoration: _getCardDecoration(isDark),
       child: Row(
         children: [
           Container(
             height: 40,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F8FC),
+              color: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFF7F8FC),
               borderRadius: BorderRadius.circular(10),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: selectedSort,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-                style: const TextStyle(color: Color(0xFF4D5B72), fontSize: 13),
+                dropdownColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: isDark ? Colors.white60 : const Color(0xFF4D5B72),
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF4D5B72),
+                  fontSize: 13,
+                ),
                 items: const [
                   DropdownMenuItem(value: 'A-Z', child: Text('Sắp xếp A-Z')),
                   DropdownMenuItem(
@@ -171,9 +186,17 @@ class _AuthorFilterCard extends StatelessWidget {
           const SizedBox(width: 16),
           Checkbox(
             value: onlyNoManga,
+            activeColor: const Color(0xFF1F5BFF),
+            checkColor: Colors.white,
             onChanged: (value) => onOnlyNoMangaChanged(value ?? false),
           ),
-          const Text('Chỉ tác giả chưa có truyện'),
+          Text(
+            'Chỉ tác giả chưa có truyện',
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black87,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -194,8 +217,9 @@ class _AuthorListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
-      decoration: _cardDecoration,
+      decoration: _getCardDecoration(isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -203,25 +227,33 @@ class _AuthorListCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             child: Text(
               'Danh sách tác giả (${visibleAuthors.length})',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1E2A3C),
+                color: isDark ? Colors.white : const Color(0xFF1E2A3C),
               ),
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFEEF1F6)),
+          Divider(
+            height: 1,
+            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEEF1F6),
+          ),
           Expanded(
             child: visibleAuthors.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'Chưa có tác giả nào',
-                      style: TextStyle(color: Color(0xFF8491A7)),
+                      style: TextStyle(
+                        color: isDark ? Colors.white30 : const Color(0xFF8491A7),
+                      ),
                     ),
                   )
                 : ListView.separated(
                     itemCount: visibleAuthors.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEEF1F6),
+                    ),
                     itemBuilder: (context, index) {
                       final AuthorEntity author = visibleAuthors[index];
                       final int authorId = author.id ?? 0;
@@ -231,7 +263,10 @@ class _AuthorListCard extends StatelessWidget {
                       return ListTile(
                         title: Text(
                           author.fullName ?? 'Tác giả #$authorId',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                         ),
                         subtitle: Text(
                           (author.description ?? '').trim().isEmpty
@@ -239,21 +274,26 @@ class _AuthorListCard extends StatelessWidget {
                               : author.description!.trim(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                            fontSize: 12,
+                          ),
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               '${authorManga.length}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : Colors.black87,
                               ),
                             ),
-                            const Text(
+                            Text(
                               'manga',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF7B879B),
+                                color: isDark ? Colors.white54 : const Color(0xFF7B879B),
                               ),
                             ),
                           ],
@@ -269,10 +309,12 @@ class _AuthorListCard extends StatelessWidget {
   }
 }
 
-BoxDecoration get _cardDecoration {
+BoxDecoration _getCardDecoration(bool isDark) {
   return BoxDecoration(
-    color: Colors.white,
+    color: isDark ? const Color(0xFF0E1326) : Colors.white,
     borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: const Color(0xFFE4E8F2)),
+    border: Border.all(
+      color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+    ),
   );
 }

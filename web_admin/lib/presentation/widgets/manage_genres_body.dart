@@ -84,6 +84,7 @@ class _GenresHeading extends StatelessWidget {
           ],
         ),
         ElevatedButton.icon(
+          key: const Key('manage_genres_create_button'),
           onPressed: onAddGenre,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1F5BFF),

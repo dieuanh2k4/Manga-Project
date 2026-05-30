@@ -307,6 +307,7 @@ class _ManageMangaState extends State<ManageManga> {
         ],
       ),
       child: ElevatedButton.icon(
+        key: const Key('manage_manga_create_button'),
         onPressed: _onAddTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
@@ -461,20 +462,24 @@ class _ManageMangaState extends State<ManageManga> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF4FF),
+                        color: isDark
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFFEFF4FF),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.menu_book_rounded,
                         size: 18,
-                        color: Color(0xFF1F5BFF),
+                        color: isDark
+                            ? const Color(0xFF60A5FA)
+                            : const Color(0xFF1F5BFF),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       'Quản lý Manga',
                       style: TextStyle(
-                        color: Color(0xFF1D2638),
+                        color: isDark ? Colors.white : const Color(0xFF1D2638),
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
@@ -484,11 +489,14 @@ class _ManageMangaState extends State<ManageManga> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Padding(
-                  padding: EdgeInsets.only(left: 2),
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
                   child: Text(
                     'Quản lý toàn bộ bộ sưu tập truyện trong hệ thống',
-                    style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
