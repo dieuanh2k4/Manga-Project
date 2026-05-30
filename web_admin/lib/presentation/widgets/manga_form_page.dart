@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:web_admin/core/models/upload_file_data.dart';
@@ -176,7 +177,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
     final UploadFileData file = UploadFileData(
       fileName: picked.name,
       bytes: picked.bytes,
-      filePath: picked.path,
+      filePath: kIsWeb ? null : picked.path,
     );
 
     if (!file.isValid) {

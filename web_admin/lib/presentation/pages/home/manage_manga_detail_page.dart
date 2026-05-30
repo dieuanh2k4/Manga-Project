@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
@@ -438,11 +439,20 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
 
     final FormData formData = FormData();
     for (final PlatformFile file in files) {
-      if (file.bytes == null && file.path == null) continue;
-      final MultipartFile multipartFile = file.bytes != null
-          ? MultipartFile.fromBytes(file.bytes!, filename: file.name)
-          : await MultipartFile.fromFile(file.path!, filename: file.name);
-      formData.files.add(MapEntry('files', multipartFile));
+      if (kIsWeb) {
+        if (file.bytes == null) continue;
+        final MultipartFile multipartFile = MultipartFile.fromBytes(
+          file.bytes!,
+          filename: file.name,
+        );
+        formData.files.add(MapEntry('files', multipartFile));
+      } else {
+        if (file.bytes == null && file.path == null) continue;
+        final MultipartFile multipartFile = file.bytes != null
+            ? MultipartFile.fromBytes(file.bytes!, filename: file.name)
+            : await MultipartFile.fromFile(file.path!, filename: file.name);
+        formData.files.add(MapEntry('files', multipartFile));
+      }
     }
 
     if (formData.files.isEmpty) {
