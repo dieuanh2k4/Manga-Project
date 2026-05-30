@@ -312,6 +312,7 @@ class _ManageMangaState extends State<ManageManga> {
         ],
       ),
       child: ElevatedButton.icon(
+        key: const Key('manage_manga_create_button'),
         onPressed: _onAddTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
