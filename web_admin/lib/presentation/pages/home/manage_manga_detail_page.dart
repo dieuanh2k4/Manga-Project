@@ -691,6 +691,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                 width: 36,
                 height: 36,
                 fit: BoxFit.cover,
+                webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
                 errorBuilder: (_, _, _) => SizedBox(
                   width: 36,
                   height: 36,

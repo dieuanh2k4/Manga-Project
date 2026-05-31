@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+﻿import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:web_admin/presentation/widgets/hover_dropdown.dart';
 import 'package:web_admin/presentation/controllers/auth_controller.dart';
@@ -638,7 +638,10 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                 followerAnchor: Alignment.topRight,
                 child: Container(
                   key: const Key('admin_profile_menu_button'),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: containerBg,
                     borderRadius: BorderRadius.circular(24),
@@ -650,7 +653,11 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                       const CircleAvatar(
                         radius: 14,
                         backgroundColor: Color(0xFF2563EB),
-                        child: Icon(Icons.person, color: Colors.white, size: 14),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 14,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -664,7 +671,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                       const SizedBox(width: 6),
                       Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF64748B),
                         size: 16,
                       ),
                     ],
@@ -835,48 +844,6 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: containerBg,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: containerBorder),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircleAvatar(
-                        radius: 14,
-                        backgroundColor: Color(0xFF2563EB),
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Xin chào, $userName!',
-                        style: TextStyle(
-                          color: titleTextColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: isDark
-                            ? Colors.white70
-                            : const Color(0xFF64748B),
-                        size: 16,
                       ),
                     ],
                   ),

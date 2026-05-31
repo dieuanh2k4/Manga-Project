@@ -185,6 +185,17 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
+  String _currentTabLabel() {
+    switch (_tabController.index) {
+      case 1:
+        return 'History';
+      case 2:
+        return 'Downloads';
+      default:
+        return 'Your Library';
+    }
+  }
+
   Widget _buildBody(LibraryController controller) {
     if (controller.isLoading) {
       return const Center(
@@ -639,7 +650,7 @@ class _AddMangaSheetState extends State<_AddMangaSheet> {
                 Icon(Icons.bookmark_add_outlined, color: Color(0xFFE8742B)),
                 SizedBox(width: 8),
                 Text(
-                  'Them truyen vao thu vien',
+                  'Thêm truyện vào thư viện',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -649,7 +660,7 @@ class _AddMangaSheetState extends State<_AddMangaSheet> {
               controller: _queryController,
               onChanged: mangaController.onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Tim ten truyen',
+                hintText: 'Tìm tên truyện',
                 prefixIcon: const Icon(Icons.search, size: 20),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -694,9 +705,9 @@ class _AddMangaSheetState extends State<_AddMangaSheet> {
                         SnackBar(
                           content: Text(
                             success
-                                ? 'Da them vao thu vien.'
+                                ? 'Đã thêm vào thư viện.'
                                 : (libraryController.error ??
-                                      'Them truyen that bai. Vui long thu lai.'),
+                                      'Thêm truyện thất bại. Vui lòng thử lại.'),
                           ),
                         ),
                       );
@@ -707,7 +718,7 @@ class _AddMangaSheetState extends State<_AddMangaSheet> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Them truyen that bai. Vui long thu lai.',
+                            'Thêm truyện thất bại. Vui lòng thử lại.',
                           ),
                         ),
                       );
@@ -744,7 +755,7 @@ class _AddMangaList extends StatelessWidget {
     if (items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(24),
-        child: Text('Khong tim thay truyen phu hop.'),
+        child: Text('Không tìm thấy truyện phù hợp.'),
       );
     }
 
@@ -806,7 +817,7 @@ class _AddMangaList extends StatelessWidget {
                       color: Colors.white,
                     ),
                   )
-                : Text(added ? 'Da them' : 'Them'),
+                : Text(added ? 'Đã thêm' : 'Thêm'),
           ),
         );
       },

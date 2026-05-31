@@ -218,6 +218,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
       return Image.network(
         currentThumbnail,
         fit: BoxFit.cover,
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
         errorBuilder: (_, _, _) {
           return const _ThumbnailPlaceholder(icon: Icons.broken_image_outlined);
         },

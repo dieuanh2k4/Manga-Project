@@ -104,41 +104,24 @@ class ManageMangaTableCard extends StatelessWidget {
                       ],
                     ),
                   )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minWidth: 1080),
-                        child: Column(
-                          children: [
-                            _buildHeaderRow(),
-                            Divider(
-                              height: 1,
-                              color: isDark
-                                  ? const Color(0xFF1E2640)
-                                  : const Color(0xFFEEF1F6),
-                            ),
-                            ...mangas.map(
-                              (manga) => _MangaDataRow(
-                                manga: manga,
-                                normalizeStatus: normalizeStatus,
-                                buildAuthor: buildAuthor,
-                                buildGenres: buildGenres,
-                                buildViewsText: buildViewsText,
-                                onEditTap: onEditTap,
-                                onViewTap: onViewTap,
-                                onDeleteTap: onDeleteTap,
-                                onStatusChange: onStatusChange,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                : _MangaTableViewport(
+                    isDark: isDark,
+                    headerRow: _buildHeaderRow(),
+                    rows: mangas
+                        .map(
+                          (manga) => _MangaDataRow(
+                            manga: manga,
+                            normalizeStatus: normalizeStatus,
+                            buildAuthor: buildAuthor,
+                            buildGenres: buildGenres,
+                            buildViewsText: buildViewsText,
+                            onEditTap: onEditTap,
+                            onViewTap: onViewTap,
+                            onDeleteTap: onDeleteTap,
+                            onStatusChange: onStatusChange,
+                          ),
+                        )
+                        .toList(),
                   ),
           ),
         ],
@@ -181,6 +164,70 @@ class ManageMangaTableCard extends StatelessWidget {
   }
 }
 
+class _MangaTableViewport extends StatefulWidget {
+  final bool isDark;
+  final Widget headerRow;
+  final List<Widget> rows;
+
+  const _MangaTableViewport({
+    required this.isDark,
+    required this.headerRow,
+    required this.rows,
+  });
+
+  @override
+  State<_MangaTableViewport> createState() => _MangaTableViewportState();
+}
+
+class _MangaTableViewportState extends State<_MangaTableViewport> {
+  final ScrollController _verticalController = ScrollController();
+  final ScrollController _horizontalController = ScrollController();
+
+  @override
+  void dispose() {
+    _verticalController.dispose();
+    _horizontalController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _horizontalController,
+      thumbVisibility: true,
+      interactive: true,
+      notificationPredicate: (notification) =>
+          notification.metrics.axis == Axis.horizontal,
+      child: SingleChildScrollView(
+        controller: _horizontalController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 1100),
+          child: Scrollbar(
+            controller: _verticalController,
+            child: SingleChildScrollView(
+              controller: _verticalController,
+              child: Column(
+                children: [
+                  widget.headerRow,
+                  Divider(
+                    height: 1,
+                    color: widget.isDark
+                        ? const Color(0xFF1E2640)
+                        : const Color(0xFFEEF1F6),
+                  ),
+                  ...widget.rows,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Private widget: một dòng dữ liệu trong bảng manga
 // ---------------------------------------------------------------------------
@@ -216,42 +263,50 @@ class _MangaDataRow extends StatelessWidget {
     final String status = normalizeStatus(manga.status);
     final isDark = sl<ThemeController>().isDarkMode;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onViewTap(manga),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isDark
+                    ? const Color(0xFF1E2640)
+                    : const Color(0xFFF0F3F8),
+              ),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 86,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildCoverImage(manga.thumbnail, isDark),
+                ),
+              ),
+              _bodyCell(manga.title ?? 'ChÆ°a cÃ³ tÃªn', 180, isDark, bold: true),
+              _bodyCell(buildAuthor(manga), 136, isDark),
+              _bodyCell(buildGenres(manga), 170, isDark),
+              SizedBox(
+                width: 148,
+                child: _StatusBadge(
+                  status: status,
+                  onStatusChange: onStatusChange != null
+                      ? (newStatus) => onStatusChange!(manga, newStatus)
+                      : null,
+                ),
+              ),
+              _bodyCell('${manga.totalChapter ?? 0}', 94, isDark),
+              _bodyCell(buildViewsText(manga), 94, isDark),
+              SizedBox(width: 86, child: _buildRateCell(manga.rate, isDark)),
+              SizedBox(width: 106, child: _buildActionButtons(context, isDark)),
+            ],
           ),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 86,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildCoverImage(manga.thumbnail, isDark),
-            ),
-          ),
-          _bodyCell(manga.title ?? 'Chưa có tên', 180, isDark, bold: true),
-          _bodyCell(buildAuthor(manga), 136, isDark),
-          _bodyCell(buildGenres(manga), 170, isDark),
-          SizedBox(
-            width: 148,
-            child: _StatusBadge(
-              status: status,
-              onStatusChange: onStatusChange != null
-                  ? (newStatus) => onStatusChange!(manga, newStatus)
-                  : null,
-            ),
-          ),
-          _bodyCell('${manga.totalChapter ?? 0}', 94, isDark),
-          _bodyCell(buildViewsText(manga), 94, isDark),
-          SizedBox(width: 86, child: _buildRateCell(manga.rate, isDark)),
-          SizedBox(width: 106, child: _buildActionButtons(context, isDark)),
-        ],
       ),
     );
   }
@@ -283,6 +338,7 @@ class _MangaDataRow extends StatelessWidget {
         width: _coverWidth,
         height: _coverHeight,
         fit: BoxFit.cover,
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
         errorBuilder: (_, _, _) {
           return Container(
             width: _coverWidth,

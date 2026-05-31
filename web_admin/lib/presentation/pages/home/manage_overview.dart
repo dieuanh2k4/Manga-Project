@@ -995,6 +995,8 @@ class _ManageOverviewState extends State<ManageOverview> {
                                       ? Image.network(
                                           manga.thumbnail,
                                           fit: BoxFit.cover,
+                                          webHtmlElementStrategy:
+                                              WebHtmlElementStrategy.prefer,
                                           errorBuilder: (_, _, _) => Icon(
                                             Icons.image,
                                             size: 12,
