@@ -52,34 +52,12 @@ if (!isSeedCommand)
 
 builder.Services.AddHttpContextAccessor();
 
-var allowedCorsOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>() ?? [];
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebAdminCors", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-            {
-                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-                {
-                    return false;
-                }
-
-                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                return allowedCorsOrigins.Any(allowedOrigin =>
-                    string.Equals(
-                        allowedOrigin.TrimEnd('/'),
-                        origin.TrimEnd('/'),
-                        StringComparison.OrdinalIgnoreCase));
-            })
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -290,6 +268,19 @@ app.MapGet("/", () =>
     }
 
     return Results.Ok(new { message = "ProjectManga API is running." });
+});
+
+app.Use(async (context, next) =>
+{
+    if (string.Equals(
+            context.Request.Headers["Access-Control-Request-Private-Network"].ToString(),
+            "true",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Headers["Access-Control-Allow-Private-Network"] = "true";
+    }
+
+    await next();
 });
 
 app.UseCors("WebAdminCors");

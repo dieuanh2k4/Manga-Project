@@ -668,6 +668,7 @@ class _PageThumbnail extends StatelessWidget {
                 child: Image.network(
                   page.imageUrl,
                   fit: BoxFit.cover,
+                  webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
                   loadingBuilder: (_, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Container(

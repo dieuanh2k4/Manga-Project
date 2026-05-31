@@ -337,7 +337,12 @@ class _HeaderSection extends StatelessWidget {
                   children: [
                     Expanded(child: _FollowButton(manga: manga)),
                     const SizedBox(width: 10),
-                    const Expanded(child: _ActionButton(label: 'CONTINUE')),
+                    Expanded(
+                      child: _ActionButton(
+                        label: continueLabel,
+                        onPressed: onContinue,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -446,7 +451,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
 
-  const _ActionButton({required this.label});
+  const _ActionButton({required this.label, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
