@@ -90,7 +90,7 @@ class _AuthPageState extends State<AuthPage>
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        'Welcome to MangaMinus',
+                        'Chào mừng đến MangaMinus!',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Color(0xFFBC5308),
@@ -116,8 +116,8 @@ class _AuthPageState extends State<AuthPage>
                         color: const Color(0xFFFF6B00),
                       ),
                       tabs: const [
-                        Tab(text: 'LOGIN'),
-                        Tab(text: 'REGISTER'),
+                        Tab(text: 'ĐĂNG NHẬP'),
+                        Tab(text: 'ĐĂNG KÝ'),
                       ],
                     ),
                   ),
@@ -155,18 +155,11 @@ class _AuthPageState extends State<AuthPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 4),
-          _FieldLabel('Username'),
-          _RoundedInput(
-            key: const Key('login_username_field'),
-            controller: _loginUserName,
-          ),
+          _FieldLabel('Tên tài khoản'),
+          _RoundedInput(controller: _loginUserName),
           const SizedBox(height: 8),
-          _FieldLabel('Password'),
-          _RoundedInput(
-            key: const Key('login_password_field'),
-            controller: _loginPassword,
-            obscureText: true,
-          ),
+          _FieldLabel('Mật khẩu'),
+          _RoundedInput(controller: _loginPassword, obscureText: true),
           const SizedBox(height: 6),
           const Align(
             alignment: Alignment.centerRight,
@@ -177,8 +170,7 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: 10),
           _MainButton(
-            key: const Key('login_submit_button'),
-            label: auth.isBusy ? 'LOADING...' : 'LOG IN',
+            label: auth.isBusy ? 'ĐANG XỬ LÝ...' : 'ĐĂNG NHẬP',
             onTap: auth.isBusy
                 ? null
                 : () async {
@@ -204,31 +196,31 @@ class _AuthPageState extends State<AuthPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _FieldLabel('Full Name'),
+          _FieldLabel('Họ và tên'),
           _RoundedInput(controller: _regFullName),
           const SizedBox(height: 8),
-          _FieldLabel('Username'),
+          _FieldLabel('Tên tài khoản'),
           _RoundedInput(controller: _regUserName),
           const SizedBox(height: 8),
           _FieldLabel('Email'),
           _RoundedInput(controller: _regEmail),
           const SizedBox(height: 8),
-          _FieldLabel('Phone'),
+          _FieldLabel('Số điện thoại'),
           _RoundedInput(controller: _regPhone),
           const SizedBox(height: 8),
-          _FieldLabel('Birth (yyyy-MM-dd)'),
+          _FieldLabel('Ngày sinh (yyyy-MM-dd)'),
           _RoundedInput(controller: _regBirth),
           const SizedBox(height: 8),
-          _FieldLabel('Address'),
+          _FieldLabel('Địa chỉ'),
           _RoundedInput(controller: _regAddress),
           const SizedBox(height: 8),
-          _FieldLabel('Gender'),
+          _FieldLabel('Giới tính'),
           DropdownButtonFormField<String>(
             initialValue: _gender,
             items: const [
-              DropdownMenuItem(value: 'Male', child: Text('Male')),
-              DropdownMenuItem(value: 'Female', child: Text('Female')),
-              DropdownMenuItem(value: 'Other', child: Text('Other')),
+              DropdownMenuItem(value: 'Male', child: Text('Nam')),
+              DropdownMenuItem(value: 'Female', child: Text('Nữ')),
+              DropdownMenuItem(value: 'Other', child: Text('Khác')),
             ],
             onChanged: (value) {
               setState(() {
@@ -238,11 +230,11 @@ class _AuthPageState extends State<AuthPage>
             decoration: _roundedDecoration(),
           ),
           const SizedBox(height: 8),
-          _FieldLabel('Password'),
+          _FieldLabel('Mật khẩu'),
           _RoundedInput(controller: _regPassword, obscureText: true),
           const SizedBox(height: 10),
           _MainButton(
-            label: auth.isBusy ? 'LOADING...' : 'REGISTER',
+            label: auth.isBusy ? 'ĐANG XỬ LÝ...' : 'ĐĂNG KÝ',
             onTap: auth.isBusy
                 ? null
                 : () async {
@@ -269,7 +261,7 @@ class _AuthPageState extends State<AuthPage>
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                          'Dang ky thanh cong, vui long dang nhap.',
+                          'Đăng ký thành công, vui lòng đăng nhập.',
                         ),
                       ),
                     );

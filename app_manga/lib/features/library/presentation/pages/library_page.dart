@@ -240,17 +240,6 @@ class _LibraryPageState extends State<LibraryPage>
     return _buildLibraryList(filtered);
   }
 
-  String _currentTabLabel() {
-    switch (_tabController.index) {
-      case 1:
-        return 'History';
-      case 2:
-        return 'Downloads';
-      default:
-        return 'Your Library';
-    }
-  }
-
   List<LibraryMangaEntity> _filterManga(List<LibraryMangaEntity> input) {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) {
@@ -537,7 +526,9 @@ class _LibraryPageState extends State<LibraryPage>
       currentIndex: 1,
       selectedItemColor: _primaryColor,
       unselectedItemColor: Colors.grey,
-      showUnselectedLabels: true,
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      iconSize: 30,
       onTap: (index) {
         if (index == 0) {
           Navigator.of(context).pushReplacement(
@@ -560,22 +551,16 @@ class _LibraryPageState extends State<LibraryPage>
       },
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined, key: Key('library_nav_home')),
-          activeIcon: Icon(Icons.home, key: Key('library_nav_home')),
-          label: 'Home',
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.menu_book_outlined, key: Key('library_nav_library')),
-          label: 'Library',
+          icon: Icon(Icons.menu_book_outlined),
+          label: '',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.search, key: Key('library_nav_search')),
-          label: 'Search',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline, key: Key('library_nav_me')),
-          label: 'Me',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
       ],
     );
   }
@@ -862,7 +847,7 @@ class _LibraryListItem extends StatelessWidget {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -870,12 +855,12 @@ class _LibraryListItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: ProtectedNetworkImage(
                 imageUrl: _getImageUrl(manga.thumbnail),
-                width: 56,
-                height: 78,
+                width: 96,
+                height: 140,
                 fit: BoxFit.cover,
                 errorWidget: Container(
-                  width: 56,
-                  height: 78,
+                  width: 96,
+                  height: 140,
                   color: Colors.grey[200],
                   child: const Icon(Icons.image_not_supported_outlined),
                 ),
@@ -891,17 +876,17 @@ class _LibraryListItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Text(
                         primaryText,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: Colors.black54,
                         ),
                       ),
@@ -910,7 +895,7 @@ class _LibraryListItem extends StatelessWidget {
                         Text(
                           badgeText,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             color: Color(0xFFE8742B),
                             fontWeight: FontWeight.w600,
                           ),
@@ -918,10 +903,10 @@ class _LibraryListItem extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Text(
                     secondaryText,
-                    style: const TextStyle(fontSize: 12, color: Colors.black45),
+                    style: const TextStyle(fontSize: 14, color: Colors.black45),
                   ),
                 ],
               ),
@@ -967,7 +952,7 @@ class _HistoryListItem extends StatelessWidget {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -975,12 +960,12 @@ class _HistoryListItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: ProtectedNetworkImage(
                 imageUrl: _getImageUrl(item.thumbnail),
-                width: 56,
-                height: 78,
+                width: 96,
+                height: 140,
                 fit: BoxFit.cover,
                 errorWidget: Container(
-                  width: 56,
-                  height: 78,
+                  width: 96,
+                  height: 140,
                   color: Colors.grey[200],
                   child: const Icon(Icons.image_not_supported_outlined),
                 ),
@@ -996,23 +981,23 @@ class _HistoryListItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                   if ((item.authorName ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       item.authorName!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         color: Colors.black45,
                       ),
                     ),

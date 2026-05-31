@@ -105,6 +105,7 @@ class _AuthorSearchCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           ElevatedButton.icon(
+            key: const Key('manage_authors_create_button'),
             onPressed: onAddAuthor,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF040617),

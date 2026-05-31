@@ -167,6 +167,7 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
   }
 
   Widget _buildDropdownItem({
+    Key? itemKey,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -188,6 +189,7 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        key: itemKey,
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         hoverColor: hoverColor,
@@ -634,6 +636,40 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                 dropdownWidth: 300.0,
                 targetAnchor: Alignment.bottomRight,
                 followerAnchor: Alignment.topRight,
+                child: Container(
+                  key: const Key('admin_profile_menu_button'),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: containerBg,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: containerBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Color(0xFF2563EB),
+                        child: Icon(Icons.person, color: Colors.white, size: 14),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Xin chào, $userName!',
+                        style: TextStyle(
+                          color: titleTextColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
                 dropdownContent: Container(
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF161F3D) : Colors.white,
@@ -790,6 +826,7 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                               subtitle: 'Đăng xuất tài khoản an toàn',
                               iconColor: const Color(0xFFEF4444),
                               textColor: const Color(0xFFEF4444),
+                              itemKey: const Key('admin_logout_button'),
                               onTap: () {
                                 if (widget.onLogout != null) {
                                   widget.onLogout!();

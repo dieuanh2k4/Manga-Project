@@ -5,6 +5,7 @@ import '../controllers/auth_controller.dart';
 import 'auth_page.dart';
 import '../../../manga/presentation/pages/home_page.dart';
 import '../../../manga/presentation/pages/search_page.dart';
+import '../../../library/presentation/pages/library_page.dart';
 import '../../../vip/domain/entities/package_plan_entity.dart';
 import '../../../vip/domain/entities/reader_entitlements_entity.dart';
 import '../../../vip/domain/repositories/vip_repository.dart';
@@ -50,7 +51,7 @@ class MePage extends StatelessWidget {
       key: const Key('me_page'),
       backgroundColor: const Color(0xFFF2F2F2),
       appBar: AppBar(
-        title: const Text('Me'),
+        title: const Text(''),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF2F2F2F),
         elevation: 0,
@@ -64,7 +65,7 @@ class MePage extends StatelessWidget {
       body: profile == null
           ? Center(
               child: Text(
-                auth.errorMessage ?? 'Khong tai duoc thong tin user',
+                auth.errorMessage ?? 'Không tải được thông tin người dùng',
                 textAlign: TextAlign.center,
               ),
             )
@@ -89,68 +90,80 @@ class MePage extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 44,
-                          backgroundColor: const Color(0xFFFF6B00),
-                          backgroundImage:
-                              (profile.avatar != null &&
-                                  profile.avatar!.startsWith('http'))
-                              ? NetworkImage(profile.avatar!)
-                              : null,
-                          child:
-                              (profile.avatar == null ||
-                                  !profile.avatar!.startsWith('http'))
-                              ? Text(
-                                  (profile.fullName ?? 'U').trim().isEmpty
-                                      ? 'U'
-                                      : (profile.fullName!
-                                            .trim()
-                                            .substring(0, 1)
-                                            .toUpperCase()),
-                                  style: const TextStyle(
-                                    fontSize: 28,
-                                    color: Color(0xFF222222),
-                                  ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          profile.fullName ??
-                              auth.session?.userName ??
-                              'Reader',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: profile.isPremium
-                                ? const Color(0xFFFFE3CC)
-                                : const Color(0xFFE4E4E4),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Text(
-                            profile.isPremium ? 'Premium' : 'Standard',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: profile.isPremium
-                                  ? const Color(0xFFB34B09)
-                                  : const Color(0xFF555555),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 44,
+                              backgroundColor: const Color(0xFFFF6B00),
+                              backgroundImage:
+                                  (profile.avatar != null &&
+                                          profile.avatar!.startsWith('http'))
+                                      ? NetworkImage(profile.avatar!)
+                                      : null,
+                              child: (profile.avatar == null ||
+                                      !profile.avatar!.startsWith('http'))
+                                  ? Text(
+                                      (profile.fullName ?? 'U').trim().isEmpty
+                                          ? 'U'
+                                          : (profile.fullName!
+                                                .trim()
+                                                .substring(0, 1)
+                                                .toUpperCase()),
+                                      style: const TextStyle(
+                                        fontSize: 28,
+                                        color: Color(0xFF222222),
+                                      ),
+                                    )
+                                  : null,
                             ),
-                          ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profile.fullName ??
+                                        auth.session?.userName ??
+                                        'Reader',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: profile.isPremium
+                                          ? const Color(0xFFFFE3CC)
+                                          : const Color(0xFFE4E4E4),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Text(
+                                      profile.isPremium
+                                          ? 'Premium'
+                                          : 'Standard',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: profile.isPremium
+                                            ? const Color(0xFFB34B09)
+                                            : const Color(0xFF555555),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 18),
                         _InfoCard(
                           rows: [
                             _InfoRow(
-                              label: 'Username',
+                              label: 'Tên tài khoản',
                               value: auth.session?.userName ?? '-',
                             ),
                             _InfoRow(
@@ -158,23 +171,23 @@ class MePage extends StatelessWidget {
                               value: profile.email ?? '-',
                             ),
                             _InfoRow(
-                              label: 'Phone',
+                              label: 'Số điện thoại',
                               value: profile.phone ?? '-',
                             ),
                             _InfoRow(
-                              label: 'Gender',
+                              label: 'Giới tính',
                               value: profile.gender ?? '-',
                             ),
                             _InfoRow(
-                              label: 'Birth',
+                              label: 'Ngày sinh',
                               value: profile.birth ?? '-',
                             ),
                             _InfoRow(
-                              label: 'Address',
+                              label: 'Địa chỉ',
                               value: profile.address ?? '-',
                             ),
                             _InfoRow(
-                              label: 'Role',
+                              label: 'Vai trò',
                               value: auth.session?.role ?? '-',
                             ),
                           ],
@@ -208,8 +221,8 @@ class MePage extends StatelessWidget {
                             }
 
                             final message = success
-                                ? (vip.purchaseMessage ?? 'Mua goi thanh cong')
-                                : (vip.errorMessage ?? 'Mua goi that bai');
+                                ? (vip.purchaseMessage ?? 'Mua gói thành công')
+                                : (vip.errorMessage ?? 'Mua gói thất bại');
 
                             ScaffoldMessenger.of(
                               context,
@@ -242,7 +255,7 @@ class MePage extends StatelessWidget {
                               ),
                             ),
                             icon: const Icon(Icons.logout),
-                            label: const Text('Dang xuat'),
+                            label: const Text('Đăng xuất'),
                           ),
                         ),
                       ],
@@ -256,11 +269,24 @@ class MePage extends StatelessWidget {
         currentIndex: 3,
         selectedItemColor: const Color(0xFFE8742B),
         unselectedItemColor: Colors.grey,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        iconSize: 30,
         onTap: (index) {
           if (index == 0) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const HomePage()),
             );
+          }
+          if (index == 1) {
+            final auth = Provider.of<AuthController>(context, listen: false);
+            if (auth.session != null) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => LibraryPage(token: auth.session!.token),
+                ),
+              );
+            }
           }
           if (index == 2) {
             Navigator.of(context).pushReplacement(
@@ -270,21 +296,15 @@ class MePage extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined, key: Key('me_nav_home')),
-            label: 'Home',
+            icon: Icon(Icons.home_outlined),
+            label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_outlined, key: Key('me_nav_library')),
-            label: 'Library',
+            icon: Icon(Icons.menu_book_outlined),
+            label: '',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search, key: Key('me_nav_search')),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, key: Key('me_nav_me')),
-            label: 'Me',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
       ),
     );
@@ -370,6 +390,47 @@ class _VipCard extends StatelessWidget {
     required this.onBuy,
   });
 
+  List<String> _formatPrivileges(List<String> privileges) {
+    final result = <String>[];
+    for (final raw in privileges) {
+      final parts = raw.split('=');
+      final key = parts.first.trim().toUpperCase();
+      final value = parts.length > 1 ? parts[1].trim() : '';
+
+      if (value.isNotEmpty && value.toLowerCase() == 'false') {
+        continue;
+      }
+
+      switch (key) {
+        case 'READ_PREMIUM':
+          result.add('Đọc các chapter Premium');
+          break;
+        case 'NO_ADS':
+          result.add('Không có quảng cáo');
+          break;
+        case 'OFFLINE_DOWNLOAD':
+          result.add('Tải offline');
+          break;
+        case 'DAILY_CHAPTER_LIMIT':
+          result.add('Giới hạn chapter/ngày: $value');
+          break;
+        case 'EARLY_ACCESS_DAYS':
+          result.add('Truy cập sớm: $value ngày');
+          break;
+        case 'MAX_DEVICES':
+          result.add('Thiết bị tối đa: $value');
+          break;
+        default:
+          if (value.isEmpty) {
+            result.add(raw.trim());
+          } else {
+            result.add(value);
+          }
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -386,7 +447,7 @@ class _VipCard extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Goi VIP',
+                  'Gói Premium của bạn',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -406,15 +467,15 @@ class _VipCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               entitlements!.hasActivePackage
-                  ? 'Trang thai: Dang co goi hoat dong'
-                  : 'Trang thai: Chua co goi hoat dong',
+                  ? 'Trạng thái: Đã kích hoạt'
+                  : 'Trạng thái: Chưa kích hoạt',
               style: const TextStyle(color: Color(0xFF555555)),
             ),
             if (entitlements!.premiumAccessExpiredAt != null)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
-                  'Het han: ${formatDate(entitlements!.premiumAccessExpiredAt!)}',
+                  'Hết hạn: ${formatDate(entitlements!.premiumAccessExpiredAt!)}',
                   style: const TextStyle(color: Color(0xFFBA541E)),
                 ),
               ),
@@ -437,7 +498,7 @@ class _VipCard extends StatelessWidget {
             )
           else if (packages.isEmpty)
             const Text(
-              'Chua co goi nao hien thi',
+              'Chưa có gói nào để hiển thị',
               style: TextStyle(color: Color(0xFF666666)),
             )
           else
@@ -465,18 +526,29 @@ class _VipCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${formatCurrency(package.price)} • ${package.durationDays} ngay',
+                            '${formatCurrency(package.price)} • ${package.durationDays} ngày',
                             style: const TextStyle(color: Color(0xFF6A6A6A)),
                           ),
                           if (package.privileges.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                package.privileges.join(' • '),
-                                style: const TextStyle(
-                                  color: Color(0xFF7A4D32),
-                                  fontSize: 12,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: _formatPrivileges(package.privileges)
+                                    .map(
+                                      (line) => Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 2),
+                                        child: Text(
+                                          line,
+                                          style: const TextStyle(
+                                            color: Color(0xFF7A4D32),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                           const SizedBox(height: 8),
@@ -502,8 +574,8 @@ class _VipCard extends StatelessWidget {
                                     )
                                   : Text(
                                       isPackageActive(package.id)
-                                          ? 'Dang su dung'
-                                          : 'Mua goi',
+                                          ? 'Đang sử dụng'
+                                          : 'Mua gói',
                                     ),
                             ),
                           ),
