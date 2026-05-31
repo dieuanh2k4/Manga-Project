@@ -1,10 +1,13 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:web_admin/core/models/upload_file_data.dart';
 import 'package:web_admin/domain/entities/author.dart';
 import 'package:web_admin/domain/entities/genre.dart';
 import 'package:web_admin/domain/entities/manga.dart';
+import 'package:web_admin/injection_container.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 
 typedef MangaFormSubmit =
     void Function(MangaEntity manga, UploadFileData? thumbnailFile);
@@ -176,7 +179,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
     final UploadFileData file = UploadFileData(
       fileName: picked.name,
       bytes: picked.bytes,
-      filePath: picked.path,
+      filePath: kIsWeb ? null : picked.path,
     );
 
     if (!file.isValid) {
@@ -215,7 +218,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
       return Image.network(
         currentThumbnail,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return const _ThumbnailPlaceholder(icon: Icons.broken_image_outlined);
         },
       );
@@ -273,94 +276,182 @@ class _MangaFormPageState extends State<MangaFormPage> {
     widget.onSubmit(manga, _thumbnailFile);
   }
 
+  InputDecoration _getInputDecoration({
+    required String label,
+    required bool isDark,
+    Widget? prefixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(
+        color: isDark ? Colors.white60 : const Color(0xFF64748B),
+        fontSize: 13,
+      ),
+      prefixIcon: prefixIcon,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF3B82F6) : const Color(0xFF1F5BFF),
+          width: 1.5,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+      ),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF15192E) : const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeController = sl<ThemeController>();
     final List<DropdownMenuItem<int>> authorItems = _buildAuthorItems();
     final List<GenreEntity> validGenres = widget.genres
         .where((genre) => (genre.id ?? 0) > 0)
         .toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      appBar: AppBar(title: Text(widget.appBarTitle), centerTitle: false),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 980),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: const BorderSide(color: Color(0xFFE3E7F0)),
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+
+        return Scaffold(
+          backgroundColor: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
+          appBar: AppBar(
+            backgroundColor: isDark ? const Color(0xFF0E1326) : Colors.white,
+            foregroundColor: isDark ? Colors.white : const Color(0xFF1D2638),
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios_new,
+                size: 18,
+                color: isDark ? Colors.white70 : const Color(0xFF1D2638),
               ),
-              child: Padding(
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              widget.appBarTitle,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1D2638),
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            centerTitle: false,
+          ),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 980),
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _SectionTitle('Thông tin cơ bản'),
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tên truyện',
-                        ),
-                        validator: (value) =>
-                            _requiredTextValidator(value, 'Tên truyện'),
+                child: Card(
+                  color: isDark ? const Color(0xFF0E1326) : Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE3E7F0),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionTitle('Thông tin cơ bản'),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _titleController,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF1D2638),
+                              fontSize: 14,
+                            ),
+                            decoration: _getInputDecoration(
+                              label: 'Tên truyện',
+                              isDark: isDark,
+                            ),
+                            validator: (value) =>
+                                _requiredTextValidator(value, 'Tên truyện'),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _descriptionController,
+                            minLines: 3,
+                            maxLines: 6,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF1D2638),
+                              fontSize: 14,
+                            ),
+                            decoration: _getInputDecoration(
+                              label: 'Mô tả',
+                              isDark: isDark,
+                            ),
+                            validator: (value) =>
+                                _requiredTextValidator(value, 'Mô tả'),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildThumbnailPicker(isDark),
+                          const SizedBox(height: 16),
+                          _buildStatusRow(isDark),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<int>(
+                            initialValue: _authorId,
+                            dropdownColor: isDark ? const Color(0xFF0E1326) : Colors.white,
+                            decoration: _getInputDecoration(
+                              label: 'Tác giả',
+                              isDark: isDark,
+                            ),
+                            items: authorItems,
+                            onChanged: (value) {
+                              setState(() {
+                                _authorId = value;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value <= 0) {
+                                return 'Vui lòng chọn tác giả';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          const _SectionTitle('Thể loại', small: true),
+                          const SizedBox(height: 8),
+                          _buildGenrePicker(validGenres, isDark),
+                          const SizedBox(height: 16),
+                          _buildDateRow(isDark),
+                          const SizedBox(height: 22),
+                          _buildActions(isDark),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _descriptionController,
-                        minLines: 3,
-                        maxLines: 6,
-                        decoration: const InputDecoration(labelText: 'Mô tả'),
-                        validator: (value) =>
-                            _requiredTextValidator(value, 'Mô tả'),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildThumbnailPicker(),
-                      const SizedBox(height: 16),
-                      _buildStatusRow(),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        value: _authorId,
-                        decoration: const InputDecoration(labelText: 'Tác giả'),
-                        items: authorItems,
-                        onChanged: (value) {
-                          setState(() {
-                            _authorId = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value <= 0) {
-                            return 'Vui lòng chọn tác giả';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      const _SectionTitle('Thể loại', small: true),
-                      const SizedBox(height: 8),
-                      _buildGenrePicker(validGenres),
-                      const SizedBox(height: 16),
-                      _buildDateRow(),
-                      const SizedBox(height: 22),
-                      _buildActions(),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   List<DropdownMenuItem<int>> _buildAuthorItems() {
+    final isDark = sl<ThemeController>().isDarkMode;
     final List<DropdownMenuItem<int>> authorItems = widget.authors
         .where((author) => (author.id ?? 0) > 0)
         .map((author) {
@@ -369,7 +460,16 @@ class _MangaFormPageState extends State<MangaFormPage> {
               ? 'Tác giả #$id'
               : author.fullName!.trim();
 
-          return DropdownMenuItem<int>(value: id, child: Text(label));
+          return DropdownMenuItem<int>(
+            value: id,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1D2638),
+                fontSize: 14,
+              ),
+            ),
+          );
         })
         .toList();
 
@@ -377,7 +477,13 @@ class _MangaFormPageState extends State<MangaFormPage> {
       authorItems.add(
         DropdownMenuItem<int>(
           value: _authorId,
-          child: Text('Tác giả #$_authorId'),
+          child: Text(
+            'Tác giả #$_authorId',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF1D2638),
+              fontSize: 14,
+            ),
+          ),
         ),
       );
     }
@@ -385,7 +491,7 @@ class _MangaFormPageState extends State<MangaFormPage> {
     return authorItems;
   }
 
-  Widget _buildThumbnailPicker() {
+  Widget _buildThumbnailPicker(bool isDark) {
     final String thumbnailText =
         _thumbnailFile?.fileName ??
         (_isEditing && _thumbnailController.text.trim().isNotEmpty
@@ -416,19 +522,32 @@ class _MangaFormPageState extends State<MangaFormPage> {
                   OutlinedButton.icon(
                     onPressed: _pickThumbnailFromDevice,
                     icon: const Icon(Icons.upload_file_outlined),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      backgroundColor: isDark ? const Color(0xFF15192E) : const Color(0xFFF8FAFC),
+                    ),
                     label: const Text('Tải ảnh từ thiết bị'),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     thumbnailText,
-                    style: const TextStyle(
-                      color: Color(0xFF607089),
+                    style: TextStyle(
+                      color: isDark ? Colors.white60 : const Color(0xFF607089),
                       fontSize: 12,
                     ),
                   ),
                   if (_thumbnailFile != null)
                     TextButton(
                       onPressed: _clearSelectedThumbnail,
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDark ? const Color(0xFFF87171) : Colors.redAccent,
+                      ),
                       child: const Text('Bỏ ảnh đã chọn'),
                     ),
                 ],
@@ -440,18 +559,28 @@ class _MangaFormPageState extends State<MangaFormPage> {
     );
   }
 
-  Widget _buildStatusRow() {
+  Widget _buildStatusRow(bool isDark) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isCompact = constraints.maxWidth < 700;
         final Widget statusField = DropdownButtonFormField<String>(
-          value: _status,
-          decoration: const InputDecoration(labelText: 'Trạng thái'),
+          initialValue: _status,
+          dropdownColor: isDark ? const Color(0xFF0E1326) : Colors.white,
+          decoration: _getInputDecoration(
+            label: 'Trạng thái',
+            isDark: isDark,
+          ),
           items: _statusOptions
               .map(
                 (status) => DropdownMenuItem<String>(
                   value: status,
-                  child: Text(status),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               )
               .toList(),
@@ -468,14 +597,28 @@ class _MangaFormPageState extends State<MangaFormPage> {
         final Widget totalChapterField = TextFormField(
           controller: _totalChapterController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Số chương'),
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1D2638),
+            fontSize: 14,
+          ),
+          decoration: _getInputDecoration(
+            label: 'Số chương',
+            isDark: isDark,
+          ),
           readOnly: true,
         );
 
         final Widget rateField = TextFormField(
           controller: _rateController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Đánh giá'),
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1D2638),
+            fontSize: 14,
+          ),
+          decoration: _getInputDecoration(
+            label: 'Đánh giá',
+            isDark: isDark,
+          ),
           readOnly: true,
         );
 
@@ -504,11 +647,11 @@ class _MangaFormPageState extends State<MangaFormPage> {
     );
   }
 
-  Widget _buildGenrePicker(List<GenreEntity> validGenres) {
+  Widget _buildGenrePicker(List<GenreEntity> validGenres, bool isDark) {
     if (validGenres.isEmpty) {
-      return const Text(
+      return Text(
         'Không có dữ liệu thể loại để chọn.',
-        style: TextStyle(color: Color(0xFF7B879B)),
+        style: TextStyle(color: isDark ? Colors.white60 : const Color(0xFF7B879B)),
       );
     }
 
@@ -523,8 +666,28 @@ class _MangaFormPageState extends State<MangaFormPage> {
         final bool selected = _selectedGenreIds.contains(genreId);
 
         return FilterChip(
-          label: Text(label),
+          label: Text(
+            label,
+            style: TextStyle(
+              color: selected
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : const Color(0xFF4E5A6F)),
+              fontSize: 12,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
           selected: selected,
+          selectedColor: const Color(0xFF1F5BFF),
+          checkmarkColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1E2640) : const Color(0xFFF1F5F9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: selected
+                  ? const Color(0xFF1F5BFF)
+                  : (isDark ? const Color(0xFF2E3B5E) : const Color(0xFFE2E8F0)),
+            ),
+          ),
           onSelected: (value) {
             setState(() {
               if (value) {
@@ -539,13 +702,27 @@ class _MangaFormPageState extends State<MangaFormPage> {
     );
   }
 
-  Widget _buildDateRow() {
+  Widget _buildDateRow(bool isDark) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _pickReleaseDate,
-            icon: const Icon(Icons.date_range_outlined),
+            icon: Icon(
+              Icons.date_range_outlined,
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+              side: BorderSide(
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              backgroundColor: isDark ? const Color(0xFF15192E) : const Color(0xFFF8FAFC),
+            ),
             label: Text('Ngày phát hành: ${_dateFormat.format(_releaseDate)}'),
           ),
         ),
@@ -553,7 +730,21 @@ class _MangaFormPageState extends State<MangaFormPage> {
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _pickEndDate,
-            icon: const Icon(Icons.event_available_outlined),
+            icon: Icon(
+              Icons.event_available_outlined,
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+              side: BorderSide(
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              backgroundColor: isDark ? const Color(0xFF15192E) : const Color(0xFFF8FAFC),
+            ),
             label: Text('Ngày kết thúc: ${_dateFormat.format(_endDate)}'),
           ),
         ),
@@ -561,13 +752,16 @@ class _MangaFormPageState extends State<MangaFormPage> {
     );
   }
 
-  Widget _buildActions() {
+  Widget _buildActions(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         TextButton(
           key: const Key('manga_form_cancel_button'),
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: isDark ? Colors.white70 : const Color(0xFF64748B),
+          ),
           child: const Text('Hủy'),
         ),
         const SizedBox(width: 10),
@@ -575,6 +769,14 @@ class _MangaFormPageState extends State<MangaFormPage> {
           key: const Key('manga_form_submit_button'),
           onPressed: _submit,
           icon: const Icon(Icons.save_outlined),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1F5BFF),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
           label: Text(widget.submitLabel),
         ),
       ],
@@ -590,12 +792,13 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Text(
       text,
       style: TextStyle(
         fontSize: small ? 14 : 18,
         fontWeight: small ? FontWeight.w600 : FontWeight.w700,
-        color: const Color(0xFF1D2638),
+        color: isDark ? Colors.white : const Color(0xFF1D2638),
       ),
     );
   }
@@ -608,10 +811,14 @@ class _ThumbnailPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
-      color: const Color(0xFFE5EAF3),
+      color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE5EAF3),
       alignment: Alignment.center,
-      child: Icon(icon, color: const Color(0xFF9AA8BE)),
+      child: Icon(
+        icon,
+        color: isDark ? const Color(0xFF64748B) : const Color(0xFF9AA8BE),
+      ),
     );
   }
 }

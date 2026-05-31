@@ -354,7 +354,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                   height: 200,
                   child: ListView.separated(
                     itemCount: mangaList.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final MangaEntity manga = mangaList[index];
                       return ListTile(
@@ -488,9 +488,13 @@ class _ManageAuthorsState extends State<ManageAuthors> {
       listenable: themeController,
       builder: (context, _) {
         final isDark = themeController.isDarkMode;
-        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
         final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -522,14 +526,19 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                                 selectedKey: sidebarKeyAuthors,
                                 onSelect: (key) {
                                   if (key == sidebarKeyOverview) {
-                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
                                   } else if (key == sidebarKeyManga) {
                                     _openMangaPage();
+                                  } else if (key == sidebarKeyGenres) {
+                                    _openGenresPage();
                                   } else if (key == sidebarKeyUsers) {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute<void>(
                                         builder: (_) => ManageUsers(
-                                          mangaController: widget.mangaController,
+                                          mangaController:
+                                              widget.mangaController,
                                           onLogout: widget.onLogout,
                                         ),
                                       ),
@@ -538,7 +547,8 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute<void>(
                                         builder: (_) => ManageVipPackages(
-                                          mangaController: widget.mangaController,
+                                          mangaController:
+                                              widget.mangaController,
                                           onLogout: widget.onLogout,
                                         ),
                                       ),
@@ -589,20 +599,26 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFEFF4FF),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           Icons.person_pin_rounded,
                           size: 18,
-                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                          color: isDark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF1F5BFF),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         'Quản lý Tác giả',
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1D2638),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1D2638),
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
@@ -617,7 +633,9 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                     child: Text(
                       'Quản lý danh sách tác giả của hệ thống',
                       style: TextStyle(
-                        color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF7B879B),
                         fontSize: 13,
                       ),
                     ),
@@ -634,7 +652,7 @@ class _ManageAuthorsState extends State<ManageAuthors> {
                     ? Center(child: Text(_errorMessage!))
                     : ListenableBuilder(
                         listenable: widget.mangaController,
-                        builder: (_, __) {
+                        builder: (_, _) {
                           final RemoteMangaState state =
                               widget.mangaController.state;
                           final List<MangaEntity> mangaList =

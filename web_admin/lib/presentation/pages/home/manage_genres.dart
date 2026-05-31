@@ -8,10 +8,12 @@ import 'package:web_admin/domain/entities/genre.dart';
 import 'package:web_admin/domain/usecases/get_genres.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/pages/home/manage_authors.dart';
 import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_notifications.dart';
 import 'package:web_admin/presentation/pages/home/manage_users.dart';
+import 'package:web_admin/presentation/pages/home/manage_vip_packages.dart';
 import 'package:web_admin/presentation/widgets/manage_genres_body.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
@@ -40,6 +42,7 @@ class _ManageGenresState extends State<ManageGenres> {
   bool _isLoading = false;
   String? _errorMessage;
   List<GenreEntity> _genres = const <GenreEntity>[];
+  String _selectedSort = 'A-Z';
 
   @override
   void initState() {
@@ -104,26 +107,63 @@ class _ManageGenresState extends State<ManageGenres> {
 
     final bool? submitted = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(genre == null ? 'Thêm thể loại' : 'Sửa thể loại'),
-        content: SizedBox(
-          width: 420,
-          child: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(labelText: 'Tên thể loại'),
+      builder: (context) {
+        final isDark = sl<ThemeController>().isDarkMode;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
+          title: Text(
+            genre == null ? 'Thêm thể loại mới' : 'Chỉnh sửa thể loại',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Lưu'),
+          content: SizedBox(
+            width: 420,
+            child: TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Tên thể loại',
+                labelStyle: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                filled: true,
+                fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              ),
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Hủy',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1F5BFF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Lưu'),
+            ),
+          ],
+        );
+      },
     );
 
     if (submitted != true) {
@@ -192,20 +232,49 @@ class _ManageGenresState extends State<ManageGenres> {
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xóa thể loại'),
-        content: Text('Bạn có chắc muốn xóa "${genre.name ?? 'thể loại'}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
+      builder: (context) {
+        final isDark = sl<ThemeController>().isDarkMode;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xóa'),
+          title: Text(
+            'Xóa thể loại',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
           ),
-        ],
-      ),
+          content: Text(
+            'Bạn có chắc muốn xóa "${genre.name ?? 'thể loại'}"?',
+            style: TextStyle(
+              color: isDark ? Colors.white70 : const Color(0xFF475569),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Hủy',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Xóa'),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true) {
@@ -230,9 +299,15 @@ class _ManageGenresState extends State<ManageGenres> {
     final String keyword = _searchController.text.trim().toLowerCase();
     final List<GenreEntity> sorted = List<GenreEntity>.from(_genres)
       ..sort((a, b) {
-        final String aName = (a.name ?? '').toLowerCase();
-        final String bName = (b.name ?? '').toLowerCase();
-        return aName.compareTo(bName);
+        if (_selectedSort == 'ID') {
+          final int aId = a.id ?? 0;
+          final int bId = b.id ?? 0;
+          return aId.compareTo(bId);
+        } else {
+          final String aName = (a.name ?? '').toLowerCase();
+          final String bName = (b.name ?? '').toLowerCase();
+          return aName.compareTo(bName);
+        }
       });
 
     if (keyword.isEmpty) {
@@ -300,66 +375,102 @@ class _ManageGenresState extends State<ManageGenres> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isCompactSidebar = constraints.maxWidth < 1120;
-        final double shellHeight =
-            (constraints.maxHeight - 24).clamp(620.0, 920.0).toDouble();
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
+        final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF2F3034),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
-                  child: SizedBox(
-                    height: shellHeight,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FC),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          ManageMangaSidebar(
-                            compact: isCompactSidebar,
-                            selectedKey: sidebarKeyGenres,
-                            onSelect: (key) {
-                              if (key == sidebarKeyManga) {
-                                _openMangaPage();
-                              } else if (key == sidebarKeyAuthors) {
-                                _openAuthorsPage();
-                              } else if (key == sidebarKeyUsers) {
-                                _openUsersPage();
-                              } else if (key == sidebarKeyNotifications) {
-                                _openNotificationsPage();
-                              }
-                            },
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isCompactSidebar = constraints.maxWidth < 1120;
+            final double shellHeight = (constraints.maxHeight - 24)
+                .clamp(620.0, 920.0)
+                .toDouble();
+
+            return Scaffold(
+              backgroundColor: scaffoldBg,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: SizedBox(
+                        height: shellHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: shellBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: shellBorder, width: 1),
                           ),
-                          Expanded(child: _buildMainContent()),
-                        ],
+                          child: Row(
+                            children: [
+                              ManageMangaSidebar(
+                                compact: isCompactSidebar,
+                                selectedKey: sidebarKeyGenres,
+                                onSelect: (key) {
+                                  if (key == sidebarKeyOverview) {
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                  } else if (key == sidebarKeyManga) {
+                                    _openMangaPage();
+                                  } else if (key == sidebarKeyAuthors) {
+                                    _openAuthorsPage();
+                                  } else if (key == sidebarKeyUsers) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ManageUsers(
+                                          mangaController: widget.mangaController,
+                                          onLogout: widget.onLogout,
+                                        ),
+                                      ),
+                                    );
+                                  } else if (key == sidebarKeyVip) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ManageVipPackages(
+                                          mangaController: widget.mangaController,
+                                          onLogout: widget.onLogout,
+                                        ),
+                                      ),
+                                    );
+                                  } else if (key == sidebarKeyNotifications) {
+                                    _openNotificationsPage();
+                                  }
+                                },
+                              ),
+                              Expanded(child: _buildMainContent()),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildMainContent() {
+    final isDark = sl<ThemeController>().isDarkMode;
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topRight: Radius.circular(14),
         bottomRight: Radius.circular(14),
       ),
       child: Container(
-        color: const Color(0xFFF7F8FC),
+        color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
         child: Column(
           children: [
             ManageMangaTopHeader(
@@ -367,6 +478,58 @@ class _ManageGenresState extends State<ManageGenres> {
               onLogout: widget.onLogout,
               onNotificationTap: _openNotificationsPage,
               hintText: 'Tìm kiếm thể loại...',
+              customHeaderWidget: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFEFF4FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.category_outlined,
+                          size: 18,
+                          color: isDark
+                              ? const Color(0xFF60A5FA)
+                              : const Color(0xFF1F5BFF),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Quản lý Thể loại',
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1D2638),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: Text(
+                      'Quản lý danh sách thể loại truyện trong hệ thống',
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF7B879B),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: Padding(
@@ -374,9 +537,22 @@ class _ManageGenresState extends State<ManageGenres> {
                 child: _isLoading
                     ? const Center(child: CupertinoActivityIndicator())
                     : _errorMessage != null
-                        ? Center(child: Text(_errorMessage!))
+                        ? Center(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
+                            ),
+                          )
                         : ManageGenresBody(
                             searchController: _searchController,
+                            selectedSort: _selectedSort,
+                            onSortChanged: (value) {
+                              setState(() {
+                                _selectedSort = value;
+                              });
+                            },
                             visibleGenres: _filterGenres(),
                             onAddGenre: _showGenreForm,
                             onEditGenre: (genre) {

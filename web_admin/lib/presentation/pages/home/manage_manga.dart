@@ -30,11 +30,7 @@ class ManageManga extends StatefulWidget {
   final RemoteMangaController mangaController;
   final Future<void> Function()? onLogout;
 
-  const ManageManga({
-    Key? key,
-    required this.mangaController,
-    this.onLogout,
-  }) : super(key: key);
+  const ManageManga({super.key, required this.mangaController, this.onLogout});
 
   @override
   State<ManageManga> createState() => _ManageMangaState();
@@ -45,13 +41,12 @@ class _ManageMangaState extends State<ManageManga> {
 
   final ManageMangaService _manageMangaService = sl<ManageMangaService>();
 
-  final TextEditingController _globalSearchController =
-      TextEditingController();
+  final TextEditingController _globalSearchController = TextEditingController();
   final TextEditingController _mangaSearchController = TextEditingController();
 
   String _selectedStatus = _allStatus;
   String _selectedSort = 'A-Z';
-  Set<int> _selectedGenreIds = {};    // Hỗ trợ chọn nhiều thể loại
+  Set<int> _selectedGenreIds = {}; // Hỗ trợ chọn nhiều thể loại
   List<AuthorEntity> _authors = const <AuthorEntity>[];
   List<GenreEntity> _genres = const <GenreEntity>[];
   Map<int, String> _authorNameById = const {};
@@ -80,8 +75,8 @@ class _ManageMangaState extends State<ManageManga> {
   }
 
   Future<void> _loadLookupData() async {
-    final ManageMangaLookupResult lookupResult =
-        await _manageMangaService.loadLookupData();
+    final ManageMangaLookupResult lookupResult = await _manageMangaService
+        .loadLookupData();
     if (!mounted) return;
     setState(() {
       _authors = lookupResult.authors;
@@ -339,9 +334,13 @@ class _ManageMangaState extends State<ManageManga> {
       listenable: themeController,
       builder: (context, _) {
         final isDark = themeController.isDarkMode;
-        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
         final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -365,67 +364,82 @@ class _ManageMangaState extends State<ManageManga> {
                             color: shellBg,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: shellBorder, width: 1),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x22000000),
-                            blurRadius: 32,
-                            offset: Offset(0, 8),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x22000000),
+                                blurRadius: 32,
+                                offset: Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Row(
-                          children: [
-                            ManageMangaSidebar(
-                              compact: isCompactSidebar,
-                              selectedKey: sidebarKeyManga,
-                              onSelect: (key) {
-                                if (key == sidebarKeyOverview) {
-                                  Navigator.of(context).popUntil((route) => route.isFirst);
-                                } else if (key == sidebarKeyAuthors) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageAuthors(
-                                        mangaController: widget.mangaController,
-                                        onLogout: _onNestedRouteLogout,
-                                      ),
-                                    ),
-                                  );
-                                } else if (key == sidebarKeyUsers) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageUsers(
-                                        mangaController: widget.mangaController,
-                                        onLogout: _onNestedRouteLogout,
-                                      ),
-                                    ),
-                                  );
-                                } else if (key == sidebarKeyVip) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ManageVipPackages(
-                                        mangaController: widget.mangaController,
-                                        onLogout: _onNestedRouteLogout,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Row(
+                              children: [
+                                ManageMangaSidebar(
+                                  compact: isCompactSidebar,
+                                  selectedKey: sidebarKeyManga,
+                                  onSelect: (key) {
+                                    if (key == sidebarKeyOverview) {
+                                      Navigator.of(
+                                        context,
+                                      ).popUntil((route) => route.isFirst);
+                                    } else if (key == sidebarKeyGenres) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageGenres(
+                                            mangaController:
+                                                widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (key == sidebarKeyAuthors) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageAuthors(
+                                            mangaController:
+                                                widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (key == sidebarKeyUsers) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageUsers(
+                                            mangaController:
+                                                widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (key == sidebarKeyVip) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ManageVipPackages(
+                                            mangaController:
+                                                widget.mangaController,
+                                            onLogout: _onNestedRouteLogout,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                                Expanded(child: _buildMainContent(context)),
+                              ],
                             ),
-                            Expanded(child: _buildMainContent(context)),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
-      },
-    );
       },
     );
   }
@@ -448,20 +462,24 @@ class _ManageMangaState extends State<ManageManga> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF4FF),
+                        color: isDark
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFFEFF4FF),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.menu_book_rounded,
                         size: 18,
-                        color: Color(0xFF1F5BFF),
+                        color: isDark
+                            ? const Color(0xFF60A5FA)
+                            : const Color(0xFF1F5BFF),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       'Quản lý Manga',
                       style: TextStyle(
-                        color: Color(0xFF1D2638),
+                        color: isDark ? Colors.white : const Color(0xFF1D2638),
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
@@ -471,11 +489,14 @@ class _ManageMangaState extends State<ManageManga> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Padding(
-                  padding: EdgeInsets.only(left: 2),
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
                   child: Text(
                     'Quản lý toàn bộ bộ sưu tập truyện trong hệ thống',
-                    style: TextStyle(color: Color(0xFF7B879B), fontSize: 13),
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -486,7 +507,7 @@ class _ManageMangaState extends State<ManageManga> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
               child: ListenableBuilder(
                 listenable: widget.mangaController,
-                builder: (_, __) {
+                builder: (_, _) {
                   final RemoteMangaState state = widget.mangaController.state;
 
                   if (state is RemoteMangaLoading) {
@@ -535,9 +556,7 @@ class _ManageMangaState extends State<ManageManga> {
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            _buildAddMangaButton(),
-                          ],
+                          children: [_buildAddMangaButton()],
                         ),
                         const SizedBox(height: 14),
                         _MangaStatsRow(mangas: allMangas),
@@ -620,9 +639,7 @@ class _MangaStatsRow extends StatelessWidget {
         )
         .length;
     final int paused = mangas
-        .where(
-          (m) => ManageMangaHelper.normalizeStatus(m.status) == 'Tạm dừng',
-        )
+        .where((m) => ManageMangaHelper.normalizeStatus(m.status) == 'Tạm dừng')
         .length;
 
     return LayoutBuilder(

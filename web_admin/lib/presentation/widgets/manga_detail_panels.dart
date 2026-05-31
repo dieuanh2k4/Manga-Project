@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:web_admin/injection_container.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/models/manga_detail_items.dart';
 
 class MangaChapterPanel extends StatelessWidget {
@@ -23,11 +25,14 @@ class MangaChapterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -41,8 +46,12 @@ class MangaChapterPanel extends StatelessWidget {
           // Header
           Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF0F3F8))),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
+                ),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -52,32 +61,32 @@ class MangaChapterPanel extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF4FF),
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.format_list_numbered_rounded,
                         size: 16,
-                        color: Color(0xFF1F5BFF),
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Danh sách Chapter',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1D2638),
+                            color: isDark ? Colors.white : const Color(0xFF1D2638),
                           ),
                         ),
                         Text(
                           '${chapters.length} chapter',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFF8491A7),
+                            color: isDark ? const Color(0xFF8491A7) : const Color(0xFF8491A7),
                           ),
                         ),
                       ],
@@ -123,8 +132,7 @@ class MangaChapterPanel extends StatelessWidget {
                     itemCount: chapters.length,
                     itemBuilder: (context, index) {
                       final ChapterItem chapter = chapters[index];
-                      final bool selected =
-                          chapter.id == selectedChapter?.id;
+                      final bool selected = chapter.id == selectedChapter?.id;
 
                       return _ChapterTile(
                         chapter: chapter,
@@ -159,14 +167,19 @@ class _ChapterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFFEFF4FF) : Colors.transparent,
+        color: selected
+            ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF))
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         border: selected
-            ? Border.all(color: const Color(0xFF1F5BFF).withOpacity(0.3))
+            ? Border.all(
+                color: (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF)).withOpacity(0.3),
+              )
             : null,
       ),
       child: InkWell(
@@ -182,8 +195,8 @@ class _ChapterTile extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: selected
-                      ? const Color(0xFF1F5BFF)
-                      : const Color(0xFFF0F3F8),
+                      ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF))
+                      : (isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
@@ -194,7 +207,7 @@ class _ChapterTile extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: selected
                           ? Colors.white
-                          : const Color(0xFF4E5A6F),
+                          : (isDark ? Colors.white70 : const Color(0xFF4E5A6F)),
                     ),
                   ),
                 ),
@@ -211,8 +224,8 @@ class _ChapterTile extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: selected
-                            ? const Color(0xFF1F5BFF)
-                            : const Color(0xFF1D2638),
+                            ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF))
+                            : (isDark ? Colors.white : const Color(0xFF1D2638)),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -244,7 +257,7 @@ class _ChapterTile extends StatelessWidget {
                 children: [
                   _IconBtn(
                     icon: Icons.edit_outlined,
-                    color: const Color(0xFF657489),
+                    color: isDark ? const Color(0xFF8491A7) : const Color(0xFF657489),
                     tooltip: 'Sửa',
                     onTap: onEdit,
                   ),
@@ -271,6 +284,7 @@ class _EmptyChapterState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -278,27 +292,30 @@ class _EmptyChapterState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F3F8),
+              color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.auto_stories_outlined,
               size: 32,
-              color: Color(0xFF9AA8BE),
+              color: isDark ? const Color(0xFF8491A7) : const Color(0xFF9AA8BE),
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Chưa có chapter nào',
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: Color(0xFF4E5A6F),
+              color: isDark ? Colors.white70 : const Color(0xFF4E5A6F),
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Thêm chapter đầu tiên để bắt đầu',
-            style: TextStyle(fontSize: 12, color: Color(0xFF8491A7)),
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? const Color(0xFF8491A7) : const Color(0xFF8491A7),
+            ),
           ),
           const SizedBox(height: 14),
           OutlinedButton.icon(
@@ -367,11 +384,14 @@ class MangaPagePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -385,8 +405,12 @@ class MangaPagePanel extends StatelessWidget {
           // Header
           Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF0F3F8))),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
+                ),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -396,13 +420,13 @@ class MangaPagePanel extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0F3F8),
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F3F8),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.photo_library_outlined,
                         size: 16,
-                        color: Color(0xFF657489),
+                        color: isDark ? const Color(0xFF8491A7) : const Color(0xFF657489),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -413,17 +437,17 @@ class MangaPagePanel extends StatelessWidget {
                           selectedChapter == null
                               ? 'Trang truyện'
                               : 'Chapter ${selectedChapter!.chapterNumber}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1D2638),
+                            color: isDark ? Colors.white : const Color(0xFF1D2638),
                           ),
                         ),
                         Text(
                           '${pages.length} trang${selectedPageIds.isNotEmpty ? ' · ${selectedPageIds.length} đã chọn' : ''}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFF8491A7),
+                            color: isDark ? const Color(0xFF8491A7) : const Color(0xFF8491A7),
                           ),
                         ),
                       ],
@@ -465,6 +489,10 @@ class MangaPagePanel extends StatelessWidget {
                           horizontal: 12,
                           vertical: 8,
                         ),
+                        foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFCBD5E1),
+                        ),
                         textStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -486,6 +514,7 @@ class MangaPagePanel extends StatelessWidget {
   }
 
   Widget _buildContent() {
+    final isDark = sl<ThemeController>().isDarkMode;
     if (loading) {
       return const Center(
         child: CircularProgressIndicator(
@@ -502,28 +531,31 @@ class MangaPagePanel extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F3F8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.touch_app_outlined,
                 size: 32,
-                color: Color(0xFF9AA8BE),
+                color: isDark ? const Color(0xFF8491A7) : const Color(0xFF9AA8BE),
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Chọn một chapter',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF4E5A6F),
+                color: isDark ? Colors.white70 : const Color(0xFF4E5A6F),
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'để xem và quản lý các trang truyện',
-              style: TextStyle(fontSize: 12, color: Color(0xFF8491A7)),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF8491A7),
+              ),
             ),
           ],
         ),
@@ -537,28 +569,31 @@ class MangaPagePanel extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F3F8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.image_outlined,
                 size: 32,
-                color: Color(0xFF9AA8BE),
+                color: isDark ? const Color(0xFF8491A7) : const Color(0xFF9AA8BE),
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Chưa có trang nào',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF4E5A6F),
+                color: isDark ? Colors.white70 : const Color(0xFF4E5A6F),
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Upload ảnh để thêm trang truyện',
-              style: TextStyle(fontSize: 12, color: Color(0xFF8491A7)),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF8491A7),
+              ),
             ),
           ],
         ),
@@ -601,6 +636,7 @@ class _PageThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -609,16 +645,16 @@ class _PageThumbnail extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
-                ? const Color(0xFF1F5BFF)
-                : const Color(0xFFE4E8F2),
+                ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF))
+                : (isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2)),
             width: selected ? 2.5 : 1,
           ),
           boxShadow: selected
               ? [
-                  const BoxShadow(
-                    color: Color(0x331F5BFF),
+                  BoxShadow(
+                    color: isDark ? const Color(0x3360A5FA) : const Color(0x331F5BFF),
                     blurRadius: 8,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ]
               : null,
@@ -635,20 +671,20 @@ class _PageThumbnail extends StatelessWidget {
                   loadingBuilder: (_, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Container(
-                      color: const Color(0xFFF0F3F8),
-                      child: const Center(
+                      color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
+                      child: Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 1.5,
-                          color: Color(0xFF9AA8BE),
+                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF9AA8BE),
                         ),
                       ),
                     );
                   },
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFFE5EAF3),
-                    child: const Icon(
+                  errorBuilder: (_, _, _) => Container(
+                    color: isDark ? const Color(0xFF151B33) : const Color(0xFFE5EAF3),
+                    child: Icon(
                       Icons.broken_image_outlined,
-                      color: Color(0xFF9AA8BE),
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF9AA8BE),
                     ),
                   ),
                 ),
@@ -656,7 +692,9 @@ class _PageThumbnail extends StatelessWidget {
               // Selection overlay
               if (selected)
                 Positioned.fill(
-                  child: Container(color: const Color(0x221F5BFF)),
+                  child: Container(
+                    color: isDark ? const Color(0x3360A5FA) : const Color(0x221F5BFF),
+                  ),
                 ),
               // Check badge
               Positioned(
@@ -668,13 +706,13 @@ class _PageThumbnail extends StatelessWidget {
                   height: 22,
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFF1F5BFF)
-                        : Colors.white.withOpacity(0.9),
+                        ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF))
+                        : (isDark ? const Color(0xFF151B33).withOpacity(0.9) : Colors.white.withOpacity(0.9)),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: selected
-                          ? const Color(0xFF1F5BFF)
-                          : const Color(0xFFCCD4E0),
+                          ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF))
+                          : (isDark ? const Color(0xFF334155) : const Color(0xFFCCD4E0)),
                       width: 1.5,
                     ),
                   ),

@@ -42,7 +42,6 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
 
   void _showSettingsDialog(BuildContext context) {
     final themeController = sl<ThemeController>();
-    final isDark = themeController.isDarkMode;
 
     showDialog<void>(
       context: context,
@@ -52,7 +51,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
           builder: (context, _) {
             final currentIsDark = themeController.isDarkMode;
             return AlertDialog(
-              backgroundColor: currentIsDark ? const Color(0xFF161F3D) : Colors.white,
+              backgroundColor: currentIsDark
+                  ? const Color(0xFF161F3D)
+                  : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -65,7 +66,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 18,
-                      color: currentIsDark ? Colors.white : const Color(0xFF0F172A),
+                      color: currentIsDark
+                          ? Colors.white
+                          : const Color(0xFF0F172A),
                     ),
                   ),
                 ],
@@ -81,7 +84,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: currentIsDark ? Colors.white70 : const Color(0xFF334155),
+                        color: currentIsDark
+                            ? Colors.white70
+                            : const Color(0xFF334155),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -89,11 +94,13 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         'Chế độ tối (Dark Mode)',
-                        style: TextStyle(color: currentIsDark ? Colors.white : Colors.black),
+                        style: TextStyle(
+                          color: currentIsDark ? Colors.white : Colors.black,
+                        ),
                       ),
                       trailing: CupertinoSwitch(
                         value: currentIsDark,
-                        activeColor: const Color(0xFF2563EB),
+                        activeTrackColor: const Color(0xFF2563EB),
                         onChanged: (val) {
                           themeController.toggleTheme();
                         },
@@ -103,19 +110,29 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         'Tự động đồng bộ với máy chủ',
-                        style: TextStyle(color: currentIsDark ? Colors.white : Colors.black),
+                        style: TextStyle(
+                          color: currentIsDark ? Colors.white : Colors.black,
+                        ),
                       ),
-                      trailing: const Icon(Icons.toggle_on_rounded, size: 28, color: Color(0xFF2563EB)),
+                      trailing: const Icon(
+                        Icons.toggle_on_rounded,
+                        size: 28,
+                        color: Color(0xFF2563EB),
+                      ),
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         'Ngôn ngữ hiển thị',
-                        style: TextStyle(color: currentIsDark ? Colors.white : Colors.black),
+                        style: TextStyle(
+                          color: currentIsDark ? Colors.white : Colors.black,
+                        ),
                       ),
                       trailing: Text(
                         'Tiếng Việt (VI)',
-                        style: TextStyle(color: currentIsDark ? Colors.white38 : Colors.grey),
+                        style: TextStyle(
+                          color: currentIsDark ? Colors.white38 : Colors.grey,
+                        ),
                       ),
                     ),
                   ],
@@ -160,9 +177,14 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
     Widget? trailing,
   }) {
     final isDark = sl<ThemeController>().isDarkMode;
-    final defaultTextColor = textColor ?? (isDark ? Colors.white70 : const Color(0xFF334155));
-    final defaultSubtitleColor = isDark ? Colors.white38 : const Color(0xFF8491A7);
-    final hoverColor = isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF6FF);
+    final defaultTextColor =
+        textColor ?? (isDark ? Colors.white70 : const Color(0xFF334155));
+    final defaultSubtitleColor = isDark
+        ? Colors.white38
+        : const Color(0xFF8491A7);
+    final hoverColor = isDark
+        ? const Color(0xFF1E2640)
+        : const Color(0xFFEFF6FF);
 
     return Material(
       color: Colors.transparent,
@@ -208,11 +230,12 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                   ],
                 ),
               ),
-              trailing ?? const Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xFFABB3C2),
-                size: 16,
-              ),
+              trailing ??
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFFABB3C2),
+                    size: 16,
+                  ),
             ],
           ),
         ),
@@ -223,7 +246,7 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
   @override
   Widget build(BuildContext context) {
     final themeController = sl<ThemeController>();
-    
+
     return ListenableBuilder(
       listenable: themeController,
       builder: (context, _) {
@@ -236,12 +259,20 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
             : 'admin@manga.vn';
 
         final bgColor = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final borderColor = isDark ? const Color(0xFF1E2640) : const Color(0xFFE7EBF3);
-        final containerBg = isDark ? const Color(0xFF161F3D) : const Color(0xFFF8FAFC);
-        final containerBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final borderColor = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE7EBF3);
+        final containerBg = isDark
+            ? const Color(0xFF161F3D)
+            : const Color(0xFFF8FAFC);
+        final containerBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
         final titleTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
         final subTextColor = isDark ? Colors.white70 : const Color(0xFF64748B);
-        final dividerColor = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final dividerColor = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return Container(
           height: 68,
@@ -255,7 +286,8 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: widget.customHeaderWidget ??
+                  child:
+                      widget.customHeaderWidget ??
                       SizedBox(
                         width: 380,
                         child: TextField(
@@ -264,17 +296,25 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                           decoration: InputDecoration(
                             hintText: widget.hintText,
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.white38 : const Color(0xFFA6ADBB),
+                              color: isDark
+                                  ? Colors.white38
+                                  : const Color(0xFFA6ADBB),
                               fontSize: 13,
                             ),
                             prefixIcon: Icon(
                               Icons.search_rounded,
-                              color: isDark ? Colors.white38 : const Color(0xFFA6ADBB),
+                              color: isDark
+                                  ? Colors.white38
+                                  : const Color(0xFFA6ADBB),
                               size: 18,
                             ),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 11),
-                            fillColor: isDark ? const Color(0xFF161F3D) : const Color(0xFFF4F6FA),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 11,
+                            ),
+                            fillColor: isDark
+                                ? const Color(0xFF161F3D)
+                                : const Color(0xFFF4F6FA),
                             filled: true,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -286,54 +326,22 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // 1. DEDICATED NOTIFICATION BELL DROPDOWN
               ListenableBuilder(
                 listenable: _notificationController,
                 builder: (context, _) {
                   final state = _notificationController.state;
                   final list = state.notifications ?? [];
-                  final unreadCount = list.where((n) => n.isRead != true).length;
+                  final unreadCount = list
+                      .where((n) => n.isRead != true)
+                      .length;
 
                   return ProfileDropdown(
                     dropdownWidth: 340.0,
                     yOffset: 8.0,
                     targetAnchor: Alignment.bottomRight,
                     followerAnchor: Alignment.topRight,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(9),
-                          decoration: BoxDecoration(
-                            color: containerBg,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: containerBorder),
-                          ),
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: isDark ? Colors.white70 : const Color(0xFF64748B),
-                            size: 20,
-                          ),
-                        ),
-                        if (unreadCount > 0)
-                          Positioned(
-                            top: 1,
-                            right: 1,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFEF4444),
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 8,
-                                minHeight: 8,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
                     dropdownContent: Container(
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF161F3D) : Colors.white,
@@ -341,7 +349,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                         border: Border.all(color: containerBorder),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                            color: Colors.black.withOpacity(
+                              isDark ? 0.3 : 0.08,
+                            ),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           ),
@@ -366,7 +376,10 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                                 ),
                                 if (list.isNotEmpty)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFEFF6FF),
                                       borderRadius: BorderRadius.circular(12),
@@ -384,8 +397,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                             ),
                           ),
                           Divider(height: 1, color: dividerColor),
-                          
-                          if (state is RemoteNotificationLoading && list.isEmpty)
+
+                          if (state is RemoteNotificationLoading &&
+                              list.isEmpty)
                             const SizedBox(
                               height: 180,
                               child: Center(
@@ -401,7 +415,9 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                                   children: [
                                     Icon(
                                       Icons.notifications_off_outlined,
-                                      color: isDark ? Colors.white38 : const Color(0xFFABB3C2),
+                                      color: isDark
+                                          ? Colors.white38
+                                          : const Color(0xFFABB3C2),
                                       size: 32,
                                     ),
                                     const SizedBox(height: 10),
@@ -423,11 +439,16 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                                 shrinkWrap: true,
                                 physics: const ClampingScrollPhysics(),
                                 itemCount: list.length > 4 ? 4 : list.length,
-                                separatorBuilder: (_, __) => Divider(height: 1, color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF1F5F9)),
+                                separatorBuilder: (_, _) => Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? const Color(0xFF1E2640)
+                                      : const Color(0xFFF1F5F9),
+                                ),
                                 itemBuilder: (context, index) {
                                   final notification = list[index];
                                   final isUnread = notification.isRead != true;
-                                  
+
                                   return Material(
                                     color: Colors.transparent,
                                     child: InkWell(
@@ -436,49 +457,72 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                                           widget.onNotificationTap!();
                                         }
                                       },
-                                      hoverColor: isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF6FF),
+                                      hoverColor: isDark
+                                          ? const Color(0xFF1E2640)
+                                          : const Color(0xFFEFF6FF),
                                       child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: isUnread 
-                                                    ? const Color(0xFFEFF6FF) 
-                                                    : (isDark ? const Color(0xFF0E1326) : const Color(0xFFF1F5F9)),
+                                                color: isUnread
+                                                    ? const Color(0xFFEFF6FF)
+                                                    : (isDark
+                                                          ? const Color(
+                                                              0xFF0E1326,
+                                                            )
+                                                          : const Color(
+                                                              0xFFF1F5F9,
+                                                            )),
                                                 shape: BoxShape.circle,
                                               ),
                                               child: Icon(
-                                                Icons.notifications_active_rounded,
-                                                color: isUnread 
-                                                    ? const Color(0xFF2563EB) 
-                                                    : (isDark ? Colors.white38 : const Color(0xFF64748B)),
+                                                Icons
+                                                    .notifications_active_rounded,
+                                                color: isUnread
+                                                    ? const Color(0xFF2563EB)
+                                                    : (isDark
+                                                          ? Colors.white38
+                                                          : const Color(
+                                                              0xFF64748B,
+                                                            )),
                                                 size: 13,
                                               ),
                                             ),
                                             const SizedBox(width: 12),
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   Text(
-                                                    notification.title ?? 'Thông báo hệ thống',
+                                                    notification.title ??
+                                                        'Thông báo hệ thống',
                                                     maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     style: TextStyle(
                                                       color: titleTextColor,
                                                       fontSize: 12,
-                                                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
+                                                      fontWeight: isUnread
+                                                          ? FontWeight.w700
+                                                          : FontWeight.w500,
                                                     ),
                                                   ),
                                                   const SizedBox(height: 2),
                                                   Text(
                                                     notification.content ?? '',
                                                     maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     style: TextStyle(
                                                       color: subTextColor,
                                                       fontSize: 10,
@@ -489,7 +533,10 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                                             ),
                                             if (isUnread)
                                               Container(
-                                                margin: const EdgeInsets.only(top: 4, left: 6),
+                                                margin: const EdgeInsets.only(
+                                                  top: 4,
+                                                  left: 6,
+                                                ),
                                                 width: 6,
                                                 height: 6,
                                                 decoration: const BoxDecoration(
@@ -506,7 +553,7 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                               ),
                             ),
                           Divider(height: 1, color: dividerColor),
-                          
+
                           Material(
                             color: Colors.transparent,
                             child: InkWell(
@@ -519,10 +566,14 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                                 bottomLeft: Radius.circular(16),
                                 bottomRight: Radius.circular(16),
                               ),
-                              hoverColor: isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF6FF),
+                              hoverColor: isDark
+                                  ? const Color(0xFF1E2640)
+                                  : const Color(0xFFEFF6FF),
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 alignment: Alignment.center,
                                 child: const Text(
                                   'Xem tất cả thông báo',
@@ -538,11 +589,47 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                         ],
                       ),
                     ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: containerBg,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: containerBorder),
+                          ),
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF64748B),
+                            size: 20,
+                          ),
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: 1,
+                            right: 1,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 8,
+                                minHeight: 8,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   );
                 },
               ),
               const SizedBox(width: 12),
-              
+
               // 2. GOOGLE-STYLE PROFILE PILL BUTTON & CARD DROPDOWN
               ProfileDropdown(
                 yOffset: 8.0,
@@ -601,9 +688,14 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                     children: [
                       // Profile Header Box
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 16,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF0E1326) : const Color(0xFFF8FAFC),
+                          color: isDark
+                              ? const Color(0xFF0E1326)
+                              : const Color(0xFFF8FAFC),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(16),
                             topRight: Radius.circular(16),
@@ -614,7 +706,11 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                             const CircleAvatar(
                               radius: 26,
                               backgroundColor: Color(0xFF2563EB),
-                              child: Icon(Icons.person, color: Colors.white, size: 28),
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Text(
@@ -635,16 +731,27 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                             ),
                             const SizedBox(height: 10),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF6FF),
+                                color: isDark
+                                    ? const Color(0xFF1E2640)
+                                    : const Color(0xFFEFF6FF),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isDark ? const Color(0xFF2F3652) : const Color(0xFFBFDBFE)),
+                                border: Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF2F3652)
+                                      : const Color(0xFFBFDBFE),
+                                ),
                               ),
                               child: Text(
                                 '${userRole.toUpperCase()} HỆ THỐNG',
                                 style: TextStyle(
-                                  color: isDark ? Colors.white70 : const Color(0xFF1D4ED8),
+                                  color: isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF1D4ED8),
                                   fontSize: 9,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.2,
@@ -655,7 +762,7 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                         ),
                       ),
                       Divider(height: 1, color: dividerColor),
-                      
+
                       // Options List (Dark Mode Toggle, Settings & Logout)
                       Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -664,25 +771,36 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                           children: [
                             // 1. Tactile Dark Mode Toggle Switch
                             _buildDropdownItem(
-                              icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                              iconColor: isDark ? const Color(0xFFFACC15) : const Color(0xFF64748B),
+                              icon: isDark
+                                  ? Icons.dark_mode_rounded
+                                  : Icons.light_mode_rounded,
+                              iconColor: isDark
+                                  ? const Color(0xFFFACC15)
+                                  : const Color(0xFF64748B),
                               title: 'Chế độ tối',
-                              subtitle: isDark ? 'Đang kích hoạt' : 'Chưa kích hoạt',
+                              subtitle: isDark
+                                  ? 'Đang kích hoạt'
+                                  : 'Chưa kích hoạt',
                               onTap: () {
                                 themeController.toggleTheme();
                               },
                               trailing: CupertinoSwitch(
                                 value: isDark,
-                                activeColor: const Color(0xFF2563EB),
+                                activeTrackColor: const Color(0xFF2563EB),
                                 onChanged: (val) {
                                   themeController.toggleTheme();
                                 },
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Divider(height: 1, color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF2F6)),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? const Color(0xFF1E2640)
+                                  : const Color(0xFFEFF2F6),
+                            ),
                             const SizedBox(height: 4),
-                            
+
                             // 2. Settings dialog
                             _buildDropdownItem(
                               icon: Icons.settings_outlined,
@@ -693,9 +811,14 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                               },
                             ),
                             const SizedBox(height: 4),
-                            Divider(height: 1, color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF2F6)),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? const Color(0xFF1E2640)
+                                  : const Color(0xFFEFF2F6),
+                            ),
                             const SizedBox(height: 4),
-                            
+
                             // 3. Logout option
                             _buildDropdownItem(
                               icon: Icons.logout_rounded,
@@ -712,6 +835,48 @@ class _ManageMangaTopHeaderState extends State<ManageMangaTopHeader> {
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: containerBg,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: containerBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Color(0xFF2563EB),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Xin chào, $userName!',
+                        style: TextStyle(
+                          color: titleTextColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF64748B),
+                        size: 16,
                       ),
                     ],
                   ),

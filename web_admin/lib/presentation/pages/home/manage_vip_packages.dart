@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:web_admin/core/constants/constants.dart';
@@ -10,10 +9,10 @@ import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_sidebar.dart';
 import 'package:web_admin/presentation/widgets/manage_manga_top_header.dart';
 import 'manage_authors.dart';
-import 'manage_overview.dart';
 import 'manage_manga.dart';
 import 'manage_notifications.dart';
 import 'manage_users.dart';
+import 'manage_genres.dart';
 
 class _VipPrivilege {
   final int id;
@@ -178,8 +177,8 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
       final dynamic packageBody = packageResponse.data;
       final Map<String, dynamic> packageMap =
           packageBody is Map<String, dynamic>
-              ? packageBody
-              : <String, dynamic>{};
+          ? packageBody
+          : <String, dynamic>{};
       final dynamic packageData =
           _readField(packageMap, <String>['data', 'Data']) ?? packageBody;
       final List<_VipPackage> packages = _extractList(packageData)
@@ -195,8 +194,8 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
       final dynamic privilegeBody = privilegeResponse.data;
       final Map<String, dynamic> privilegeMap =
           privilegeBody is Map<String, dynamic>
-              ? privilegeBody
-              : <String, dynamic>{};
+          ? privilegeBody
+          : <String, dynamic>{};
       final dynamic privilegeData =
           _readField(privilegeMap, <String>['data', 'Data']) ?? privilegeBody;
       final List<_VipPrivilege> privileges = _extractList(privilegeData)
@@ -350,10 +349,8 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
       text: package?.durationDays.toString() ?? '',
     );
 
-    final Set<int> selectedPrivilegeIds = package?.privileges
-            .map((priv) => priv.id)
-            .toSet() ??
-        <int>{};
+    final Set<int> selectedPrivilegeIds =
+        package?.privileges.map((priv) => priv.id).toSet() ?? <int>{};
 
     await showDialog<void>(
       context: context,
@@ -416,7 +413,9 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: Text(package == null ? 'Tạo gói VIP mới' : 'Chỉnh sửa gói VIP'),
+              title: Text(
+                package == null ? 'Tạo gói VIP mới' : 'Chỉnh sửa gói VIP',
+              ),
               content: SizedBox(
                 width: 480,
                 child: SingleChildScrollView(
@@ -739,6 +738,17 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
     );
   }
 
+  void _openGenresPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ManageGenres(
+          mangaController: widget.mangaController,
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
+  }
+
   void _openNotificationsPage() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -757,9 +767,13 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
       listenable: themeController,
       builder: (context, _) {
         final isDark = themeController.isDarkMode;
-        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
         final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -791,9 +805,13 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                                 selectedKey: sidebarKeyVip,
                                 onSelect: (key) {
                                   if (key == sidebarKeyOverview) {
-                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
                                   } else if (key == sidebarKeyManga) {
                                     _openMangaPage();
+                                  } else if (key == sidebarKeyGenres) {
+                                    _openGenresPage();
                                   } else if (key == sidebarKeyAuthors) {
                                     _openAuthorsPage();
                                   } else if (key == sidebarKeyUsers) {
@@ -810,13 +828,16 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                                     bottomRight: Radius.circular(14),
                                   ),
                                   child: Container(
-                                    color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
+                                    color: isDark
+                                        ? const Color(0xFF080C1B)
+                                        : const Color(0xFFF7F8FC),
                                     child: Column(
                                       children: [
                                         ManageMangaTopHeader(
                                           searchController: _searchController,
                                           onLogout: widget.onLogout,
-                                          onNotificationTap: _openNotificationsPage,
+                                          onNotificationTap:
+                                              _openNotificationsPage,
                                           hintText: 'Tìm kiếm gói VIP...',
                                           customHeaderWidget: Column(
                                             crossAxisAlignment:
@@ -827,25 +848,45 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                                               Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.all(6),
+                                                    padding:
+                                                        const EdgeInsets.all(6),
                                                     decoration: BoxDecoration(
-                                                      color: isDark ? const Color(0xFF452200) : const Color(0xFFFFF4D6),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF452200,
+                                                            )
+                                                          : const Color(
+                                                              0xFFFFF4D6,
+                                                            ),
                                                       borderRadius:
-                                                          BorderRadius.circular(8),
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                     child: Icon(
                                                       Icons.stars_rounded,
                                                       size: 18,
-                                                      color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFFFBBF24,
+                                                            )
+                                                          : const Color(
+                                                              0xFFB45309,
+                                                            ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
                                                     'Quản lý gói VIP',
                                                     style: TextStyle(
-                                                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                                                      color: isDark
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF1D2638,
+                                                            ),
                                                       fontSize: 26,
-                                                      fontWeight: FontWeight.w800,
+                                                      fontWeight:
+                                                          FontWeight.w800,
                                                       letterSpacing: -0.3,
                                                       height: 1.1,
                                                     ),
@@ -854,11 +895,17 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                                               ),
                                               const SizedBox(height: 2),
                                               Padding(
-                                                padding: const EdgeInsets.only(left: 2),
+                                                padding: const EdgeInsets.only(
+                                                  left: 2,
+                                                ),
                                                 child: Text(
                                                   'Thiết lập ưu đãi & thời hạn cho từng gói hội viên VIP',
                                                   style: TextStyle(
-                                                    color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                                                    color: isDark
+                                                        ? Colors.white70
+                                                        : const Color(
+                                                            0xFF7B879B,
+                                                          ),
                                                     fontSize: 13,
                                                   ),
                                                 ),
@@ -866,68 +913,80 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                                             ],
                                           ),
                                         ),
-                                    if (_vipLoading)
-                                      const LinearProgressIndicator(minHeight: 3),
-                                    if (_vipError != null)
-                                      Container(
-                                        width: double.infinity,
-                                        margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 10,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFFFF1F2),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border:
-                                              Border.all(color: const Color(0xFFFBC8CE)),
-                                        ),
-                                        child: Row(
-                                          children: <Widget>[
-                                            const Icon(
-                                              Icons.error_outline,
-                                              color: Color(0xFFB42318),
-                                              size: 18,
+                                        if (_vipLoading)
+                                          const LinearProgressIndicator(
+                                            minHeight: 3,
+                                          ),
+                                        if (_vipError != null)
+                                          Container(
+                                            width: double.infinity,
+                                            margin: const EdgeInsets.fromLTRB(
+                                              20,
+                                              12,
+                                              20,
+                                              0,
                                             ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                _vipError!,
-                                                style: const TextStyle(
-                                                  color: Color(0xFFB42318),
-                                                  fontSize: 12,
-                                                ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFF1F2),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: const Color(0xFFFBC8CE),
                                               ),
                                             ),
-                                            TextButton(
-                                              onPressed: () => _fetchVipData(),
-                                              child: const Text('Tải lại'),
+                                            child: Row(
+                                              children: <Widget>[
+                                                const Icon(
+                                                  Icons.error_outline,
+                                                  color: Color(0xFFB42318),
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    _vipError!,
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFB42318),
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      _fetchVipData(),
+                                                  child: const Text('Tải lại'),
+                                                ),
+                                              ],
                                             ),
-                                          ],
+                                          ),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(20),
+                                            child: _buildMainContentPanel(
+                                              context,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(20),
-                                        child: _buildMainContentPanel(context),
-                                      ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
-      },
-    );
       },
     );
   }
@@ -974,12 +1033,15 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
     required ValueChanged<_VipPackage> onDeletePackage,
     bool shrinkWrap = false,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -989,20 +1051,20 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4D6),
+                  color: isDark ? const Color(0xFF452200) : const Color(0xFFFFF4D6),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_offer_rounded,
-                  color: Color(0xFFB45309),
+                  color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
                   size: 18,
                 ),
               ),
               const SizedBox(width: 10),
               Text(
                 'Gói VIP (${_vipPackages.length})',
-                style: const TextStyle(
-                  color: Color(0xFF1E293B),
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -1014,7 +1076,10 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                   backgroundColor: const Color(0xFFF59E0B),
                   foregroundColor: Colors.black,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1040,7 +1105,7 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _vipPackages.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              separatorBuilder: (_, _) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 final _VipPackage package = _vipPackages[index];
                 return _buildVipPackageCard(
@@ -1054,7 +1119,7 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
             Expanded(
               child: ListView.separated(
                 itemCount: _vipPackages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final _VipPackage package = _vipPackages[index];
                   return _buildVipPackageCard(
@@ -1074,12 +1139,15 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
     required VoidCallback onCreatePrivilege,
     bool shrinkWrap = false,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1089,12 +1157,12 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF4FF),
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.verified_rounded,
-                  color: Color(0xFF1F5BFF),
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
                   size: 18,
                 ),
               ),
@@ -1102,8 +1170,8 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               Expanded(
                 child: Text(
                   'Đặc quyền (${_vipPrivileges.length})',
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
                   ),
@@ -1112,7 +1180,10 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               TextButton.icon(
                 onPressed: onCreatePrivilege,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Thêm đặc quyền', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Thêm đặc quyền',
+                  style: TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -1130,7 +1201,7 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _vipPrivileges.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final _VipPrivilege item = _vipPrivileges[index];
                 return _buildVipPrivilegeItem(item);
@@ -1140,7 +1211,7 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
             Expanded(
               child: ListView.separated(
                 itemCount: _vipPrivileges.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final _VipPrivilege item = _vipPrivileges[index];
                   return _buildVipPrivilegeItem(item);
@@ -1153,30 +1224,30 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
   }
 
   Widget _buildVipPrivilegeItem(_VipPrivilege item) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFF),
+        color: isDark ? const Color(0xFF151B33) : const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE0E7FF)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE0E7FF),
+        ),
       ),
       child: Row(
         children: <Widget>[
-          const Icon(
+          Icon(
             Icons.check_circle_rounded,
-            color: Color(0xFF2563EB),
+            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
             size: 18,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               item.content,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF1E293B),
+                color: isDark ? Colors.white70 : const Color(0xFF1E293B),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1191,11 +1262,14 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
     required VoidCallback onEdit,
     required VoidCallback onDelete,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x12000000),
@@ -1281,17 +1355,20 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
               children: <Widget>[
                 Text(
                   'Đặc quyền (${package.privileges.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF64748B),
+                    color: isDark ? const Color(0xFF8491A7) : const Color(0xFF64748B),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 8),
                 if (package.privileges.isEmpty)
-                  const Text(
+                  Text(
                     'Chưa có đặc quyền được gán',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      fontSize: 12,
+                    ),
                   )
                 else
                   Wrap(
@@ -1304,24 +1381,26 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
+                          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            const Icon(
+                            Icon(
                               Icons.check,
-                              color: Color(0xFF475569),
+                              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF475569),
                               size: 10,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               priv.content,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF475569),
+                                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF475569),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1330,16 +1409,31 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                       );
                     }).toList(),
                   ),
-                const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                Divider(
+                  height: 24,
+                  color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF1F5F9),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: <Widget>[
                     OutlinedButton.icon(
                       onPressed: onEdit,
-                      icon: const Icon(Icons.edit_outlined, size: 14),
-                      label: const Text('Chỉnh sửa', style: TextStyle(fontSize: 12)),
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        size: 14,
+                        color: isDark ? const Color(0xFF60A5FA) : Colors.black87,
+                      ),
+                      label: Text(
+                        'Chỉnh sửa',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? const Color(0xFF60A5FA) : Colors.black87,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFCBD5E1),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -1355,7 +1449,10 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
                       ),
                       label: const Text(
                         'Xóa',
-                        style: TextStyle(fontSize: 12, color: Color(0xFFEF4444)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFFEF4444),
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFFFCA5A5)),
@@ -1379,22 +1476,19 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
     required String subtitle,
     IconData icon = Icons.local_offer_outlined,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(
-              icon,
-              size: 44,
-              color: const Color(0xFF94A3B8),
-            ),
+            Icon(icon, size: 44, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
-                color: Color(0xFF475569),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : const Color(0xFF475569),
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -1402,8 +1496,8 @@ class _ManageVipPackagesState extends State<ManageVipPackages> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(
-                color: Color(0xFF94A3B8),
+              style: TextStyle(
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 fontSize: 12,
               ),
             ),

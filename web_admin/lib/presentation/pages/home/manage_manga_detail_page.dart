@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:web_admin/core/constants/constants.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/domain/entities/manga.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/models/manga_detail_items.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
 import 'package:web_admin/presentation/widgets/manga_detail_panels.dart';
 
 class ManageMangaDetailPage extends StatefulWidget {
@@ -172,7 +174,9 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      editing == null ? 'Thêm Chapter mới' : 'Chỉnh sửa Chapter',
+                      editing == null
+                          ? 'Thêm Chapter mới'
+                          : 'Chỉnh sửa Chapter',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -253,7 +257,7 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                     ),
                     onChanged: (value) =>
                         setDialogState(() => isPremium = value),
-                    activeColor: const Color(0xFFD97706),
+                    activeThumbColor: const Color(0xFFD97706),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -436,11 +440,20 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
 
     final FormData formData = FormData();
     for (final PlatformFile file in files) {
-      if (file.bytes == null && file.path == null) continue;
-      final MultipartFile multipartFile = file.bytes != null
-          ? MultipartFile.fromBytes(file.bytes!, filename: file.name)
-          : await MultipartFile.fromFile(file.path!, filename: file.name);
-      formData.files.add(MapEntry('files', multipartFile));
+      if (kIsWeb) {
+        if (file.bytes == null) continue;
+        final MultipartFile multipartFile = MultipartFile.fromBytes(
+          file.bytes!,
+          filename: file.name,
+        );
+        formData.files.add(MapEntry('files', multipartFile));
+      } else {
+        if (file.bytes == null && file.path == null) continue;
+        final MultipartFile multipartFile = file.bytes != null
+            ? MultipartFile.fromBytes(file.bytes!, filename: file.name)
+            : await MultipartFile.fromFile(file.path!, filename: file.name);
+        formData.files.add(MapEntry('files', multipartFile));
+      }
     }
 
     if (formData.files.isEmpty) {
@@ -588,75 +601,84 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final String title = widget.manga.title ?? 'Manga';
-    final String? thumbnail = widget.manga.thumbnail;
+    final themeController = sl<ThemeController>();
+    return ListenableBuilder(
+      listenable: themeController,
+      builder: (context, _) {
+        final isDark = themeController.isDarkMode;
+        final String title = widget.manga.title ?? 'Manga';
+        final String? thumbnail = widget.manga.thumbnail;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF1A1D2E),
-      appBar: _buildAppBar(title, thumbnail),
-      body: _errorMessage != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: Color(0xFFD93025),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Color(0xFF8491A7)),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadChapters,
-                    child: const Text('Thử lại'),
-                  ),
-                ],
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final bool isNarrow = constraints.maxWidth < 980;
-
-                  if (isNarrow) {
-                    return Column(
-                      children: [
-                        Expanded(child: _buildChapterPanel()),
-                        const SizedBox(height: 16),
-                        Expanded(child: _buildPagePanel()),
-                      ],
-                    );
-                  }
-
-                  return Row(
+        return Scaffold(
+          backgroundColor: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED),
+          appBar: _buildAppBar(title, thumbnail),
+          body: _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 360,
-                        child: _buildChapterPanel(),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Color(0xFFD93025),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildPagePanel()),
+                      const SizedBox(height: 12),
+                      Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Color(0xFF8491A7)),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadChapters,
+                        child: const Text('Thử lại'),
+                      ),
                     ],
-                  );
-                },
-              ),
-            ),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final bool isNarrow = constraints.maxWidth < 980;
+
+                      if (isNarrow) {
+                        return Column(
+                          children: [
+                            Expanded(child: _buildChapterPanel()),
+                            const SizedBox(height: 16),
+                            Expanded(child: _buildPagePanel()),
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          SizedBox(width: 360, child: _buildChapterPanel()),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildPagePanel()),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+        );
+      },
     );
   }
 
   PreferredSizeWidget _buildAppBar(String title, String? thumbnail) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return AppBar(
-      backgroundColor: const Color(0xFF081C3A),
-      foregroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0E1326) : Colors.white,
+      foregroundColor: isDark ? Colors.white : const Color(0xFF1D2638),
       elevation: 0,
       titleSpacing: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+        icon: Icon(
+          Icons.arrow_back_ios_new,
+          size: 18,
+          color: isDark ? Colors.white70 : const Color(0xFF1D2638),
+        ),
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Row(
@@ -669,19 +691,23 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
                 width: 36,
                 height: 36,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox(
+                errorBuilder: (_, _, _) => SizedBox(
                   width: 36,
                   height: 36,
                   child: Icon(
                     Icons.menu_book_rounded,
-                    color: Colors.white54,
+                    color: isDark ? Colors.white54 : const Color(0xFF8491A7),
                     size: 20,
                   ),
                 ),
               ),
             )
           else
-            const Icon(Icons.menu_book_rounded, color: Colors.white54, size: 22),
+            Icon(
+              Icons.menu_book_rounded,
+              color: isDark ? Colors.white54 : const Color(0xFF8491A7),
+              size: 22,
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -689,18 +715,18 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF1D2638),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   '${_chapters.length} chapter · ${_pages.length} trang',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF9BB2D4),
+                    color: isDark ? const Color(0xFF9BB2D4) : const Color(0xFF7B879B),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -711,7 +737,10 @@ class _ManageMangaDetailPageState extends State<ManageMangaDetailPage>
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh_rounded),
+          icon: Icon(
+            Icons.refresh_rounded,
+            color: isDark ? Colors.white70 : const Color(0xFF1D2638),
+          ),
           tooltip: 'Tải lại',
           onPressed: _loadChapters,
         ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_admin/domain/entities/genre.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
+import 'package:web_admin/injection_container.dart';
 
 class ManageMangaFilterBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -38,11 +40,14 @@ class ManageMangaFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Column(
@@ -118,25 +123,30 @@ class ManageMangaFilterBar extends StatelessWidget {
   }
 
   Widget _buildSearchField() {
+    final isDark = sl<ThemeController>().isDarkMode;
     return TextField(
       key: const Key('manage_manga_search_field'),
       controller: searchController,
+      style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 13),
       decoration: InputDecoration(
         hintText: 'Tìm tên truyện, tác giả...',
-        hintStyle: const TextStyle(color: Color(0xFFBBC3D0), fontSize: 13),
-        prefixIcon: const Icon(
+        hintStyle: TextStyle(
+          color: isDark ? Colors.white38 : const Color(0xFFBBC3D0),
+          fontSize: 13,
+        ),
+        prefixIcon: Icon(
           Icons.search_rounded,
-          color: Color(0xFFBBC3D0),
+          color: isDark ? Colors.white38 : const Color(0xFFBBC3D0),
           size: 18,
         ),
         suffixIcon: ListenableBuilder(
           listenable: searchController,
-          builder: (_, __) => searchController.text.isNotEmpty
+          builder: (_, _) => searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     size: 16,
-                    color: Color(0xFF8491A7),
+                    color: isDark ? Colors.white54 : const Color(0xFF8491A7),
                   ),
                   onPressed: searchController.clear,
                   splashRadius: 16,
@@ -146,14 +156,18 @@ class ManageMangaFilterBar extends StatelessWidget {
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         filled: true,
-        fillColor: const Color(0xFFF5F7FC),
+        fillColor: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFF5F7FC),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE4E8F2)),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE4E8F2)),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -268,6 +282,7 @@ class _ActiveFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     final List<Widget> chips = [];
 
     if (searchText.isNotEmpty) {
@@ -292,12 +307,12 @@ class _ActiveFilterChips extends StatelessWidget {
 
     return Row(
       children: [
-        const Text(
+        Text(
           'Lọc:',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF8491A7),
+            color: isDark ? Colors.white60 : const Color(0xFF8491A7),
           ),
         ),
         const SizedBox(width: 8),
@@ -336,32 +351,35 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       margin: const EdgeInsets.only(right: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF4FF),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF93B4FF)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2F3E66) : const Color(0xFF93B4FF),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF1F5BFF),
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onRemove,
-            child: const Icon(
+            child: Icon(
               Icons.close_rounded,
               size: 13,
-              color: Color(0xFF1F5BFF),
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
             ),
           ),
         ],
@@ -393,28 +411,38 @@ class _DropdownFilter<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFFEFF4FF) : const Color(0xFFF5F7FC),
+        color: active
+            ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF))
+            : (isDark ? const Color(0xFF1A1D2E) : const Color(0xFFF5F7FC)),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: active ? const Color(0xFF93B4FF) : const Color(0xFFE4E8F2),
+          color: active
+              ? const Color(0xFF93B4FF)
+              : (isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2)),
           width: active ? 1.5 : 1,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
+          dropdownColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             size: 18,
-            color: active ? const Color(0xFF1F5BFF) : const Color(0xFF8491A7),
+            color: active
+                ? const Color(0xFF1F5BFF)
+                : (isDark ? Colors.white38 : const Color(0xFF8491A7)),
           ),
           style: TextStyle(
-            color: active ? const Color(0xFF1F5BFF) : const Color(0xFF4D5B72),
+            color: active
+                ? const Color(0xFF1F5BFF)
+                : (isDark ? Colors.white70 : const Color(0xFF4D5B72)),
             fontSize: 13,
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
           ),

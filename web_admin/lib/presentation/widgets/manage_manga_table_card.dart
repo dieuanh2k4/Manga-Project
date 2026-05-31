@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_admin/domain/entities/manga.dart';
+import 'package:web_admin/presentation/controllers/theme_controller.dart';
+import 'package:web_admin/injection_container.dart';
 
 /// Các trạng thái hợp lệ của manga trong hệ thống.
 const List<String> kMangaStatusOptions = <String>[
@@ -37,11 +39,14 @@ class ManageMangaTableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0E1326) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E8F2)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,14 +55,17 @@ class ManageMangaTableCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             child: Text(
               'Danh sách Manga (${mangas.length})',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1E2A3C),
+                color: isDark ? Colors.white : const Color(0xFF1E2A3C),
               ),
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFEEF1F6)),
+          Divider(
+            height: 1,
+            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEEF1F6),
+          ),
           Expanded(
             child: mangas.isEmpty
                 ? Center(
@@ -66,30 +74,30 @@ class ManageMangaTableCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(14),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFF5F7FC),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF5F7FC),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.search_off_rounded,
                             size: 32,
-                            color: Color(0xFFBBC3D0),
+                            color: isDark ? Colors.white38 : const Color(0xFFBBC3D0),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Không tìm thấy manga phù hợp',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF4E5A6F),
+                            color: isDark ? Colors.white : const Color(0xFF4E5A6F),
                             fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm',
                           style: TextStyle(
-                            color: Color(0xFF8491A7),
+                            color: isDark ? Colors.white60 : const Color(0xFF8491A7),
                             fontSize: 13,
                           ),
                         ),
@@ -108,7 +116,12 @@ class ManageMangaTableCard extends StatelessWidget {
                         child: Column(
                           children: [
                             _buildHeaderRow(),
-                            const Divider(height: 1, color: Color(0xFFEEF1F6)),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? const Color(0xFF1E2640)
+                                  : const Color(0xFFEEF1F6),
+                            ),
                             ...mangas.map(
                               (manga) => _MangaDataRow(
                                 manga: manga,
@@ -134,12 +147,13 @@ class ManageMangaTableCard extends StatelessWidget {
   }
 
   Widget _headerCell(String text, double width) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return SizedBox(
       width: width,
       child: Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFF344055),
+        style: TextStyle(
+          color: isDark ? Colors.white70 : const Color(0xFF344055),
           fontWeight: FontWeight.w700,
           fontSize: 13,
         ),
@@ -200,11 +214,16 @@ class _MangaDataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String status = normalizeStatus(manga.status);
+    final isDark = sl<ThemeController>().isDarkMode;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF0F3F8))),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF0F3F8),
+          ),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,12 +232,12 @@ class _MangaDataRow extends StatelessWidget {
             width: 86,
             child: Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: _buildCoverImage(manga.thumbnail),
+              child: _buildCoverImage(manga.thumbnail, isDark),
             ),
           ),
-          _bodyCell(manga.title ?? 'Chưa có tên', 180, bold: true),
-          _bodyCell(buildAuthor(manga), 136),
-          _bodyCell(buildGenres(manga), 170),
+          _bodyCell(manga.title ?? 'Chưa có tên', 180, isDark, bold: true),
+          _bodyCell(buildAuthor(manga), 136, isDark),
+          _bodyCell(buildGenres(manga), 170, isDark),
           SizedBox(
             width: 148,
             child: _StatusBadge(
@@ -228,17 +247,18 @@ class _MangaDataRow extends StatelessWidget {
                   : null,
             ),
           ),
-          _bodyCell('${manga.totalChapter ?? 0}', 94),
-          _bodyCell(buildViewsText(manga), 94),
-          SizedBox(width: 86, child: _buildRateCell(manga.rate)),
-          SizedBox(width: 106, child: _buildActionButtons(context)),
+          _bodyCell('${manga.totalChapter ?? 0}', 94, isDark),
+          _bodyCell(buildViewsText(manga), 94, isDark),
+          SizedBox(width: 86, child: _buildRateCell(manga.rate, isDark)),
+          SizedBox(width: 106, child: _buildActionButtons(context, isDark)),
         ],
       ),
     );
   }
 
-  Widget _buildCoverImage(String? thumbnail) {
+  Widget _buildCoverImage(String? thumbnail, bool isDark) {
     final String image = thumbnail?.trim() ?? '';
+    debugPrint("Cover image for '${manga.title}': '$image'");
 
     if (image.isEmpty) {
       return ClipRRect(
@@ -246,11 +266,11 @@ class _MangaDataRow extends StatelessWidget {
         child: Container(
           width: _coverWidth,
           height: _coverHeight,
-          color: const Color(0xFFE5EAF3),
-          child: const Icon(
+          color: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFE5EAF3),
+          child: Icon(
             Icons.image_outlined,
             size: 18,
-            color: Color(0xFF9AA8BE),
+            color: isDark ? Colors.white38 : const Color(0xFF9AA8BE),
           ),
         ),
       );
@@ -263,15 +283,15 @@ class _MangaDataRow extends StatelessWidget {
         width: _coverWidth,
         height: _coverHeight,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return Container(
             width: _coverWidth,
             height: _coverHeight,
-            color: const Color(0xFFE5EAF3),
-            child: const Icon(
+            color: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFE5EAF3),
+            child: Icon(
               Icons.broken_image_outlined,
               size: 18,
-              color: Color(0xFF9AA8BE),
+              color: isDark ? Colors.white38 : const Color(0xFF9AA8BE),
             ),
           );
         },
@@ -281,7 +301,8 @@ class _MangaDataRow extends StatelessWidget {
 
   Widget _bodyCell(
     String text,
-    double width, {
+    double width,
+    bool isDark, {
     bool bold = false,
     int? maxLines,
   }) {
@@ -291,10 +312,11 @@ class _MangaDataRow extends StatelessWidget {
         text,
         maxLines: maxLines,
         softWrap: true,
-        overflow:
-            maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
+        overflow: maxLines == null
+            ? TextOverflow.visible
+            : TextOverflow.ellipsis,
         style: TextStyle(
-          color: const Color(0xFF4E5A6F),
+          color: isDark ? Colors.white70 : const Color(0xFF4E5A6F),
           fontSize: 13,
           height: 1.35,
           fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
@@ -303,7 +325,7 @@ class _MangaDataRow extends StatelessWidget {
     );
   }
 
-  Widget _buildRateCell(int? rate) {
+  Widget _buildRateCell(int? rate, bool isDark) {
     final String text = rate == null ? '--' : rate.toString();
 
     return Row(
@@ -312,7 +334,10 @@ class _MangaDataRow extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           text,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF4E5A6F)),
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white70 : const Color(0xFF4E5A6F),
+          ),
         ),
       ],
     );
@@ -338,13 +363,14 @@ class _MangaDataRow extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, bool isDark) {
+    final iconColor = isDark ? Colors.white70 : const Color(0xFF657489);
     return Row(
       children: [
         _actionButton(
           context,
           Icons.visibility_outlined,
-          const Color(0xFF657489),
+          iconColor,
           () => onViewTap(manga),
           tooltip: 'Xem chi tiết',
         ),
@@ -352,7 +378,7 @@ class _MangaDataRow extends StatelessWidget {
         _actionButton(
           context,
           Icons.edit_outlined,
-          const Color(0xFF657489),
+          iconColor,
           () => onEditTap(manga),
           tooltip: 'Chỉnh sửa',
         ),
@@ -379,30 +405,30 @@ class _StatusBadge extends StatelessWidget {
 
   const _StatusBadge({required this.status, this.onStatusChange});
 
-  static _StatusStyle _styleFor(String status) {
+  static _StatusStyle _styleFor(String status, bool isDark) {
     switch (status) {
       case 'Đang tiến hành':
-        return const _StatusStyle(
-          background: Color(0xFF0D1F3C),
+        return _StatusStyle(
+          background: isDark ? const Color(0xFF1E293B) : const Color(0xFF0D1F3C),
           foreground: Colors.white,
           icon: Icons.play_circle_outline_rounded,
         );
       case 'Hoàn thành':
-        return const _StatusStyle(
-          background: Color(0xFFEBFAF0),
-          foreground: Color(0xFF1A7C40),
+        return _StatusStyle(
+          background: isDark ? const Color(0xFF064E3B) : const Color(0xFFEBFAF0),
+          foreground: isDark ? const Color(0xFF34D399) : const Color(0xFF1A7C40),
           icon: Icons.check_circle_outline_rounded,
         );
       case 'Tạm dừng':
-        return const _StatusStyle(
-          background: Color(0xFFFFF3E5),
-          foreground: Color(0xFFA85C00),
+        return _StatusStyle(
+          background: isDark ? const Color(0xFF78350F) : const Color(0xFFFFF3E5),
+          foreground: isDark ? const Color(0xFFFBBF24) : const Color(0xFFA85C00),
           icon: Icons.pause_circle_outline_rounded,
         );
       default:
-        return const _StatusStyle(
-          background: Color(0xFFEFF3FB),
-          foreground: Color(0xFF5E708C),
+        return _StatusStyle(
+          background: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFEFF3FB),
+          foreground: isDark ? Colors.white70 : const Color(0xFF5E708C),
           icon: Icons.help_outline_rounded,
         );
     }
@@ -410,7 +436,8 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _StatusStyle style = _styleFor(status);
+    final isDark = sl<ThemeController>().isDarkMode;
+    final _StatusStyle style = _styleFor(status, isDark);
     final bool canChange = onStatusChange != null;
 
     final Widget badge = AnimatedContainer(
@@ -441,7 +468,7 @@ class _StatusBadge extends StatelessWidget {
             Icon(
               Icons.arrow_drop_down_rounded,
               size: 14,
-              color: style.foreground.withValues(alpha: 0.8),
+              color: style.foreground.withOpacity(0.8),
             ),
           ],
         ],
@@ -452,14 +479,16 @@ class _StatusBadge extends StatelessWidget {
       return Align(alignment: Alignment.centerLeft, child: badge);
     }
 
-    final List<String> otherStatuses =
-        kMangaStatusOptions.where((s) => s != status).toList();
+    final List<String> otherStatuses = kMangaStatusOptions
+        .where((s) => s != status)
+        .toList();
 
     return Align(
       alignment: Alignment.centerLeft,
       child: PopupMenuButton<String>(
         tooltip: 'Đổi trạng thái',
         offset: const Offset(0, 32),
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onSelected: onStatusChange,
         itemBuilder: (_) => otherStatuses
@@ -470,12 +499,18 @@ class _StatusBadge extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      _styleFor(s).icon,
+                      _styleFor(s, isDark).icon,
                       size: 14,
-                      color: _styleFor(s).foreground,
+                      color: _styleFor(s, isDark).foreground,
                     ),
                     const SizedBox(width: 8),
-                    Text(s, style: const TextStyle(fontSize: 13)),
+                    Text(
+                      s,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
                   ],
                 ),
               ),

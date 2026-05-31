@@ -3,7 +3,6 @@ import 'package:web_admin/config/theme/app_themes.dart';
 import 'package:web_admin/presentation/controllers/auth_controller.dart';
 import 'package:web_admin/presentation/controllers/remote_manga_controller.dart';
 import 'package:web_admin/presentation/pages/auth/login_page.dart';
-import 'package:web_admin/presentation/pages/home/manage_manga.dart';
 import 'package:web_admin/presentation/pages/home/manage_overview.dart';
 import 'package:web_admin/injection_container.dart';
 import 'package:web_admin/presentation/controllers/theme_controller.dart';
@@ -27,7 +26,9 @@ class WebAdmin extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: theme(),
           darkTheme: darkTheme(),
-          themeMode: themeController.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: themeController.isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light,
           home: const AuthGate(),
         );
       },

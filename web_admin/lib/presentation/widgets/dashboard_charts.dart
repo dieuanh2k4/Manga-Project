@@ -14,7 +14,6 @@ class DashboardLineChart extends StatefulWidget {
 }
 
 class _DashboardLineChartState extends State<DashboardLineChart> {
-  Offset? _hoverOffset;
   int _hoveredIndex = -1;
 
   void _onHover(PointerEvent event, BoxConstraints constraints) {
@@ -47,7 +46,6 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
     if (nearestIndex != _hoveredIndex) {
       setState(() {
         _hoveredIndex = nearestIndex;
-        _hoverOffset = localOffset;
       });
     }
   }
@@ -55,7 +53,6 @@ class _DashboardLineChartState extends State<DashboardLineChart> {
   void _onExit(PointerEvent event) {
     setState(() {
       _hoveredIndex = -1;
-      _hoverOffset = null;
     });
   }
 

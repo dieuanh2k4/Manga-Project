@@ -93,6 +93,7 @@ class ManageMangaSidebar extends StatelessWidget {
             onTap: () => onSelect(sidebarKeyUsers),
           ),
           _SidebarItem(
+            itemKey: const Key('admin_sidebar_vip'),
             icon: Icons.stars_rounded,
             label: 'Quản lý gói VIP',
             compact: compact,

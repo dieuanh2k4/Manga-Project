@@ -825,6 +825,7 @@ class _ManageUsersState extends State<ManageUsers> {
     required String title,
     required String value,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     final String displayValue = value.trim().isEmpty ? '(Trống)' : value;
 
     return SizedBox(
@@ -835,16 +836,28 @@ class _ManageUsersState extends State<ManageUsers> {
         waitDuration: const Duration(milliseconds: 250),
         child: OutlinedButton.icon(
           onPressed: () => _showValueDialog(title: title, value: value),
-          icon: const Icon(Icons.visibility_outlined, size: 14),
+          icon: Icon(
+            Icons.visibility_outlined,
+            size: 14,
+            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+          ),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            side: const BorderSide(color: Color(0xFFD7DEEE)),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF1E2640) : const Color(0xFFD7DEEE),
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          label: Text(label, style: const TextStyle(fontSize: 11)),
+          label: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+            ),
+          ),
         ),
       ),
     );
@@ -904,7 +917,7 @@ class _ManageUsersState extends State<ManageUsers> {
                       _buildDialogInput(_genderController, 'Giới tính'),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: _editingRole,
+                        initialValue: _editingRole,
                         decoration: InputDecoration(
                           labelText: 'Vai trò',
                           border: OutlineInputBorder(
@@ -923,10 +936,11 @@ class _ManageUsersState extends State<ManageUsers> {
                         ],
                         onChanged: _editingUserId == null
                             ? (String? val) {
-                                if (val != null)
+                                if (val != null) {
                                   setStateDialog(() {
                                     _editingRole = val;
                                   });
+                                }
                               }
                             : null,
                       ),
@@ -1192,17 +1206,28 @@ class _ManageUsersState extends State<ManageUsers> {
   }
 
   Widget _buildMembershipBadge(String tier) {
+    final isDark = sl<ThemeController>().isDarkMode;
     final bool vip = tier == 'VIP';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: vip ? const Color(0xFFFFF4D6) : const Color(0xFFEFF4FF),
+        color: vip
+            ? (isDark ? const Color(0xFF78350F).withOpacity(0.3) : const Color(0xFFFFF4D6))
+            : (isDark ? const Color(0xFF1E3A8A).withOpacity(0.3) : const Color(0xFFEFF4FF)),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: vip
+              ? (isDark ? const Color(0xFFD97706) : Colors.transparent)
+              : (isDark ? const Color(0xFF3B82F6) : Colors.transparent),
+          width: 1,
+        ),
       ),
       child: Text(
         tier,
         style: TextStyle(
-          color: vip ? const Color(0xFFB54708) : const Color(0xFF175CD3),
+          color: vip
+              ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFB54708))
+              : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF175CD3)),
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -1215,16 +1240,27 @@ class _ManageUsersState extends State<ManageUsers> {
     required String activeLabel,
     required String inactiveLabel,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFFFEECEE) : const Color(0xFFEFFAF0),
+        color: active
+            ? (isDark ? const Color(0xFF7F1D1D).withOpacity(0.3) : const Color(0xFFFEECEE))
+            : (isDark ? const Color(0xFF064E3B).withOpacity(0.3) : const Color(0xFFEFFAF0)),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: active
+              ? (isDark ? const Color(0xFFEF4444) : Colors.transparent)
+              : (isDark ? const Color(0xFF10B981) : Colors.transparent),
+          width: 1,
+        ),
       ),
       child: Text(
         active ? activeLabel : inactiveLabel,
         style: TextStyle(
-          color: active ? const Color(0xFFB42318) : const Color(0xFF067647),
+          color: active
+              ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB42318))
+              : (isDark ? const Color(0xFF34D399) : const Color(0xFF067647)),
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -1238,18 +1274,28 @@ class _ManageUsersState extends State<ManageUsers> {
     required List<String> options,
     required ValueChanged<String> onChanged,
   }) {
+    final isDark = sl<ThemeController>().isDarkMode;
     return Container(
       width: 220,
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
+        color: isDark ? const Color(0xFF1E2640) : const Color(0xFFF7F8FC),
         borderRadius: BorderRadius.circular(10),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(label),
+          dropdownColor: isDark ? const Color(0xFF1E2640) : Colors.white,
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1D2638),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+          ),
           items: options
               .map(
                 (String option) => DropdownMenuItem<String>(
@@ -1474,7 +1520,7 @@ class _ManageUsersState extends State<ManageUsers> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _vipPackages.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final _VipPackage package = _vipPackages[index];
                 return _buildVipPackageCard(
@@ -1488,7 +1534,7 @@ class _ManageUsersState extends State<ManageUsers> {
             Expanded(
               child: ListView.separated(
                 itemCount: _vipPackages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final _VipPackage package = _vipPackages[index];
                   return _buildVipPackageCard(
@@ -1562,7 +1608,7 @@ class _ManageUsersState extends State<ManageUsers> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _vipPrivileges.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final _VipPrivilege item = _vipPrivileges[index];
                 return Container(
@@ -1601,7 +1647,7 @@ class _ManageUsersState extends State<ManageUsers> {
             Expanded(
               child: ListView.separated(
                 itemCount: _vipPrivileges.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final _VipPrivilege item = _vipPrivileges[index];
                   return Container(
@@ -2349,9 +2395,13 @@ class _ManageUsersState extends State<ManageUsers> {
       listenable: themeController,
       builder: (context, _) {
         final isDark = themeController.isDarkMode;
-        final scaffoldBg = isDark ? const Color(0xFF1A1D2E) : const Color(0xFFDFE3ED);
+        final scaffoldBg = isDark
+            ? const Color(0xFF1A1D2E)
+            : const Color(0xFFDFE3ED);
         final shellBg = isDark ? const Color(0xFF0E1326) : Colors.white;
-        final shellBorder = isDark ? const Color(0xFF1E2640) : const Color(0xFFE2E8F0);
+        final shellBorder = isDark
+            ? const Color(0xFF1E2640)
+            : const Color(0xFFE2E8F0);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -2383,9 +2433,13 @@ class _ManageUsersState extends State<ManageUsers> {
                                 selectedKey: sidebarKeyUsers,
                                 onSelect: (key) {
                                   if (key == sidebarKeyOverview) {
-                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
                                   } else if (key == sidebarKeyManga) {
                                     _openMangaPage();
+                                  } else if (key == sidebarKeyGenres) {
+                                    _openGenresPage();
                                   } else if (key == sidebarKeyAuthors) {
                                     _openAuthorsPage();
                                   } else if (key == sidebarKeyNotifications) {
@@ -2394,7 +2448,8 @@ class _ManageUsersState extends State<ManageUsers> {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute<void>(
                                         builder: (_) => ManageVipPackages(
-                                          mangaController: widget.mangaController,
+                                          mangaController:
+                                              widget.mangaController,
                                           onLogout: widget.onLogout,
                                         ),
                                       ),
@@ -2409,7 +2464,9 @@ class _ManageUsersState extends State<ManageUsers> {
                                     bottomRight: Radius.circular(14),
                                   ),
                                   child: Container(
-                                    color: isDark ? const Color(0xFF080C1B) : const Color(0xFFF7F8FC),
+                                    color: isDark
+                                        ? const Color(0xFF080C1B)
+                                        : const Color(0xFFF7F8FC),
                                     child: Column(
                                       children: [
                                         ManageMangaTopHeader(
@@ -2427,27 +2484,45 @@ class _ManageUsersState extends State<ManageUsers> {
                                               Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.all(
-                                                      6,
-                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(6),
                                                     decoration: BoxDecoration(
-                                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF4FF),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF1E293B,
+                                                            )
+                                                          : const Color(
+                                                              0xFFEFF4FF,
+                                                            ),
                                                       borderRadius:
-                                                          BorderRadius.circular(8),
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                     child: Icon(
                                                       Icons.people_alt_rounded,
                                                       size: 18,
-                                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1F5BFF),
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF60A5FA,
+                                                            )
+                                                          : const Color(
+                                                              0xFF1F5BFF,
+                                                            ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
                                                     'Quản lý người dùng',
                                                     style: TextStyle(
-                                                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                                                      color: isDark
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF1D2638,
+                                                            ),
                                                       fontSize: 26,
-                                                      fontWeight: FontWeight.w800,
+                                                      fontWeight:
+                                                          FontWeight.w800,
                                                       letterSpacing: -0.3,
                                                       height: 1.1,
                                                     ),
@@ -2456,11 +2531,17 @@ class _ManageUsersState extends State<ManageUsers> {
                                               ),
                                               const SizedBox(height: 2),
                                               Padding(
-                                                padding: const EdgeInsets.only(left: 2),
+                                                padding: const EdgeInsets.only(
+                                                  left: 2,
+                                                ),
                                                 child: Text(
                                                   'Quản lý tài khoản độc giả theo dữ liệu thực tế',
                                                   style: TextStyle(
-                                                    color: isDark ? Colors.white70 : const Color(0xFF7B879B),
+                                                    color: isDark
+                                                        ? Colors.white70
+                                                        : const Color(
+                                                            0xFF7B879B,
+                                                          ),
                                                     fontSize: 13,
                                                   ),
                                                 ),
@@ -2522,6 +2603,8 @@ class _ManageUsersState extends State<ManageUsers> {
           (_AdminUser u) => _selectedUserIds.contains(u.uniqueKey),
         );
 
+    final isDark = sl<ThemeController>().isDarkMode;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
@@ -2540,17 +2623,20 @@ class _ManageUsersState extends State<ManageUsers> {
                           horizontal: 14,
                           vertical: 14,
                         ),
-                        side: const BorderSide(color: Color(0xFFCCD6EA)),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF1E2640) : const Color(0xFFCCD6EA),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       icon: const Icon(Icons.restart_alt, size: 16),
-                      label: const Text(
+                      label: Text(
                         'Xem mặc định',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : Colors.black87,
                         ),
                       ),
                     ),
@@ -2559,7 +2645,7 @@ class _ManageUsersState extends State<ManageUsers> {
                       key: const Key('manage_users_create_button'),
                       onPressed: () => _showUserDialog(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF040617),
+                        backgroundColor: isDark ? const Color(0xFF1F5BFF) : const Color(0xFF040617),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
@@ -2631,9 +2717,11 @@ class _ManageUsersState extends State<ManageUsers> {
             ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF0E1326) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE4E8F2)),
+              border: Border.all(
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+              ),
             ),
             padding: const EdgeInsets.all(10),
             margin: const EdgeInsets.only(bottom: 12),
@@ -2645,21 +2733,25 @@ class _ManageUsersState extends State<ManageUsers> {
                   width: 380,
                   child: TextField(
                     controller: _searchController,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1D2638),
+                      fontSize: 13,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Tìm kiếm theo tên, email, username...',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFFABB3C2),
+                      hintStyle: TextStyle(
+                        color: isDark ? const Color(0xFF8491A7) : const Color(0xFFABB3C2),
                         fontSize: 13,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search,
-                        color: Color(0xFFABB3C2),
+                        color: isDark ? const Color(0xFF8491A7) : const Color(0xFFABB3C2),
                         size: 18,
                       ),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 11),
                       filled: true,
-                      fillColor: const Color(0xFFF7F8FC),
+                      fillColor: isDark ? const Color(0xFF1E2640) : const Color(0xFFF7F8FC),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -2719,9 +2811,11 @@ class _ManageUsersState extends State<ManageUsers> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF0E1326) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE4E8F2)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2730,14 +2824,17 @@ class _ManageUsersState extends State<ManageUsers> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
                     child: Text(
                       'Danh sách người dùng (${filteredUsers.length})',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E2A3C),
+                        color: isDark ? Colors.white : const Color(0xFF1E2A3C),
                       ),
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFEEF1F6)),
+                  Divider(
+                    height: 1,
+                    color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEEF1F6),
+                  ),
                   Expanded(
                     child: filteredUsers.isEmpty
                         ? const Center(
@@ -2772,13 +2869,11 @@ class _ManageUsersState extends State<ManageUsers> {
                                 );
                                 return DataRow(
                                   selected: selected,
-                                  color: MaterialStateProperty.resolveWith((
-                                    Set<MaterialState> states,
+                                  color: WidgetStateProperty.resolveWith((
+                                    Set<WidgetState> states,
                                   ) {
-                                    if (states.contains(
-                                      MaterialState.selected,
-                                    )) {
-                                      return const Color(0xFFF3F6FF);
+                                    if (states.contains(WidgetState.selected)) {
+                                      return isDark ? const Color(0xFF1E293B) : const Color(0xFFF3F6FF);
                                     }
                                     return null;
                                   }),
@@ -2831,13 +2926,11 @@ class _ManageUsersState extends State<ManageUsers> {
                                   selected: _selectedUserIds.contains(
                                     user.uniqueKey,
                                   ),
-                                  color: MaterialStateProperty.resolveWith((
-                                    Set<MaterialState> states,
+                                  color: WidgetStateProperty.resolveWith((
+                                    Set<WidgetState> states,
                                   ) {
-                                    if (states.contains(
-                                      MaterialState.selected,
-                                    )) {
-                                      return const Color(0xFFF3F6FF);
+                                    if (states.contains(WidgetState.selected)) {
+                                      return isDark ? const Color(0xFF1E293B) : const Color(0xFFF3F6FF);
                                     }
                                     return null;
                                   }),
@@ -3055,29 +3148,29 @@ class _ManageUsersState extends State<ManageUsers> {
                                           width: leftTableWidth,
                                           height: _scrollbarHeight,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF2F5FB),
+                                            color: isDark ? const Color(0xFF151B33) : const Color(0xFFF2F5FB),
                                             borderRadius: BorderRadius.circular(
                                               10,
                                             ),
                                             border: Border.all(
-                                              color: const Color(0xFFE3E8F4),
+                                              color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE3E8F4),
                                             ),
                                           ),
                                           child: ScrollbarTheme(
                                             data: ScrollbarThemeData(
                                               thickness:
-                                                  MaterialStateProperty.all(8),
+                                                  WidgetStateProperty.all(8),
                                               radius: const Radius.circular(8),
                                               thumbColor:
-                                                  MaterialStateProperty.all(
+                                                  WidgetStateProperty.all(
                                                     const Color(0xFFB5C0D6),
                                                   ),
                                               trackColor:
-                                                  MaterialStateProperty.all(
+                                                  WidgetStateProperty.all(
                                                     const Color(0xFFE7ECF5),
                                                   ),
                                               trackBorderColor:
-                                                  MaterialStateProperty.all(
+                                                  WidgetStateProperty.all(
                                                     const Color(0xFFD5DDEA),
                                                   ),
                                             ),
@@ -3110,32 +3203,30 @@ class _ManageUsersState extends State<ManageUsers> {
                                           child: Container(
                                             height: _scrollbarHeight,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF2F5FB),
+                                              color: isDark ? const Color(0xFF151B33) : const Color(0xFFF2F5FB),
                                               borderRadius:
                                                   BorderRadius.circular(10),
                                               border: Border.all(
-                                                color: const Color(0xFFE3E8F4),
+                                                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE3E8F4),
                                               ),
                                             ),
                                             child: ScrollbarTheme(
                                               data: ScrollbarThemeData(
                                                 thickness:
-                                                    MaterialStateProperty.all(
-                                                      8,
-                                                    ),
+                                                    WidgetStateProperty.all(8),
                                                 radius: const Radius.circular(
                                                   8,
                                                 ),
                                                 thumbColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                       const Color(0xFFB5C0D6),
                                                     ),
                                                 trackColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                       const Color(0xFFE7ECF5),
                                                     ),
                                                 trackBorderColor:
-                                                    MaterialStateProperty.all(
+                                                    WidgetStateProperty.all(
                                                       const Color(0xFFD5DDEA),
                                                     ),
                                               ),
@@ -3172,10 +3263,10 @@ class _ManageUsersState extends State<ManageUsers> {
                                         Container(
                                           width: leftTableWidth,
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
+                                            color: isDark ? const Color(0xFF0E1326) : Colors.white,
                                             border: Border(
                                               right: BorderSide(
-                                                color: const Color(0xFFE4E8F2),
+                                                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFE4E8F2),
                                               ),
                                             ),
                                           ),

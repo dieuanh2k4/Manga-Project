@@ -73,98 +73,108 @@ class _LibraryPageState extends State<LibraryPage>
           body: SafeArea(
             child: Column(
               children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            key: const Key('library_search_field'),
-                            controller: _searchController,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              hintText: 'Search here',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                size: 20,
-                                color: Colors.grey,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                  color: _primaryColor,
-                                  width: 1.2,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                  color: _primaryColor,
-                                  width: 1.2,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                  color: _primaryColor,
-                                  width: 1.5,
-                                ),
-                              ),
-                              isDense: true,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Library - ${_currentTabLabel()}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const Key('library_search_field'),
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'Search here',
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
                             ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: _primaryColor,
+                                width: 1.2,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: _primaryColor,
+                                width: 1.2,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: _primaryColor,
+                                width: 1.5,
+                              ),
+                            ),
+                            isDense: true,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () => _openAddMangaSheet(context),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        icon: const Icon(Icons.more_vert),
+                        onPressed: () => _openAddMangaSheet(context),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(height: 4, color: _primaryColor),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: _primaryColor,
+                  unselectedLabelColor: Colors.black54,
+                  indicatorColor: _primaryColor,
+                  indicatorWeight: 2.5,
+                  tabs: const [
+                    Tab(text: 'Your Library'),
+                    Tab(text: 'History'),
+                    Tab(text: 'Downloads'),
+                  ],
+                ),
+                if (_tabController.index == 1)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Row(
+                      children: [
+                        const Spacer(),
+                        const Text(
+                          'Nhóm theo thời gian',
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                        ),
+                        const SizedBox(width: 8),
+                        Switch(
+                          value: _groupHistoryByTime,
+                          activeThumbColor: _primaryColor,
+                          onChanged: (value) {
+                            setState(() {
+                              _groupHistoryByTime = value;
+                            });
+                          },
                         ),
                       ],
                     ),
                   ),
-                  Container(height: 4, color: _primaryColor),
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: _primaryColor,
-                    unselectedLabelColor: Colors.black54,
-                    indicatorColor: _primaryColor,
-                    indicatorWeight: 2.5,
-                    tabs: const [
-                      Tab(text: 'Your Library'),
-                      Tab(text: 'History'),
-                      Tab(text: 'Downloads'),
-                    ],
-                  ),
-                  if (_tabController.index == 1)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Row(
-                        children: [
-                          const Spacer(),
-                          const Text(
-                            'Nhóm theo thời gian',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Switch(
-                            value: _groupHistoryByTime,
-                            activeColor: _primaryColor,
-                            onChanged: (value) {
-                              setState(() {
-                                _groupHistoryByTime = value;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
                 Expanded(child: _buildBody(controller)),
               ],
             ),
@@ -673,17 +683,21 @@ class _AddMangaSheetState extends State<_AddMangaSheet> {
                     }
                     setState(() => _pendingAdds.add(mangaId));
                     try {
-                      final success =
-                          await libraryController.addManga(mangaId, widget.token);
+                      final success = await libraryController.addManga(
+                        mangaId,
+                        widget.token,
+                      );
                       if (!mounted) {
                         return;
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(success
-                              ? 'Da them vao thu vien.'
-                              : (libraryController.error ??
-                                  'Them truyen that bai. Vui long thu lai.')),
+                          content: Text(
+                            success
+                                ? 'Da them vao thu vien.'
+                                : (libraryController.error ??
+                                      'Them truyen that bai. Vui long thu lai.'),
+                          ),
                         ),
                       );
                     } catch (_) {
@@ -692,7 +706,9 @@ class _AddMangaSheetState extends State<_AddMangaSheet> {
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Them truyen that bai. Vui long thu lai.'),
+                          content: Text(
+                            'Them truyen that bai. Vui long thu lai.',
+                          ),
                         ),
                       );
                     } finally {
@@ -735,7 +751,7 @@ class _AddMangaList extends StatelessWidget {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: items.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final manga = items[index];
         final bool added = libraryIds.contains(manga.id);
@@ -744,11 +760,14 @@ class _AddMangaList extends StatelessWidget {
         final imageUrl = manga.thumbnail == null || manga.thumbnail!.isEmpty
             ? 'https://via.placeholder.com/60x85?text=Manga'
             : manga.thumbnail!.startsWith('http')
-                ? manga.thumbnail!
-                : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
+            ? manga.thumbnail!
+            : '${AppConfig.apiOrigin}/${manga.thumbnail!.replaceFirst(RegExp(r'^/+'), '')}';
 
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 0,
+            vertical: 4,
+          ),
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: ProtectedNetworkImage(
@@ -916,13 +935,14 @@ class _HistoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chapterLabel = (item.lastChapterNumber == null ||
-        item.lastChapterNumber!.trim().isEmpty)
-      ? item.lastChapterId.toString()
-      : item.lastChapterNumber!.trim();
+    final chapterLabel =
+        (item.lastChapterNumber == null ||
+            item.lastChapterNumber!.trim().isEmpty)
+        ? item.lastChapterId.toString()
+        : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-      : 'Đọc tiếp Chapter $chapterLabel';
+        : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -1009,13 +1029,14 @@ class _HistoryGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chapterLabel = (item.lastChapterNumber == null ||
-        item.lastChapterNumber!.trim().isEmpty)
-      ? item.lastChapterId.toString()
-      : item.lastChapterNumber!.trim();
+    final chapterLabel =
+        (item.lastChapterNumber == null ||
+            item.lastChapterNumber!.trim().isEmpty)
+        ? item.lastChapterId.toString()
+        : item.lastChapterNumber!.trim();
     final subtitle = item.isCompleted
         ? 'Đã hoàn thành'
-      : 'Đọc tiếp Chapter $chapterLabel';
+        : 'Đọc tiếp Chapter $chapterLabel';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(

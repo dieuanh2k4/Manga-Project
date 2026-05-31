@@ -63,10 +63,13 @@ class NewApiService {
   }
 
   bool _looksLikeManga(Map<String, dynamic> map) {
-    return map.containsKey('id') &&
+    return (map.containsKey('id') || map.containsKey('Id')) &&
         (map.containsKey('title') ||
+            map.containsKey('Title') ||
             map.containsKey('authorId') ||
-            map.containsKey('totalChapter'));
+            map.containsKey('AuthorId') ||
+            map.containsKey('totalChapter') ||
+            map.containsKey('TotalChapter'));
   }
 
   List<dynamic> _extractList(dynamic data) {

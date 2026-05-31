@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:web_admin/core/models/upload_file_data.dart';
 import 'package:web_admin/core/utils/auth_token_storage.dart';
 import 'package:web_admin/core/constants/constants.dart';
@@ -39,10 +40,12 @@ class MangaUpdateApiService {
           ? MultipartFile.fromBytes(
               thumbnailFile.bytes!,
               filename: thumbnailFile.fileName,
+              contentType: _resolveMediaType(thumbnailFile.fileName),
             )
           : await MultipartFile.fromFile(
               thumbnailFile.filePath!,
               filename: thumbnailFile.fileName,
+              contentType: _resolveMediaType(thumbnailFile.fileName),
             );
 
       formData.files.add(MapEntry('file', multipartFile));
@@ -144,10 +147,12 @@ class MangaUpdateApiService {
           ? MultipartFile.fromBytes(
               thumbnailFile.bytes!,
               filename: thumbnailFile.fileName,
+              contentType: _resolveMediaType(thumbnailFile.fileName),
             )
           : await MultipartFile.fromFile(
               thumbnailFile.filePath!,
               filename: thumbnailFile.fileName,
+              contentType: _resolveMediaType(thumbnailFile.fileName),
             );
 
       formData.files.add(MapEntry('file', multipartFile));
@@ -183,5 +188,22 @@ class MangaUpdateApiService {
     }
 
     return '$bucket/$objectPath';
+  }
+
+  MediaType _resolveMediaType(String fileName) {
+    final String ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'png':
+        return MediaType('image', 'png');
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      case 'gif':
+        return MediaType('image', 'gif');
+      case 'webp':
+        return MediaType('image', 'webp');
+      default:
+        return MediaType('application', 'octet-stream');
+    }
   }
 }
