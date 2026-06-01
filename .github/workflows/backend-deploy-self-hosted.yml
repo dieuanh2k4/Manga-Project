@@ -55,6 +55,10 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
+          if ([string]::IsNullOrWhiteSpace($env:GHCR_TOKEN)) {
+            throw "GHCR_TOKEN secret is empty or not available to this workflow."
+          }
+          Write-Host "GHCR_TOKEN is available."
           docker logout ghcr.io
           $env:GHCR_TOKEN | docker login ghcr.io -u dieuanh2k4 --password-stdin
 
