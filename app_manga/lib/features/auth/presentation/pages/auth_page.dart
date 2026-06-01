@@ -53,6 +53,7 @@ class _AuthPageState extends State<AuthPage>
     final auth = context.watch<AuthController>();
 
     return Scaffold(
+      key: const Key('auth_page'),
       backgroundColor: const Color(0xFFE9E9E9),
       body: SafeArea(
         child: Center(
@@ -116,8 +117,8 @@ class _AuthPageState extends State<AuthPage>
                         color: const Color(0xFFFF6B00),
                       ),
                       tabs: const [
-                        Tab(text: 'ĐĂNG NHẬP'),
-                        Tab(text: 'ĐĂNG KÝ'),
+                        Tab(key: Key('auth_login_tab'), text: 'ĐĂNG NHẬP'),
+                        Tab(key: Key('auth_register_tab'), text: 'ĐĂNG KÝ'),
                       ],
                     ),
                   ),
@@ -156,10 +157,17 @@ class _AuthPageState extends State<AuthPage>
         children: [
           const SizedBox(height: 4),
           _FieldLabel('Tên tài khoản'),
-          _RoundedInput(controller: _loginUserName),
+          _RoundedInput(
+            inputKey: const Key('login_username_field'),
+            controller: _loginUserName,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Mật khẩu'),
-          _RoundedInput(controller: _loginPassword, obscureText: true),
+          _RoundedInput(
+            inputKey: const Key('login_password_field'),
+            controller: _loginPassword,
+            obscureText: true,
+          ),
           const SizedBox(height: 6),
           const Align(
             alignment: Alignment.centerRight,
@@ -170,6 +178,7 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: 10),
           _MainButton(
+            buttonKey: const Key('login_submit_button'),
             label: auth.isBusy ? 'ĐANG XỬ LÝ...' : 'ĐĂNG NHẬP',
             onTap: auth.isBusy
                 ? null
@@ -197,25 +206,44 @@ class _AuthPageState extends State<AuthPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _FieldLabel('Họ và tên'),
-          _RoundedInput(controller: _regFullName),
+          _RoundedInput(
+            inputKey: const Key('register_full_name_field'),
+            controller: _regFullName,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Tên tài khoản'),
-          _RoundedInput(controller: _regUserName),
+          _RoundedInput(
+            inputKey: const Key('register_username_field'),
+            controller: _regUserName,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Email'),
-          _RoundedInput(controller: _regEmail),
+          _RoundedInput(
+            inputKey: const Key('register_email_field'),
+            controller: _regEmail,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Số điện thoại'),
-          _RoundedInput(controller: _regPhone),
+          _RoundedInput(
+            inputKey: const Key('register_phone_field'),
+            controller: _regPhone,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Ngày sinh (yyyy-MM-dd)'),
-          _RoundedInput(controller: _regBirth),
+          _RoundedInput(
+            inputKey: const Key('register_birth_field'),
+            controller: _regBirth,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Địa chỉ'),
-          _RoundedInput(controller: _regAddress),
+          _RoundedInput(
+            inputKey: const Key('register_address_field'),
+            controller: _regAddress,
+          ),
           const SizedBox(height: 8),
           _FieldLabel('Giới tính'),
           DropdownButtonFormField<String>(
+            key: const Key('register_gender_field'),
             initialValue: _gender,
             items: const [
               DropdownMenuItem(value: 'Male', child: Text('Nam')),
@@ -231,9 +259,14 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: 8),
           _FieldLabel('Mật khẩu'),
-          _RoundedInput(controller: _regPassword, obscureText: true),
+          _RoundedInput(
+            inputKey: const Key('register_password_field'),
+            controller: _regPassword,
+            obscureText: true,
+          ),
           const SizedBox(height: 10),
           _MainButton(
+            buttonKey: const Key('register_submit_button'),
             label: auth.isBusy ? 'ĐANG XỬ LÝ...' : 'ĐĂNG KÝ',
             onTap: auth.isBusy
                 ? null
@@ -310,11 +343,13 @@ class _FieldLabel extends StatelessWidget {
 }
 
 class _RoundedInput extends StatelessWidget {
+  final Key? inputKey;
   final TextEditingController controller;
   final bool obscureText;
 
   const _RoundedInput({
     super.key,
+    this.inputKey,
     required this.controller,
     this.obscureText = false,
   });
@@ -322,6 +357,7 @@ class _RoundedInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      key: inputKey,
       controller: controller,
       obscureText: obscureText,
       decoration: InputDecoration(
@@ -346,11 +382,13 @@ class _RoundedInput extends StatelessWidget {
 }
 
 class _MainButton extends StatelessWidget {
+  final Key? buttonKey;
   final String label;
   final VoidCallback? onTap;
 
   const _MainButton({
     super.key,
+    this.buttonKey,
     required this.label,
     required this.onTap,
   });
@@ -360,6 +398,7 @@ class _MainButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
+        key: buttonKey,
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFF6B00),

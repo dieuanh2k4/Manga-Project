@@ -87,7 +87,7 @@ if (-not (Test-Path $AppDir)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
-    $ApiBaseUrl = "http://192.168.0.195:5001/api/"
+    $ApiBaseUrl = "http://192.168.0.200:5002/api/"
     # $ApiBaseUrl = "http://10.76.200.178:5001/api/"
 }
 

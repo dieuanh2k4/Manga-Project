@@ -412,11 +412,16 @@ class _FollowButtonState extends State<_FollowButton> {
     );
 
     return OutlinedButton(
+      key: const Key('manga_follow_button'),
       onPressed: isAuthenticated
           ? () async {
               final success = isInLibrary
                   ? await libraryController.deleteManga(widget.manga.id, token)
-                  : await libraryController.addManga(widget.manga.id, token);
+                  : await libraryController.addManga(
+                      widget.manga.id,
+                      token,
+                      manga: widget.manga,
+                    );
               if (!context.mounted) {
                 return;
               }

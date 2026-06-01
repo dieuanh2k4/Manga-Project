@@ -56,8 +56,9 @@ class MePage extends StatelessWidget {
         foregroundColor: const Color(0xFF2F2F2F),
         elevation: 0,
         actions: [
-          IconButton(
-            onPressed: auth.isBusy ? null : auth.refreshProfile,
+              IconButton(
+                key: const Key('me_profile_refresh_button'),
+                onPressed: auth.isBusy ? null : auth.refreshProfile,
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -296,15 +297,21 @@ class MePage extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
+            icon: Icon(Icons.home_outlined, key: Key('me_nav_home')),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_outlined),
+            icon: Icon(Icons.menu_book_outlined, key: Key('me_nav_library')),
             label: '',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search, key: Key('me_nav_search')),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, key: Key('me_nav_me')),
+            label: '',
+          ),
         ],
       ),
     );
@@ -452,6 +459,7 @@ class _VipCard extends StatelessWidget {
                 ),
               ),
               IconButton(
+                key: const Key('vip_refresh_button'),
                 onPressed: isRefreshing ? null : onRefresh,
                 icon: isRefreshing
                     ? const SizedBox(

@@ -63,7 +63,7 @@ Future<void> _launchApp(WidgetTester tester) async {
 }
 
 Future<void> _loginIfNeeded(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  if (find.byKey(const Key('login_submit_button')).evaluate().isEmpty) {
     return;
   }
 
@@ -72,18 +72,18 @@ Future<void> _loginIfNeeded(WidgetTester tester) async {
 
   await tester.enterText(textFields.at(0), _username);
   await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
+  await tester.tap(find.byKey(const Key('login_submit_button')));
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should be visible after login.',
   );
 }
 
 Future<void> _openSearch(WidgetTester tester) async {
-  await tester.tap(find.text('Search').last);
+  await tester.tap(find.byKey(const Key('home_nav_search')));
   await tester.pumpAndSettle();
 }
 

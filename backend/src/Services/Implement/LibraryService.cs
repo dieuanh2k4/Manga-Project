@@ -24,8 +24,9 @@ namespace backend.src.Services.Implement
 
         public async Task<List<Libraries>> GetMangaInLibrary(int userId)
         {
+            var readerId = await GetReaderIdFromUserId(userId);
             var mangas = await _context.Libraries
-                .Where(a => a.ReaderId == userId)
+                .Where(a => a.ReaderId == readerId)
                 .Include(a => a.Manga)
                 .ToListAsync();
 
@@ -42,8 +43,9 @@ namespace backend.src.Services.Implement
 
         public async Task<Libraries> AddMangaToLibrary(int mangaId, int userId)
         {
+            var readerId = await GetReaderIdFromUserId(userId);
             var checkManga = await _context.Libraries
-                .FirstOrDefaultAsync(a => a.ReaderId == userId && a.MangaId == mangaId);
+                .FirstOrDefaultAsync(a => a.ReaderId == readerId && a.MangaId == mangaId);
             
             if (checkManga != null)
             {
@@ -52,7 +54,7 @@ namespace backend.src.Services.Implement
 
             var addManga = new Libraries
             {
-                ReaderId = userId,
+                ReaderId = readerId,
                 MangaId = mangaId
             };
 
@@ -64,8 +66,9 @@ namespace backend.src.Services.Implement
 
         public async Task<Libraries> DeleteMangaToLibrary(int mangaId, int userId) 
         {
+            var readerId = await GetReaderIdFromUserId(userId);
             var deleteManga = await _context.Libraries
-                .FirstOrDefaultAsync(a => a.ReaderId == userId && a.MangaId == mangaId);
+                .FirstOrDefaultAsync(a => a.ReaderId == readerId && a.MangaId == mangaId);
             
             if (deleteManga == null)
             {
@@ -76,6 +79,21 @@ namespace backend.src.Services.Implement
             await _context.SaveChangesAsync();
 
             return deleteManga;
+        }
+
+        private async Task<int> GetReaderIdFromUserId(int userId)
+        {
+            var readerId = await _context.Readers
+                .Where(reader => reader.UserId == userId)
+                .Select(reader => reader.Id)
+                .FirstOrDefaultAsync();
+
+            if (readerId == 0)
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin reader cho tài khoản hiện tại");
+            }
+
+            return readerId;
         }
     }
 }

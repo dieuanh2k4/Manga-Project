@@ -45,7 +45,7 @@ Future<void> _launchApp(WidgetTester tester) async {
 }
 
 Future<void> _loginIfNeeded(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  if (find.byKey(const Key('login_submit_button')).evaluate().isEmpty) {
     return;
   }
 
@@ -54,18 +54,18 @@ Future<void> _loginIfNeeded(WidgetTester tester) async {
 
   await tester.enterText(textFields.at(0), _username);
   await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
+  await tester.tap(find.byKey(const Key('login_submit_button')));
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should be visible after login.',
   );
 }
 
 Future<void> _openLibrary(WidgetTester tester) async {
-  await tester.tap(find.text('Library').last);
+  await tester.tap(find.byKey(const Key('home_nav_library')));
   await tester.pumpAndSettle();
 }
 
@@ -111,7 +111,7 @@ Future<void> _toggleHistoryGrouping(WidgetTester tester) async {
 }
 
 Future<void> _openHome(WidgetTester tester) async {
-  await tester.tap(find.text('Home').last);
+  await tester.tap(find.byKey(const Key('library_nav_home')));
   await tester.pumpAndSettle();
 }
 
@@ -161,8 +161,8 @@ Future<void> _tryNextPreviousChapter(WidgetTester tester) async {
     await tester.pumpAndSettle();
   }
 
-  final nextButton = find.byIcon(Icons.chevron_right);
-  final prevButton = find.byIcon(Icons.chevron_left);
+  final nextButton = find.byKey(const Key('reader_next_chapter_button'));
+  final prevButton = find.byKey(const Key('reader_prev_chapter_button'));
 
   if (nextButton.evaluate().isNotEmpty) {
     await tester.tap(nextButton.first);
@@ -176,24 +176,32 @@ Future<void> _tryNextPreviousChapter(WidgetTester tester) async {
 }
 
 Future<void> _openMe(WidgetTester tester) async {
-  await tester.tap(find.text('Me').last);
+  for (var i = 0; i < 3; i++) {
+    if (find.byKey(const Key('home_nav_me')).evaluate().isNotEmpty) {
+      break;
+    }
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+  }
+
+  await tester.tap(find.byKey(const Key('home_nav_me')));
   await tester.pumpAndSettle();
 }
 
 Future<void> _logout(WidgetTester tester) async {
   await _waitUntil(
     tester,
-    () => find.text('Dang xuat').evaluate().isNotEmpty,
+    () => find.byKey(const Key('me_logout_button')).evaluate().isNotEmpty,
     reason: 'Logout button should be visible on Me page.',
   );
-  await tester.tap(find.text('Dang xuat').first);
+  await tester.tap(find.byKey(const Key('me_logout_button')));
   await tester.pumpAndSettle();
 }
 
 Future<void> _expectAuthPage(WidgetTester tester) async {
   await _waitUntil(
     tester,
-    () => find.text('LOGIN').evaluate().isNotEmpty,
+    () => find.byKey(const Key('auth_page')).evaluate().isNotEmpty,
     reason: 'Auth page should appear after logout.',
   );
 }

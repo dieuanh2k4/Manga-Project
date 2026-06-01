@@ -49,33 +49,36 @@ Future<void> _launchApp(WidgetTester tester) async {
 Future<void> _verifyAuthPageUI(WidgetTester tester) async {
   await _waitUntil(
     tester,
-    () => find.text('LOGIN').evaluate().isNotEmpty,
+    () => find.byKey(const Key('auth_page')).evaluate().isNotEmpty,
     reason: 'Auth page should show LOGIN tab.',
   );
 
-  expect(find.text('Welcome to MangaMinus'), findsOneWidget);
-  expect(find.text('LOGIN'), findsOneWidget);
-  expect(find.text('REGISTER'), findsOneWidget);
+  expect(find.byKey(const Key('auth_login_tab')), findsOneWidget);
+  expect(find.byKey(const Key('auth_register_tab')), findsOneWidget);
 }
 
 Future<void> _loginWithWrongPassword(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  if (find.byKey(const Key('login_submit_button')).evaluate().isEmpty) {
     return;
   }
 
-  final textFields = find.byType(TextField);
-  expect(textFields, findsAtLeastNWidgets(2));
-
-  await tester.enterText(textFields.at(0), _username);
-  await tester.enterText(textFields.at(1), 'wrong-password-123');
-  await tester.tap(find.text('LOG IN'));
+  await tester.enterText(
+    find.byKey(const Key('login_username_field')),
+    _username,
+  );
+  await tester.enterText(
+    find.byKey(const Key('login_password_field')),
+    'wrong-password-123',
+  );
+  await tester.tap(find.byKey(const Key('login_submit_button')));
   await tester.pumpAndSettle();
 
   // Should remain on LOGIN page
   await _waitUntil(
     tester,
-    () => find.text('LOGIN').evaluate().isNotEmpty,
+    () => find.byKey(const Key('auth_page')).evaluate().isNotEmpty,
     reason: 'Auth page should remain after wrong login.',
+    failureDetails: _visibleStateForFailure,
   );
 
   // Verify error message appears (red color text)
@@ -87,55 +90,72 @@ Future<void> _loginWithWrongPassword(WidgetTester tester) async {
 }
 
 Future<void> _switchToRegisterTab(WidgetTester tester) async {
-  await tester.tap(find.text('REGISTER'));
+  await tester.tap(find.byKey(const Key('auth_register_tab')));
   await tester.pumpAndSettle();
 }
 
 Future<void> _verifyRegisterFields(WidgetTester tester) async {
   await _waitUntil(
     tester,
-    () => find.text('Full Name').evaluate().isNotEmpty,
+    () =>
+        find.byKey(const Key('register_full_name_field')).evaluate().isNotEmpty,
     reason: 'Register tab should show Full Name field.',
   );
 
-  expect(find.text('Full Name'), findsOneWidget);
-  expect(find.text('Email'), findsOneWidget);
-  expect(find.text('Phone'), findsOneWidget);
-  expect(find.text('Gender'), findsOneWidget);
+  expect(find.byKey(const Key('register_email_field')), findsOneWidget);
+  expect(find.byKey(const Key('register_phone_field')), findsOneWidget);
+  expect(find.byKey(const Key('register_gender_field')), findsOneWidget);
 }
 
 Future<void> _switchToLoginTab(WidgetTester tester) async {
-  await tester.tap(find.text('LOGIN'));
+  await tester.tap(find.byKey(const Key('auth_login_tab')));
   await tester.pumpAndSettle();
 }
 
 Future<void> _verifyLoginFields(WidgetTester tester) async {
   await _waitUntil(
     tester,
-    () => find.text('LOG IN').evaluate().isNotEmpty,
+    () => find.byKey(const Key('login_submit_button')).evaluate().isNotEmpty,
     reason: 'Login tab should show LOG IN button.',
   );
 
   // Username and Password labels should be visible in login tab
-  expect(find.text('Username'), findsWidgets);
-  expect(find.text('Password'), findsWidgets);
+  expect(find.byKey(const Key('login_username_field')), findsOneWidget);
+  expect(find.byKey(const Key('login_password_field')), findsOneWidget);
 }
 
 Future<void> _loginWithCorrectCredentials(WidgetTester tester) async {
-  final textFields = find.byType(TextField);
-  expect(textFields, findsAtLeastNWidgets(2));
+  await tester.enterText(
+    find.byKey(const Key('login_username_field')),
+    _username,
+  );
+  await tester.enterText(
+    find.byKey(const Key('login_password_field')),
+    _password,
+  );
+  await tester.testTextInput.receiveAction(TextInputAction.done);
+  await tester.pump();
 
-  // Clear old values and enter correct credentials
-  await tester.enterText(textFields.at(0), _username);
-  await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
-  await tester.pumpAndSettle();
+  final errorBeforeSubmit = _visibleAuthErrorText();
+  final submitButton = find.byKey(const Key('login_submit_button'));
+  await tester.ensureVisible(submitButton);
+  await tester.tap(submitButton);
+  await tester.pump();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () =>
+        find.byKey(const Key('home_page')).evaluate().isNotEmpty ||
+        (_visibleAuthErrorText().isNotEmpty &&
+            _visibleAuthErrorText() != errorBeforeSubmit),
     reason: 'Home page should be visible after successful login.',
+    failureDetails: _homeStateForFailure,
   );
+
+  final authError = _visibleAuthErrorText();
+  if (authError.isNotEmpty) {
+    fail('Login failed before reaching Home. Auth error: $authError');
+  }
 }
 
 Future<void> _verifyHomePage(WidgetTester tester) async {
@@ -143,11 +163,56 @@ Future<void> _verifyHomePage(WidgetTester tester) async {
 
   await _waitUntil(
     tester,
-    () =>
-        find.text('Last Updates').evaluate().isNotEmpty ||
-        find.text('Most Viewed').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should show manga sections.',
+    failureDetails: _homeStateForFailure,
   );
+}
+
+String _homeStateForFailure() {
+  if (find.byKey(const Key('home_loading')).evaluate().isNotEmpty) {
+    return 'Home is still loading manga.';
+  }
+  if (find.byKey(const Key('home_error')).evaluate().isNotEmpty) {
+    return 'Home API error. ${_visibleStateForFailure()}';
+  }
+  if (find.byKey(const Key('home_empty')).evaluate().isNotEmpty) {
+    return 'Home loaded but returned an empty manga list.';
+  }
+  if (find.byKey(const Key('auth_page')).evaluate().isNotEmpty) {
+    return 'App is on auth page. Login may have failed. ${_visibleStateForFailure()}';
+  }
+  return _visibleStateForFailure();
+}
+
+String _visibleStateForFailure() {
+  final values = find
+      .byType(Text)
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Text>()
+      .map((text) => text.data ?? text.textSpan?.toPlainText() ?? '')
+      .where((text) => text.trim().isNotEmpty)
+      .take(16)
+      .join(' | ');
+
+  return 'Current visible text: ${values.isEmpty ? '<none>' : values}';
+}
+
+String _visibleAuthErrorText() {
+  final values = find
+      .byWidgetPredicate(
+        (widget) =>
+            widget is Text && widget.style?.color == const Color(0xFF9B1B1B),
+      )
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Text>()
+      .map((text) => text.data ?? text.textSpan?.toPlainText() ?? '')
+      .where((text) => text.trim().isNotEmpty)
+      .join(' | ');
+
+  return values;
 }
 
 Future<void> _waitForAppSettled(WidgetTester tester) async {
@@ -162,6 +227,7 @@ Future<void> _waitUntil(
   WidgetTester tester,
   bool Function() condition, {
   required String reason,
+  String Function()? failureDetails,
   Duration timeout = const Duration(seconds: 30),
 }) async {
   final end = DateTime.now().add(timeout);
@@ -172,5 +238,6 @@ Future<void> _waitUntil(
     }
   }
 
-  fail(reason);
+  final details = failureDetails?.call();
+  fail(details == null || details.isEmpty ? reason : '$reason $details');
 }

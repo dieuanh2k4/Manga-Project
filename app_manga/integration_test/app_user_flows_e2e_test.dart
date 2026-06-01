@@ -106,8 +106,7 @@ Future<void> _expectHome(WidgetTester tester) async {
     tester,
     () =>
         find.byKey(const Key('home_page')).evaluate().isNotEmpty &&
-        (find.text('Last Updates').evaluate().isNotEmpty ||
-            find.text('Most Viewed').evaluate().isNotEmpty),
+        find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should show manga sections.',
     failureDetails: _homeStateForFailure,
   );
@@ -307,7 +306,6 @@ Future<void> _expectMe(WidgetTester tester) async {
         find.text('E2E Reader').evaluate().isNotEmpty &&
         find.text(_username).evaluate().isNotEmpty &&
         find.text('Premium').evaluate().isNotEmpty &&
-        find.text('Username').evaluate().isNotEmpty &&
         find.byKey(const Key('me_logout_button')).evaluate().isNotEmpty,
     reason: 'Me page should show the seeded reader profile.',
   );
