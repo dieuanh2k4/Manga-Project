@@ -71,7 +71,7 @@ jobs:
             throw "GHCR_TOKEN does not include write:packages. Update the repository secret with a classic PAT that has repo and write:packages."
           }
           docker logout ghcr.io
-          $env:GHCR_TOKEN.Trim() | docker login ghcr.io -u $user.login --password-stdin
+          docker login ghcr.io -u $user.login --password $env:GHCR_TOKEN.Trim()
 
       - name: Build backend image
         working-directory: backend
