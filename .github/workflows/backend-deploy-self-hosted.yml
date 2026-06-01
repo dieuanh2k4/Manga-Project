@@ -62,8 +62,14 @@ jobs:
             Authorization = "Bearer $env:GHCR_TOKEN"
             Accept = "application/vnd.github+json"
           }
-          $user = Invoke-RestMethod -Uri "https://api.github.com/user" -Headers $headers
+          $userResponse = Invoke-WebRequest -Uri "https://api.github.com/user" -Headers $headers
+          $user = $userResponse.Content | ConvertFrom-Json
+          $tokenScopes = [string]$userResponse.Headers["X-OAuth-Scopes"]
           Write-Host "GHCR_TOKEN is available for GitHub user: $($user.login)"
+          Write-Host "GHCR_TOKEN scopes: $tokenScopes"
+          if ($tokenScopes -notmatch "write:packages") {
+            throw "GHCR_TOKEN does not include write:packages. Update the repository secret with a classic PAT that has repo and write:packages."
+          }
           docker logout ghcr.io
           $env:GHCR_TOKEN.Trim() | docker login ghcr.io -u $user.login --password-stdin
 
