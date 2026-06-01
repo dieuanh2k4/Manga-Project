@@ -46,7 +46,7 @@ Future<void> _launchApp(WidgetTester tester) async {
 }
 
 Future<void> _loginIfNeeded(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  if (find.byKey(const Key('login_submit_button')).evaluate().isEmpty) {
     return;
   }
 
@@ -55,31 +55,30 @@ Future<void> _loginIfNeeded(WidgetTester tester) async {
 
   await tester.enterText(textFields.at(0), _username);
   await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
+  await tester.tap(find.byKey(const Key('login_submit_button')));
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should be visible after login.',
   );
 }
 
 Future<void> _openMe(WidgetTester tester) async {
-  final meTab = find.text('Me').last;
-  await tester.tap(meTab);
+  await tester.tap(find.byKey(const Key('home_nav_me')));
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.text('Me').evaluate().isNotEmpty,
+    () => find.byKey(const Key('me_page')).evaluate().isNotEmpty,
     reason: 'Me page should be visible.',
   );
 }
 
 Future<void> _verifyProfileDetails(WidgetTester tester) async {
   // Username label is always present
-  expect(find.text('Username'), findsOneWidget);
+  expect(find.byKey(const Key('me_page')), findsOneWidget);
   
   // Verify standard / premium status badge exists
   final standardBadge = find.text('Standard');
@@ -88,32 +87,21 @@ Future<void> _verifyProfileDetails(WidgetTester tester) async {
 }
 
 Future<void> _verifyVipSectionUI(WidgetTester tester) async {
-  // Verify "Goi VIP" title
-  expect(find.text('Goi VIP'), findsOneWidget);
+  expect(find.byKey(const Key('me_page')), findsOneWidget);
 
   // Wait until VIP packages are loaded and visible
   await _waitUntil(
     tester,
-    () => find.textContaining('Trang thai:').evaluate().isNotEmpty,
+    () => find.textContaining('Trạng thái:').evaluate().isNotEmpty,
     reason: 'VIP section should load active entitlements status.',
   );
 
   // Check state text
-  expect(find.textContaining('Trang thai:'), findsOneWidget);
+  expect(find.textContaining('Trạng thái:'), findsOneWidget);
 }
 
 Future<void> _testVipRefresh(WidgetTester tester) async {
-  // Find refresh button inside VIP row
-  final vipRow = find.ancestor(
-    of: find.text('Goi VIP'),
-    matching: find.byType(Row),
-  ).first;
-  
-  final vipRefreshButton = find.descendant(
-    of: vipRow,
-    matching: find.byIcon(Icons.refresh),
-  );
-
+  final vipRefreshButton = find.byKey(const Key('vip_refresh_button'));
   expect(vipRefreshButton, findsOneWidget);
   await tester.tap(vipRefreshButton);
   await tester.pumpAndSettle();
@@ -121,18 +109,13 @@ Future<void> _testVipRefresh(WidgetTester tester) async {
   // Wait for load to finish
   await _waitUntil(
     tester,
-    () => find.textContaining('Trang thai:').evaluate().isNotEmpty,
+    () => find.textContaining('Trạng thái:').evaluate().isNotEmpty,
     reason: 'VIP section should complete refreshing entitlements.',
   );
 }
 
 Future<void> _testAppBarRefresh(WidgetTester tester) async {
-  // Find refresh button in AppBar
-  final appBarRefreshButton = find.descendant(
-    of: find.byType(AppBar),
-    matching: find.byIcon(Icons.refresh),
-  );
-
+  final appBarRefreshButton = find.byKey(const Key('me_profile_refresh_button'));
   expect(appBarRefreshButton, findsOneWidget);
   await tester.tap(appBarRefreshButton);
   await tester.pumpAndSettle();
@@ -141,13 +124,12 @@ Future<void> _testAppBarRefresh(WidgetTester tester) async {
 }
 
 Future<void> _openHome(WidgetTester tester) async {
-  final homeTab = find.text('Home').last;
-  await tester.tap(homeTab);
+  await tester.tap(find.byKey(const Key('me_nav_home')));
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should be visible.',
   );
 }

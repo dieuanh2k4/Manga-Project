@@ -254,6 +254,7 @@ class _HomePageState extends State<HomePage> {
                       CircleAvatar(
                         backgroundColor: Colors.white,
                         child: IconButton(
+                          key: const Key('home_notification_button'),
                           tooltip: 'Thông báo',
                           icon: const Icon(
                             Icons.notifications_outlined,
@@ -473,16 +474,22 @@ class _HomePageState extends State<HomePage> {
       },
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
+          icon: Icon(Icons.home_outlined, key: Key('home_nav_home')),
+          activeIcon: Icon(Icons.home, key: Key('home_nav_home')),
           label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.menu_book_outlined),
+          icon: Icon(Icons.menu_book_outlined, key: Key('home_nav_library')),
           label: '',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search, key: Key('home_nav_search')),
+          label: '',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline, key: Key('home_nav_me')),
+          label: '',
+        ),
       ],
     );
   }

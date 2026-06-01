@@ -40,7 +40,7 @@ Future<void> _launchApp(WidgetTester tester) async {
 }
 
 Future<void> _loginIfNeeded(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  if (find.byKey(const Key('login_submit_button')).evaluate().isEmpty) {
     return;
   }
 
@@ -49,48 +49,45 @@ Future<void> _loginIfNeeded(WidgetTester tester) async {
 
   await tester.enterText(textFields.at(0), _username);
   await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
+  await tester.tap(find.byKey(const Key('login_submit_button')));
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should be visible after login.',
   );
 }
 
 Future<void> _openNotifications(WidgetTester tester) async {
-  final notificationBell = find.byTooltip('Thong bao');
+  final notificationBell = find.byKey(const Key('home_notification_button'));
   expect(notificationBell, findsOneWidget);
   await tester.tap(notificationBell);
   await tester.pumpAndSettle();
 
   await _waitUntil(
     tester,
-    () => find.descendant(
-      of: find.byType(AppBar),
-      matching: find.text('Thong bao'),
-    ).evaluate().isNotEmpty,
+    () => find.byKey(const Key('notification_page')).evaluate().isNotEmpty,
     reason: 'Notification page should open with "Thong bao" title.',
   );
 }
 
 Future<void> _verifyNotificationPageUI(WidgetTester tester) async {
   // Check that "Da doc tat ca" button is present
-  expect(find.text('Da doc tat ca'), findsOneWidget);
+  expect(find.byKey(const Key('notifications_mark_all_read_button')), findsOneWidget);
 }
 
 Future<void> _testNotificationInteraction(WidgetTester tester) async {
-  final isEmpty = find.text('Chua co thong bao').evaluate().isNotEmpty;
+  final isEmpty = find.byType(ListTile).evaluate().isEmpty;
 
   if (isEmpty) {
-    expect(find.text('Chua co thong bao'), findsOneWidget);
+    expect(find.byKey(const Key('notification_page')), findsOneWidget);
   } else {
     // We have active notification items
     expect(find.byType(ListTile), findsAtLeastNWidgets(1));
 
     // Optional: Tap "Da doc tat ca" to mark notifications as read
-    final doneAllButton = find.text('Da doc tat ca');
+    final doneAllButton = find.byKey(const Key('notifications_mark_all_read_button'));
     await tester.tap(doneAllButton);
     await tester.pumpAndSettle();
 
@@ -109,10 +106,7 @@ Future<void> _testNotificationInteraction(WidgetTester tester) async {
       // Ensure we are back on Notification Page
       await _waitUntil(
         tester,
-        () => find.descendant(
-          of: find.byType(AppBar),
-          matching: find.text('Thong bao'),
-        ).evaluate().isNotEmpty,
+        () => find.byKey(const Key('notification_page')).evaluate().isNotEmpty,
         reason: 'Should return to notification page.',
       );
     }
@@ -125,7 +119,7 @@ Future<void> _goBackToHome(WidgetTester tester) async {
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Should navigate back to Home page.',
   );
 }

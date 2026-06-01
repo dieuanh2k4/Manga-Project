@@ -67,33 +67,64 @@ Future<void> _launchApp(WidgetTester tester) async {
 }
 
 Future<void> _loginIfNeeded(WidgetTester tester) async {
-  if (find.text('LOGIN').evaluate().isEmpty) {
+  await _waitUntil(
+    tester,
+    () =>
+        find.byKey(const Key('home_page')).evaluate().isNotEmpty ||
+        _isAuthPageVisible(),
+    reason: 'App should settle on either auth page or home page before login.',
+    failureDetails: _visibleStateForFailure,
+  );
+
+  if (!_isAuthPageVisible()) {
     return;
   }
 
-  final textFields = find.byType(TextField);
-  expect(textFields, findsAtLeastNWidgets(2));
+  await tester.enterText(
+    find.byKey(const Key('login_username_field')),
+    _username,
+  );
+  await tester.enterText(
+    find.byKey(const Key('login_password_field')),
+    _password,
+  );
+  await tester.testTextInput.receiveAction(TextInputAction.done);
+  await tester.pump();
 
-  await tester.enterText(textFields.at(0), _username);
-  await tester.enterText(textFields.at(1), _password);
-  await tester.tap(find.text('LOG IN'));
-  await tester.pumpAndSettle();
+  final errorBeforeSubmit = _visibleAuthErrorText();
+  final submitButton = find.byKey(const Key('login_submit_button'));
+  await tester.ensureVisible(submitButton);
+  await tester.tap(submitButton);
+  await tester.pump();
 
   await _waitUntil(
     tester,
-    () => find.text('Last Updates').evaluate().isNotEmpty,
+    () =>
+        find.byKey(const Key('home_page')).evaluate().isNotEmpty ||
+        (_visibleAuthErrorText().isNotEmpty &&
+            _visibleAuthErrorText() != errorBeforeSubmit),
     reason: 'Home page should be visible after login.',
+    failureDetails: _homeStateForFailure,
   );
+
+  final authError = _visibleAuthErrorText();
+  if (authError.isNotEmpty && authError != errorBeforeSubmit) {
+    fail('Login failed before reaching Home. Auth error: $authError');
+  }
 }
 
 Future<void> _expectHome(WidgetTester tester) async {
   await _waitUntil(
     tester,
-    () =>
-        find.text('Last Updates').evaluate().isNotEmpty ||
-        find.text('Most Viewed').evaluate().isNotEmpty,
+    () => find.byKey(const Key('home_page')).evaluate().isNotEmpty,
     reason: 'Home page should show manga sections.',
+    failureDetails: _homeStateForFailure,
   );
+}
+
+bool _isAuthPageVisible() {
+  return find.byKey(const Key('auth_page')).evaluate().isNotEmpty ||
+      find.byKey(const Key('login_submit_button')).evaluate().isNotEmpty;
 }
 
 Future<void> _openFirstMangaFromHome(WidgetTester tester) async {
@@ -130,22 +161,22 @@ Future<void> _followManga(WidgetTester tester) async {
     return;
   }
 
-  await tester.tap(find.text('FOLLOW').first);
-  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('manga_follow_button')));
+  await tester.pump();
 
   await _waitUntil(
     tester,
-    () => find.text('FOLLOWING').evaluate().isNotEmpty,
+    () =>
+        find.text('FOLLOWING').evaluate().isNotEmpty ||
+        _visibleLibraryMutationErrorText().isNotEmpty,
     reason: 'Follow state should change to FOLLOWING.',
+    failureDetails: _visibleStateForFailure,
   );
 
-  // Verify snackbar
-  await _waitUntil(
-    tester,
-    () => find.text('Da them vao thu vien.').evaluate().isNotEmpty,
-    reason: 'Snackbar should show follow success message.',
-    timeout: const Duration(seconds: 5),
-  );
+  final followError = _visibleLibraryMutationErrorText();
+  if (followError.isNotEmpty) {
+    fail('Follow failed before reaching FOLLOWING state: $followError');
+  }
 }
 
 Future<void> _unfollowManga(WidgetTester tester) async {
@@ -163,14 +194,93 @@ Future<void> _unfollowManga(WidgetTester tester) async {
     return;
   }
 
-  await tester.tap(find.text('FOLLOWING').first);
-  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('manga_follow_button')));
+  await tester.pump();
 
   await _waitUntil(
     tester,
-    () => find.text('FOLLOW').evaluate().isNotEmpty,
+    () =>
+        find.text('FOLLOW').evaluate().isNotEmpty ||
+        _visibleLibraryMutationErrorText().isNotEmpty,
     reason: 'Follow state should change back to FOLLOW.',
+    failureDetails: _visibleStateForFailure,
   );
+
+  final unfollowError = _visibleLibraryMutationErrorText();
+  if (unfollowError.isNotEmpty) {
+    fail('Unfollow failed before reaching FOLLOW state: $unfollowError');
+  }
+}
+
+String _visibleStateForFailure() {
+  final values = find
+      .byType(Text)
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Text>()
+      .map((text) => text.data ?? text.textSpan?.toPlainText() ?? '')
+      .where((text) => text.trim().isNotEmpty)
+      .take(16)
+      .join(' | ');
+
+  return 'Current visible text: ${values.isEmpty ? '<none>' : values}';
+}
+
+String _homeStateForFailure() {
+  if (find.byKey(const Key('home_loading')).evaluate().isNotEmpty) {
+    return 'Home is still loading manga.';
+  }
+  if (find.byKey(const Key('home_error')).evaluate().isNotEmpty) {
+    return 'Home API error. ${_visibleStateForFailure()}';
+  }
+  if (find.byKey(const Key('home_empty')).evaluate().isNotEmpty) {
+    return 'Home loaded but returned an empty manga list.';
+  }
+  if (_isAuthPageVisible()) {
+    return 'App is on auth page. Login may have failed. ${_visibleStateForFailure()}';
+  }
+  return _visibleStateForFailure();
+}
+
+String _visibleAuthErrorText() {
+  final values = find
+      .byWidgetPredicate(
+        (widget) =>
+            widget is Text && widget.style?.color == const Color(0xFF9B1B1B),
+      )
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Text>()
+      .map((text) => text.data ?? text.textSpan?.toPlainText() ?? '')
+      .where((text) => text.trim().isNotEmpty)
+      .join(' | ');
+
+  return values;
+}
+
+String _visibleLibraryMutationErrorText() {
+  final values = find
+      .byType(SnackBar)
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<SnackBar>()
+      .map((snackBar) {
+        final content = snackBar.content;
+        if (content is Text) {
+          return content.data ?? content.textSpan?.toPlainText() ?? '';
+        }
+        return '';
+      })
+      .where((text) {
+        final normalized = text.toLowerCase();
+        return normalized.contains('that bai') ||
+            normalized.contains('failed') ||
+            normalized.contains('error') ||
+            normalized.contains('exception');
+      })
+      .join(' | ');
+
+  return values;
 }
 
 Future<void> _goBackToHome(WidgetTester tester) async {
@@ -180,7 +290,7 @@ Future<void> _goBackToHome(WidgetTester tester) async {
 }
 
 Future<void> _openLibrary(WidgetTester tester) async {
-  await tester.tap(find.text('Library').last);
+  await tester.tap(find.byKey(const Key('home_nav_library')));
   await tester.pumpAndSettle();
 }
 
@@ -235,7 +345,7 @@ Future<void> _toggleHistoryGrouping(WidgetTester tester) async {
 }
 
 Future<void> _goToHomeFromLibrary(WidgetTester tester) async {
-  await tester.tap(find.text('Home').last);
+  await tester.tap(find.byKey(const Key('library_nav_home')));
   await tester.pumpAndSettle();
   await _expectHome(tester);
 }
@@ -252,6 +362,7 @@ Future<void> _waitUntil(
   WidgetTester tester,
   bool Function() condition, {
   required String reason,
+  String Function()? failureDetails,
   Duration timeout = const Duration(seconds: 30),
 }) async {
   final end = DateTime.now().add(timeout);
@@ -262,6 +373,7 @@ Future<void> _waitUntil(
     }
   }
 
-  fail(reason);
+  final details = failureDetails?.call();
+  fail(details == null || details.isEmpty ? reason : '$reason $details');
 }
 

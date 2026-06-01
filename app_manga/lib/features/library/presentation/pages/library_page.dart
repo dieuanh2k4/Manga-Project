@@ -562,16 +562,22 @@ class _LibraryPageState extends State<LibraryPage>
       },
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
+          icon: Icon(Icons.home_outlined, key: Key('library_nav_home')),
+          activeIcon: Icon(Icons.home, key: Key('library_nav_home')),
           label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.menu_book_outlined),
+          icon: Icon(Icons.menu_book_outlined, key: Key('library_nav_library')),
           label: '',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search, key: Key('library_nav_search')),
+          label: '',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline, key: Key('library_nav_me')),
+          label: '',
+        ),
       ],
     );
   }

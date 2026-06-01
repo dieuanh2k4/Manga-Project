@@ -654,6 +654,7 @@ class _ReaderTaskbar extends StatelessWidget {
                 Row(
                   children: [
                     _ControlButton(
+                      key: const Key('reader_prev_chapter_button'),
                       icon: Icons.chevron_left,
                       enabled: controller.hasPreviousChapter,
                       onTap: onPrevChapter,
@@ -698,6 +699,7 @@ class _ReaderTaskbar extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     _ControlButton(
+                      key: const Key('reader_next_chapter_button'),
                       icon: Icons.chevron_right,
                       enabled: controller.hasNextChapter,
                       onTap: onNextChapter,
@@ -711,6 +713,7 @@ class _ReaderTaskbar extends StatelessWidget {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<ReaderMode>(
+                          key: const Key('reader_mode_dropdown'),
                           value: controller.mode,
                           dropdownColor: const Color(0xFF11141B),
                           iconEnabledColor: Colors.white,
@@ -764,6 +767,7 @@ class _ControlButton extends StatelessWidget {
   final Future<void> Function() onTap;
 
   const _ControlButton({
+    super.key,
     required this.icon,
     required this.enabled,
     required this.onTap,

@@ -32,6 +32,7 @@ class _NotificationPageState extends State<NotificationPage> {
     final token = auth.session?.token;
 
     return Scaffold(
+      key: const Key('notification_page'),
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -43,6 +44,7 @@ class _NotificationPageState extends State<NotificationPage> {
         ),
         actions: [
           TextButton.icon(
+            key: const Key('notifications_mark_all_read_button'),
             onPressed: token == null || controller.unreadCount == 0
                 ? null
                 : () => controller.markAllAsRead(token),
