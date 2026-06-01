@@ -52,7 +52,11 @@ jobs:
           '${{ secrets.FIREBASE_ADMIN_KEY_JSON }}' | Set-Content -LiteralPath backend/manga-project-firebase-admin-key.json -Encoding UTF8
 
       - name: Login to GHCR
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dieuanh2k4 --password-stdin
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          docker logout ghcr.io
+          $env:GHCR_TOKEN | docker login ghcr.io -u dieuanh2k4 --password-stdin
 
       - name: Build backend image
         working-directory: backend
