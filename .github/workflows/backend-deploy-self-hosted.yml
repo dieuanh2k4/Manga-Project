@@ -59,10 +59,10 @@ jobs:
             throw "GHCR_TOKEN secret is empty or not available to this workflow."
           }
           $headers = @{
-            Authorization = "Bearer $env:GHCR_TOKEN"
+            Authorization = "token $env:GHCR_TOKEN"
             Accept = "application/vnd.github+json"
           }
-          $userResponse = Invoke-WebRequest -Uri "https://api.github.com/user" -Headers $headers
+          $userResponse = Invoke-WebRequest -UseBasicParsing -Uri "https://api.github.com/user" -Headers $headers
           $user = $userResponse.Content | ConvertFrom-Json
           $tokenScopes = [string]$userResponse.Headers["X-OAuth-Scopes"]
           Write-Host "GHCR_TOKEN is available for GitHub user: $($user.login)"
